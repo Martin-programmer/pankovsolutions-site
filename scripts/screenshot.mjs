@@ -2,6 +2,8 @@ import { chromium } from 'playwright';
 
 const url = process.argv[2] ?? 'http://localhost:4321/styleguide';
 const outDir = process.argv[3] ?? '.';
+// /projects/stegi-store -> "projects-stegi-store"; / -> "index"
+const slug = new URL(url).pathname.replace(/^\/|\/$/g, '').replace(/\//g, '-') || 'index';
 
 const browser = await chromium.launch({ channel: 'msedge' });
 
@@ -13,7 +15,7 @@ for (const [name, width, height] of [
   await page.goto(url, { waitUntil: 'networkidle' });
   await page.evaluate(() => document.fonts.ready);
   const h = await page.evaluate(() => document.documentElement.scrollHeight);
-  const path = `${outDir}/styleguide-${name}.png`;
+  const path = `${outDir}/${slug}-${name}.png`;
   await page.screenshot({ path, fullPage: true });
   console.log(`${name}px viewport -> ${path}  (page height ${h}px)`);
   await page.close();
