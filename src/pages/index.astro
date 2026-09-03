@@ -1,15 +1,616 @@
 ---
-import '../styles/global.css';
+import { getCollection, getEntry } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import InquiryForm from '../components/InquiryForm.astro';
+import Placeholder from '../components/Placeholder.astro';
+import { company } from '../data/company';
+import { useTranslations, type Locale } from '../i18n/utils';
+import { publicFileExists } from '../lib/assets';
+import {
+  mdInline,
+  parseHero,
+  parseSection,
+  parseServices,
+  parseSteps,
+  splitSections,
+} from '../lib/markdown';
+
+// Цялото съдържание идва от content/bg/home.md, нарязан по секционните коментари в него,
+// плюс колекциите projects (featured), clients и testimonials. Нищо не е написано тук.
+const locale: Locale = 'bg';
+const t = useTranslations(locale);
+const isProd = import.meta.env.PROD;
+
+const page = await getEntry('pages', 'bg/home');
+if (!page) throw new Error('content/bg/home.md липсва');
+const s = splitSections(page.body ?? '');
+const get = (key: string) => {
+  const v = s.get(key);
+  if (v === undefined) throw new Error(`home.md: няма секция <!-- ${key} — ... -->`);
+  return v;
+};
+
+const hero = await parseHero(get('HERO'));
+const trust = await mdInline(get('ЛЕНТА ДОВЕРИЕ'));
+const services = await parseServices(get('УСЛУГИ'));
+const projectsSection = await parseSection(get('ИЗБРАНИ ПРОЕКТИ'));
+const steps = await parseSteps(get('ПРОЦЕС'));
+const testimonialsSection = await parseSection(get('ОТЗИВИ'));
+const about = await parseSection(get('ЗА МЕН'));
+const cta = await parseSection(get('CTA + МИНИ-ФОРМА'));
+
+const featured = (await getCollection('projects', (p) => p.id.startsWith('bg/') && p.data.featured))
+  .sort((a, b) => a.data.order - b.data.order);
+const slugOf = (id: string) => id.replace(/^bg\/projects\//, '');
+
+// placeholder: true → в dev с етикет, в production се пропуска (CLAUDE.md §Правила 1).
+const clients = (await getCollection('clients'))
+  .filter((c) => !c.data.partner && (!c.data.placeholder || !isProd))
+  .slice(0, 6);
+const testimonials = (await getCollection('testimonials'))
+  .filter((x) => !x.data.placeholder || !isProd)
+  .slice(0, 3);
+
+// Hero визуалът е първият скрийншот на първия избран проект (Odoo CRM), както е в коментара.
+const heroImage = featured[0]?.data.images[0];
+const portrait = '/img/marti.jpg';
+
+const site = Astro.site?.href ?? 'https://pankovsolutions.com/';
+const address = {
+  '@type': 'PostalAddress',
+  streetAddress: company.street,
+  addressLocality: company.city,
+  addressCountry: 'BG',
+};
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${site}#organization`,
+      name: company.brand,
+      legalName: company.name,
+      url: site,
+      email: company.email,
+      telephone: company.phone,
+      taxID: company.eik,
+      address,
+      founder: { '@type': 'Person', name: company.founder },
+    },
+    {
+      '@type': 'ProfessionalService',
+      '@id': `${site}#service`,
+      name: company.brand,
+      url: site,
+      description: page.data.description,
+      email: company.email,
+      telephone: company.phone,
+      address,
+      areaServed: { '@type': 'Country', name: 'България' },
+      parentOrganization: { '@id': `${site}#organization` },
+    },
+  ],
+};
 ---
 
-<!doctype html>
-<html lang="bg">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Pankov Solutions</title>
-  </head>
-  <body>
-    <p>Pankov Solutions</p>
-  </body>
-</html>
+<Base title={page.data.title} description={page.data.description} locale={locale}>
+  <script is:inline type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
+
+  <!-- HERO — 7/12 текст, 5/12 реален скрийншот в плоска рамка -->
+  <section class="hero wrap grid12">
+    <div class="hero-text">
+      <h1 set:html={hero.title} />
+      <div class="lede" set:html={hero.lede} />
+      <p class="hero-cta">
+        {hero.links[0] && <a class="btn" href={hero.links[0].href}>{hero.links[0].text}</a>}
+        {hero.links[1] && <a class="arrow-link" href={hero.links[1].href}>{hero.links[1].text}</a>}
+      </p>
+    </div>
+    <div class="hero-media">
+      {
+        heroImage && publicFileExists(heroImage.src) ? (
+          <img class="shot" src={heroImage.src} alt={heroImage.alt} width="1200" height="750" fetchpriority="high" />
+        ) : (
+          <Placeholder label={t('placeholder.screenshot')} caption={heroImage?.alt} ratio="16 / 10" />
+        )
+      }
+    </div>
+  </section>
+
+  <!-- ЛЕНТА ДОВЕРИЕ — един ред mono + до 6 лога в естествен цвят -->
+  <section class="trust">
+    <div class="wrap trust-inner">
+      <p class="trust-line" set:html={trust} />
+      {
+        clients.length > 0 && (
+          <ul class="logos" aria-label={t('trust.clients')}>
+            {clients.map((c) =>
+              c.data.placeholder ? (
+                <li class="logo-ph">
+                  <span class="mono">{c.data.name}</span>
+                  <span class="mono tag">{t('placeholder.sample')}</span>
+                </li>
+              ) : (
+                <li>
+                  <img class="logo" src={c.data.logo} alt={c.data.name} height="28" />
+                </li>
+              ),
+            )}
+          </ul>
+        )
+      }
+    </div>
+  </section>
+
+  <!-- УСЛУГИ — номериран вертикален списък, без икони -->
+  <section class="section wrap">
+    <h2 set:html={services.heading} />
+    <ol class="services">
+      {
+        services.items.map((item) => (
+          <li>
+            <span class="num" aria-hidden="true">{item.number}</span>
+            <div>
+              <h3 set:html={item.title} />
+              <p set:html={item.text} />
+              {item.link && (
+                <a class="arrow-link" href={item.link.href}>
+                  {item.link.text}
+                </a>
+              )}
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <!-- ИЗБРАНИ ПРОЕКТИ — редуващ се двуколонен layout, заглавие = резултатът -->
+  <section class="section wrap">
+    <h2 set:html={projectsSection.heading} />
+    <div class="projects">
+      {
+        featured.map((p) => {
+          const img = p.data.images[0];
+          const href = `/projects/${slugOf(p.id)}`;
+          return (
+            <article class="project grid12">
+              <div class="media">
+                {img && publicFileExists(img.src) ? (
+                  <img class="shot" src={img.src} alt={img.alt} width="1200" height="750" loading="lazy" />
+                ) : (
+                  <Placeholder label={t('placeholder.screenshot')} caption={img?.alt} ratio="16 / 10" />
+                )}
+              </div>
+              <div class="text">
+                <p class="meta">
+                  <span class="mono">{p.data.year}</span> · {p.data.client}
+                </p>
+                <h3>
+                  <a href={href} set:html={p.data.result} />
+                </h3>
+                <p class="mono stack">{p.data.stack.join(' · ')}</p>
+              </div>
+            </article>
+          );
+        })
+      }
+    </div>
+  </section>
+
+  <!-- ПРОЦЕС — 5 стъпки в един ред на десктоп, вертикално на мобилно -->
+  <section class="section wrap">
+    <h2 set:html={steps.heading} />
+    <ol class="steps">
+      {
+        steps.items.map((step) => (
+          <li>
+            <span class="num" aria-hidden="true">{step.number}</span>
+            <h3 set:html={step.title} />
+            <p set:html={step.text} />
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <!-- ОТЗИВИ — пълен текст, име, длъжност, фирма; без снимки; максимум 3 -->
+  {
+    testimonials.length > 0 && (
+      <section class="section wrap">
+        <h2 set:html={testimonialsSection.heading} />
+        <div class="quotes">
+          {testimonials.map((x) => (
+            <blockquote class="quote">
+              <span class="open" aria-hidden="true">
+                „
+              </span>
+              <p>{x.data.quote}</p>
+              <footer>
+                <span class="who">{x.data.name}</span>, {x.data.role}, {x.data.company}
+                {x.data.placeholder && <span class="mono tag">{t('placeholder.sample')}</span>}
+              </footer>
+            </blockquote>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ЗА МЕН — портрет 4/12, текст 8/12 -->
+  <section class="section wrap grid12 about">
+    <div class="portrait">
+      {
+        publicFileExists(portrait) ? (
+          <img src={portrait} alt={company.founder} width="800" height="1000" loading="lazy" />
+        ) : (
+          <Placeholder variant="photo" label={t('placeholder.photo')} caption={company.founder} ratio="4 / 5" />
+        )
+      }
+    </div>
+    <div class="about-text">
+      <h2 set:html={about.heading} />
+      <div class="prose" set:html={about.body} />
+      {about.links[0] && <a class="arrow-link" href={about.links[0].href}>{about.links[0].text}</a>}
+    </div>
+  </section>
+
+  <!-- CTA + МИНИ-ФОРМА -->
+  <section class="section wrap cta">
+    <h2 set:html={cta.heading} />
+    <div class="prose" set:html={cta.body} />
+    <InquiryForm locale={locale} variant="short" />
+  </section>
+</Base>
+
+<style>
+  .grid12 {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--spacing-6);
+    row-gap: var(--spacing-8);
+  }
+
+  .section {
+    padding-block: var(--spacing-16);
+  }
+
+  .section h2 {
+    font-size: var(--text-xl);
+    margin: 0 0 var(--spacing-8);
+  }
+
+  .prose :global(p) {
+    max-width: var(--measure);
+    line-height: 1.6;
+    margin: 0 0 var(--spacing-4);
+  }
+
+  /* Hero: единственият page-load reveal (DESIGN.md §Motion). Reduced-motion го изключва глобално. */
+  @keyframes hero-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(var(--spacing-2));
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .hero {
+    padding-block: var(--spacing-12) var(--spacing-16);
+    align-items: center;
+    animation: hero-reveal 400ms ease-out both;
+  }
+
+  .hero-text,
+  .hero-media {
+    grid-column: 1 / -1;
+  }
+
+  .hero h1 {
+    font-size: var(--text-xl);
+    line-height: 1.1;
+    margin: 0 0 var(--spacing-6);
+  }
+
+  .lede :global(p) {
+    font-size: var(--text-base);
+    line-height: 1.6;
+    max-width: var(--measure);
+    margin: 0 0 var(--spacing-6);
+  }
+
+  .hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-6);
+    margin: 0;
+  }
+
+  .shot {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--color-line);
+  }
+
+  /* Лента доверие */
+  .trust {
+    border-block: 1px solid var(--color-line);
+  }
+
+  .trust-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--spacing-4) var(--spacing-12);
+    padding-block: var(--spacing-4);
+  }
+
+  .trust-line {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .trust-line :global(code) {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-ink);
+  }
+
+  .logos {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--spacing-2) var(--spacing-8);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .logo {
+    display: block;
+    /* DESIGN.md: 28 px височина, естествен цвят, по baseline. */
+    height: calc(var(--spacing-6) + var(--spacing-1));
+    width: auto;
+  }
+
+  .logo-ph {
+    display: flex;
+    gap: var(--spacing-2);
+    align-items: baseline;
+  }
+
+  .tag {
+    color: var(--color-muted);
+  }
+
+  /* Услуги: mono номер в охра + заглавие + два реда + линк */
+  .services {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-width: var(--measure);
+  }
+
+  .services li {
+    display: grid;
+    grid-template-columns: var(--spacing-12) 1fr;
+    gap: var(--spacing-4);
+    padding-block: var(--spacing-6);
+    border-top: 1px solid var(--color-line);
+  }
+
+  .services li:last-child {
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .num {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-accent);
+    line-height: 1.6;
+  }
+
+  .services h3 {
+    font-size: var(--text-md);
+    line-height: 1.25;
+    margin: 0 0 var(--spacing-2);
+  }
+
+  /* Номерът е в размера и line-height на заглавието, за да са на една базова линия. */
+  .services .num {
+    font-size: var(--text-md);
+    line-height: 1.25;
+  }
+
+  .services p {
+    margin: 0 0 var(--spacing-3);
+    line-height: 1.6;
+  }
+
+  /* Избрани проекти: редуващ се двуколонен layout */
+  .projects {
+    display: grid;
+    row-gap: var(--spacing-12);
+  }
+
+  .project .media,
+  .project .text {
+    grid-column: 1 / -1;
+  }
+
+  .project h3 {
+    font-size: var(--text-lg);
+    line-height: 1.25;
+    margin: 0 0 var(--spacing-3);
+  }
+
+  .project h3 a {
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+
+  .project h3 a:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    text-decoration-thickness: 1px;
+  }
+
+  .meta {
+    margin: 0 0 var(--spacing-2);
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .stack {
+    margin: 0;
+    color: var(--color-muted);
+  }
+
+  /* Процес: 5 стъпки в ред */
+  .steps {
+    display: grid;
+    gap: var(--spacing-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .steps li {
+    border-top: 1px solid var(--color-line);
+    padding-top: var(--spacing-3);
+  }
+
+  /* Наследява serif 700 от tokens.css (CHECKLIST §A: заглавия само 700/300). */
+  .steps h3 {
+    font-size: var(--text-sm);
+    margin: var(--spacing-2) 0 var(--spacing-1);
+  }
+
+  .steps p {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: 1.6;
+  }
+
+  /* Отзиви */
+  .quotes {
+    display: grid;
+    gap: var(--spacing-8);
+  }
+
+  .quote {
+    margin: 0;
+  }
+
+  .open {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 300;
+    font-size: var(--text-3xl);
+    line-height: 0.6;
+    color: var(--color-muted);
+    margin-bottom: var(--spacing-2);
+  }
+
+  .quote p {
+    font-size: var(--text-base);
+    line-height: 1.6;
+    margin: 0 0 var(--spacing-3);
+  }
+
+  .quote footer {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .who {
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+
+  .quote .tag {
+    display: block;
+    margin-top: var(--spacing-1);
+  }
+
+  /* За мен */
+  .portrait,
+  .about-text {
+    grid-column: 1 / -1;
+  }
+
+  .about-text h2 {
+    margin-top: 0;
+  }
+
+  /* CTA + форма */
+  .cta h2 {
+    max-width: var(--measure);
+  }
+
+  /* = --breakpoint-md в tokens.css */
+  @media (min-width: 48rem) {
+    .section {
+      padding-block: var(--spacing-24);
+    }
+
+    .hero {
+      padding-block: var(--spacing-16) var(--spacing-24);
+    }
+
+    /* 48, не 64: в 7/12 колона 64 px чупи изречението на 5 реда. */
+    .hero h1 {
+      font-size: var(--text-2xl);
+    }
+
+    .hero-text {
+      grid-column: 1 / span 7;
+    }
+
+    .hero-media {
+      grid-column: 8 / span 5;
+    }
+
+    .project .media {
+      grid-column: 1 / span 6;
+    }
+
+    .project .text {
+      grid-column: 7 / span 6;
+      align-self: center;
+    }
+
+    .project:nth-child(even) .media {
+      grid-column: 7 / span 6;
+      grid-row: 1;
+    }
+
+    .project:nth-child(even) .text {
+      grid-column: 1 / span 6;
+      grid-row: 1;
+    }
+
+    .steps {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .quotes {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--spacing-12);
+    }
+
+    .portrait {
+      grid-column: 1 / span 4;
+    }
+
+    .about-text {
+      grid-column: 5 / span 8;
+    }
+  }
+</style>

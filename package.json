@@ -12,9 +12,12 @@
     "preview": "astro preview",
     "check": "astro check",
     "shot": "node scripts/screenshot.mjs",
+    "overflow": "node scripts/overflow.mjs",
+    "crop": "node scripts/crop.mjs",
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/markdown-remark": "^6.3.11",
     "@astrojs/sitemap": "^3.7.4",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^5.18.2",

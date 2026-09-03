@@ -1,0 +1,128 @@
+---
+import { company } from '../data/company';
+import { localeUrl, useTranslations, type Locale } from '../i18n/utils';
+
+// Само markup. Backend-ът (functions/api/inquiry.ts: honeypot → timing → rate limit →
+// Turnstile → Zod → Resend → Telegram) идва със страницата /contact. Формата работи и без
+// JS — обикновен POST към същия път.
+interface Props {
+  locale: Locale;
+  variant?: 'short' | 'full';
+}
+
+const { locale, variant = 'short' } = Astro.props;
+const t = useTranslations(locale);
+const id = (name: string) => `inquiry-${variant}-${name}`;
+---
+
+<form class="inquiry" method="post" action="/api/inquiry">
+  <div class="field">
+    <label for={id('name')}>{t('form.name')}</label>
+    <input id={id('name')} name="name" type="text" autocomplete="name" required aria-describedby={id('name-error')} />
+    <p class="error" id={id('name-error')} hidden></p>
+  </div>
+
+  <div class="field">
+    <label for={id('email')}>{t('form.email')}</label>
+    <input id={id('email')} name="email" type="email" autocomplete="email" required aria-describedby={id('email-error')} />
+    <p class="error" id={id('email-error')} hidden></p>
+  </div>
+
+  <div class="field">
+    <label for={id('company')}>{t('form.company')}</label>
+    <input id={id('company')} name="company" type="text" autocomplete="organization" />
+  </div>
+
+  <div class="field">
+    <label for={id('message')}>{t('form.message')}</label>
+    <textarea id={id('message')} name="message" rows="3" required aria-describedby={id('message-error')}></textarea>
+    <p class="error" id={id('message-error')} hidden></p>
+  </div>
+
+  <!-- Honeypot: скрито от хора, попълва се от ботове. -->
+  <div class="hp" aria-hidden="true">
+    <label for={id('website')}>{t('form.honeypot')}</label>
+    <input id={id('website')} name="website" type="text" tabindex="-1" autocomplete="off" />
+  </div>
+  <!-- TODO при /contact: Turnstile widget (TURNSTILE_SITE_KEY) и timing поле. -->
+
+  <button class="btn" type="submit">{t('form.submit')}</button>
+
+  <p class="promise">
+    {t('form.promise')}
+    <a class="mono" href={company.phoneHref}>{company.phone}</a> ·
+    <a class="mono" href={`mailto:${company.email}`}>{company.email}</a>
+  </p>
+  <p class="gdpr">
+    {t('form.gdpr')}
+    <a href={localeUrl(locale, '/privacy')}>{t('footer.privacy')}</a>
+  </p>
+</form>
+
+<style>
+  .inquiry {
+    max-width: var(--measure);
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+    margin-bottom: var(--spacing-4);
+  }
+
+  label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  input,
+  textarea {
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    color: var(--color-ink);
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-2) var(--spacing-3);
+    width: 100%;
+  }
+
+  input:hover,
+  textarea:hover {
+    border-color: var(--color-ink);
+  }
+
+  input[aria-invalid='true'],
+  textarea[aria-invalid='true'] {
+    border-color: var(--color-error);
+  }
+
+  .error {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-error);
+  }
+
+  /* Визуално скрито, но в DOM-а — за ботовете. */
+  .hp {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .promise,
+  .gdpr {
+    margin: var(--spacing-4) 0 0;
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    line-height: 1.6;
+  }
+
+  .promise a,
+  .gdpr a {
+    color: var(--color-primary);
+  }
+</style>

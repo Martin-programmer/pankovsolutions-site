@@ -1,0 +1,49 @@
+---
+// Заместител за изображение, което още не е качено (DESIGN.md §За мен / §Изображения).
+// Не е илюстрация и не е stock: плосък блок с 1px рамка, mono етикет и текстът, който
+// описва какво ще стои тук — така при преглед се вижда и липсата, и намерението.
+interface Props {
+  label: string;
+  caption?: string;
+  variant?: 'screenshot' | 'photo';
+  ratio?: string;
+  class?: string;
+}
+
+const { label, caption, variant = 'screenshot', ratio = '16 / 10', class: cls } = Astro.props;
+---
+
+<div
+  class:list={['ph', `ph-${variant}`, cls]}
+  style={`aspect-ratio: ${ratio}`}
+  role="img"
+  aria-label={caption ? `${label}: ${caption}` : label}
+>
+  <span class="mono">{label}</span>
+  {caption && <span class="cap">{caption}</span>}
+</div>
+
+<style>
+  .ph {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: var(--spacing-1);
+    padding: var(--spacing-4);
+    border: 1px solid var(--color-line);
+    color: var(--color-ink);
+  }
+
+  .ph-screenshot {
+    background: var(--color-line);
+  }
+
+  .ph-photo {
+    background: var(--color-accent-soft);
+  }
+
+  .cap {
+    font-size: var(--text-xs);
+    line-height: 1.4;
+  }
+</style>

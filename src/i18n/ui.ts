@@ -28,6 +28,20 @@ const bg = {
   'footer.vat': 'ДДС №',
   'footer.privacy': 'Политика за поверителност',
   'footer.accessibility': 'Достъпност',
+  // Форма (COPY.md §Микрокопи, DESIGN.md §Форма)
+  'form.name': 'Име и фамилия',
+  'form.email': 'Имейл',
+  'form.company': 'Фирма (по избор)',
+  'form.message': 'Опишете накратко',
+  'form.submit': 'Изпратете запитването',
+  'form.promise': 'Отговарям до 1 работен ден. Или:',
+  'form.gdpr': 'Изпращайки формата, се съгласявате данните Ви да бъдат използвани само за отговор на запитването.',
+  'form.honeypot': 'Оставете празно',
+  // Етикети на placeholder-и (само до качване на реалните материали)
+  'placeholder.screenshot': 'скрийншот',
+  'placeholder.photo': 'снимка',
+  'placeholder.sample': 'примерен – ще бъде заменен',
+  'trust.clients': 'Клиенти',
 } as const;
 
 export type UiKey = keyof typeof bg;
@@ -50,6 +64,18 @@ const en: Record<UiKey, string> = {
   'footer.vat': 'VAT no.',
   'footer.privacy': 'Privacy policy',
   'footer.accessibility': 'Accessibility',
+  'form.name': 'Full name',
+  'form.email': 'Email',
+  'form.company': 'Company (optional)',
+  'form.message': 'Describe it briefly',
+  'form.submit': 'Send the inquiry',
+  'form.promise': 'I reply within 1 business day. Or:',
+  'form.gdpr': 'By sending the form you agree that your data is used only to reply to your inquiry.',
+  'form.honeypot': 'Leave empty',
+  'placeholder.screenshot': 'screenshot',
+  'placeholder.photo': 'photo',
+  'placeholder.sample': 'sample – to be replaced',
+  'trust.clients': 'Clients',
 };
 
 export const ui: Record<Locale, Record<UiKey, string>> = { bg, en };

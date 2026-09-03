@@ -1,0 +1,66 @@
+/* Общи класове върху токените. Всички стойности идват от tokens.css; 1px рамки и
+   2px/3px focus ring са изрично по DESIGN.md. */
+
+.wrap {
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--spacing-6);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.btn {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-surface);
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-3) var(--spacing-6);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 120ms ease-out;
+}
+
+.btn:hover {
+  background: var(--color-primary-strong);
+  border-color: var(--color-primary-strong);
+}
+
+.btn:disabled {
+  background: var(--color-muted);
+  border-color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+/* Underline-slide: псевдоелемент със scaleX, без градиент. Стрелката е част от текста. */
+.arrow-link {
+  position: relative;
+  display: inline-block;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.arrow-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1px;
+  background: var(--color-primary);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 160ms ease-out;
+}
+
+.arrow-link:hover::after {
+  transform: scaleX(1);
+}

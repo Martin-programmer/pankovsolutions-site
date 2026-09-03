@@ -2,3 +2,4 @@
    Тук НЕ се дефинират стойности — всичко идва от tokens.css (виж CLAUDE.md §Правила 2). */
 @import "tailwindcss";
 @import "./tokens.css";
+@import "./components.css";
