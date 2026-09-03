@@ -1,0 +1,63 @@
+/* Pankov Solutions — design tokens. ЕДИНСТВЕН източник на цветове, шрифтове, спейсинг.
+   Промени се правят само тук, никога в компоненти. Виж DESIGN.md. */
+
+@font-face { font-family: "Source Serif 4"; font-weight: 300; font-display: swap; src: url("/fonts/SourceSerif4-Light.woff2") format("woff2"); }
+@font-face { font-family: "Source Serif 4"; font-weight: 700; font-display: swap; src: url("/fonts/SourceSerif4-Bold.woff2") format("woff2"); }
+@font-face { font-family: "Source Sans 3"; font-weight: 400; font-display: swap; src: url("/fonts/SourceSans3-Regular.woff2") format("woff2"); }
+@font-face { font-family: "Source Sans 3"; font-weight: 600; font-display: swap; src: url("/fonts/SourceSans3-SemiBold.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 400; font-display: swap; src: url("/fonts/JetBrainsMono-Regular.woff2") format("woff2"); }
+/* TODO при setup: subset-ирай с glyphhanger/pyftsubset на latin + cyrillic и добави unicode-range. */
+
+@theme {
+  /* Цветове — „петрол и охра върху хартия“ */
+  --color-paper: #F5F3EE;
+  --color-surface: #FFFFFF;
+  --color-ink: #16191D;
+  --color-muted: #5B6268;
+  --color-line: #D9D4C9;
+  --color-primary: #0E4A5A;
+  --color-primary-strong: #093642;
+  --color-accent: #C9702A;
+  --color-accent-soft: #F3E4D3;
+  --color-ok: #2E6B3F;
+  --color-error: #A83A2B;
+
+  /* Шрифтове */
+  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-body: "Source Sans 3", "Segoe UI", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "Consolas", monospace;
+
+  /* Типографска скала 1.25 */
+  --text-xs: 0.875rem;   /* 14 */
+  --text-sm: 1rem;       /* 16 */
+  --text-base: 1.125rem; /* 18 */
+  --text-md: 1.375rem;   /* 22 */
+  --text-lg: 1.75rem;    /* 28 */
+  --text-xl: 2.25rem;    /* 36 */
+  --text-2xl: 3rem;      /* 48 */
+  --text-3xl: 4rem;      /* 64 */
+
+  /* Спейсинг */
+  --spacing-1: 4px;  --spacing-2: 8px;  --spacing-3: 12px; --spacing-4: 16px;
+  --spacing-6: 24px; --spacing-8: 32px; --spacing-12: 48px; --spacing-16: 64px;
+  --spacing-24: 96px; --spacing-32: 128px;
+
+  /* Форма */
+  --radius-none: 0;
+  --radius-sm: 4px;
+  --shadow-modal: 0 12px 32px rgb(22 25 29 / 0.16);
+
+  /* Layout */
+  --container: 1200px;
+  --measure: 68ch;
+}
+
+:root {
+  color-scheme: light;
+  font-feature-settings: "locl" 1, "kern" 1;
+  -webkit-font-smoothing: antialiased;
+}
+html { background: var(--color-paper); color: var(--color-ink); font-family: var(--font-body); }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

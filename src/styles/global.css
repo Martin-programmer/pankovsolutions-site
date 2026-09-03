@@ -1,0 +1,4 @@
+/* Единствената точка, в която Tailwind се свързва с токените.
+   Тук НЕ се дефинират стойности — всичко идва от tokens.css (виж CLAUDE.md §Правила 2). */
+@import "tailwindcss";
+@import "./tokens.css";

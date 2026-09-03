@@ -1,0 +1,45 @@
+# Лога за лентата „доверие“ и за листинга на проекти.
+# placeholder: true → в production се СКРИВА; в dev се показва с етикет „примерен“.
+# Марти качва SVG в public/img/clients/<slug>.svg, сменя placeholder на false и добавя consent (дата на писменото съгласие).
+
+- slug: domoupravitel-bulgaria
+  name: "Домоуправител България ООД"
+  logo: /img/clients/domoupravitel.svg
+  placeholder: true
+  consent: null
+- slug: kivi-tv
+  name: "КИВИ-ТВ ООД"
+  logo: /img/clients/kivi-tv.svg
+  placeholder: true
+  consent: null
+- slug: dosev-impex
+  name: "Досев Импекс ЕООД"
+  logo: /img/clients/dosev-impex.svg
+  placeholder: true
+  consent: null
+- slug: stegi-store
+  name: "stegi.store"
+  logo: /img/clients/stegi-store.svg
+  placeholder: true
+  consent: null
+- slug: secret-legend
+  name: "Сикрет Леджънд ЕООД (Secret Bar)"
+  logo: /img/clients/secret-bar.svg
+  placeholder: true
+  consent: null
+- slug: ksg-brand
+  name: "KSG Brand"
+  logo: /img/clients/ksg-brand.svg
+  placeholder: true
+  consent: null
+- slug: infralink
+  name: "INFRALINK UG"
+  logo: /img/clients/infralink.svg
+  placeholder: true
+  consent: null
+- slug: eco-globe
+  name: "Еко Глоуб ООД"        # партньор, не клиент — показва се в блока „Партньор“
+  logo: /img/clients/eco-globe.svg
+  partner: true
+  placeholder: true
+  consent: null
