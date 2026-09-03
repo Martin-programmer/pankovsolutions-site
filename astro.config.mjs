@@ -17,6 +17,8 @@ export default defineConfig({
   integrations: [
     sitemap({
       i18n: { defaultLocale: 'bg', locales: { bg: 'bg-BG', en: 'en-US' } },
+      // /styleguide е вътрешна и noindex — не влиза в sitemap-а.
+      filter: (page) => !page.includes('/styleguide'),
     }),
   ],
   vite: { plugins: [tailwindcss()] },

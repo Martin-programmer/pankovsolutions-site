@@ -1,0 +1,477 @@
+---
+import Base from '../layouts/Base.astro';
+// Суровият текст на tokens.css се чете при build (Vite `?raw`), за да няма нито един
+// hex в src/ и таблицата да не може да се разсинхронизира с единствения източник.
+import tokens from '../styles/tokens.css?raw';
+
+const colors = [...tokens.matchAll(/--color-([a-z-]+):\s*(#[0-9A-Fa-f]{3,8});/g)].map((m) => ({
+  name: m[1],
+  value: m[2].toUpperCase(),
+}));
+
+const sizes = [...tokens.matchAll(/--text-([a-z0-9]+):\s*([\d.]+)rem;/g)].map((m) => ({
+  name: m[1],
+  px: Math.round(parseFloat(m[2]) * 16),
+}));
+
+const faces = [
+  { cls: 'f-display-700', label: 'display · Source Serif 4 · 700' },
+  { cls: 'f-display-300', label: 'display · Source Serif 4 · 300' },
+  { cls: 'f-body-400', label: 'body · Source Sans 3 · 400' },
+  { cls: 'f-body-600', label: 'body · Source Sans 3 · 600' },
+  { cls: 'f-mono-400', label: 'mono · JetBrains Mono · 400' },
+];
+
+const sample = 'Внедряване на Odoo за Домоуправител България – тд лб вж зип шщ ъ';
+
+// Всяко състояние се показва два пъти: реалното (:hover / :focus-visible) и
+// принудено през клас, за да се вижда и на статичен скрийншот.
+const states = [
+  { cls: '', label: 'default' },
+  { cls: 'is-hover', label: 'hover' },
+  { cls: 'is-focus', label: 'focus' },
+  { cls: 'is-disabled', label: 'disabled' },
+];
+---
+
+<Base
+  title="Styleguide — Pankov Solutions"
+  description="Вътрешна страница: всички дизайн токени, типографска скала и състояния на компонентите."
+  noindex
+>
+  <div class="wrap">
+    <h1>Styleguide</h1>
+    <p class="lede">
+      Всичко на тази страница се захранва от <code>src/styles/tokens.css</code>. Страницата е
+      <code>noindex</code> и не влиза в навигацията.
+    </p>
+
+    <hr />
+
+    <section>
+      <h2>Цветове</h2>
+      <ul class="swatches">
+        {
+          colors.map((c) => (
+            <li>
+              <div class="swatch" style={`background: var(--color-${c.name})`} />
+              <span class="mono name">--color-{c.name}</span>
+              <span class="mono value">{c.value}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <hr />
+
+    <section>
+      <h2>Типографска скала</h2>
+      {
+        faces.map((f) => (
+          <div class="face">
+            <h3 class="mono face-label">{f.label}</h3>
+            {sizes.map((s) => (
+              <div class="row">
+                <span class="mono size-label">
+                  {s.px} px · --text-{s.name}
+                </span>
+                <p class={f.cls} style={`font-size: var(--text-${s.name})`}>
+                  {sample}
+                </p>
+              </div>
+            ))}
+          </div>
+        ))
+      }
+    </section>
+
+    <hr />
+
+    <section>
+      <h2>Мярка на текста</h2>
+      <p class="mono size-label">max-width: var(--measure) · 68ch</p>
+      <p class="measure">
+        Внедрих Odoo Community с CRM, продажби и склад за Домоуправител България, обучих
+        служителите в Moodle и предадох системата с приемо-предавателен протокол. Хостингът беше
+        на Hetzner за моя сметка по време на проекта и мина на тяхно име след приемането. Целта на
+        този абзац е да покаже къде се пречупва редът при 68 знака и как изглежда line-height 1,6
+        върху хартиен фон – с български форми на кирилицата: тд лб вж зип шщ ъ.
+      </p>
+    </section>
+
+    <hr />
+
+    <section>
+      <h2>Бутон</h2>
+      <div class="states">
+        {
+          states.map((s) => (
+            <div class="state">
+              <span class="mono size-label">{s.label}</span>
+              <button type="button" class={`btn ${s.cls}`} disabled={s.cls === 'is-disabled'}>
+                Изпратете запитване
+              </button>
+            </div>
+          ))
+        }
+      </div>
+
+      <h2>Вторичен линк</h2>
+      <div class="states">
+        {
+          states.map((s) => (
+            <div class="state">
+              <span class="mono size-label">{s.label}</span>
+              <a
+                href="/projects"
+                class={`arrow-link ${s.cls}`}
+                aria-disabled={s.cls === 'is-disabled'}
+              >
+                Вижте проектите <span aria-hidden="true">→</span>
+              </a>
+            </div>
+          ))
+        }
+      </div>
+
+      <h2>Поле с етикет и грешка</h2>
+      <div class="states">
+        {
+          states.map((s) => (
+            <div class="state field">
+              <span class="mono size-label">{s.label}</span>
+              <label for={`email-${s.label}`}>Имейл</label>
+              <input
+                id={`email-${s.label}`}
+                class={`input ${s.cls}`}
+                type="email"
+                value="marti@"
+                aria-invalid="true"
+                aria-describedby={`email-${s.label}-error`}
+                disabled={s.cls === 'is-disabled'}
+              />
+              <p id={`email-${s.label}-error`} class="error">
+                Имейлът не изглежда валиден
+              </p>
+            </div>
+          ))
+        }
+      </div>
+
+      <h2>Чекбокс</h2>
+      <div class="states">
+        {
+          states.map((s) => (
+            <div class="state">
+              <span class="mono size-label">{s.label}</span>
+              <div class="check">
+                <input
+                  id={`gdpr-${s.label}`}
+                  class={`checkbox ${s.cls}`}
+                  type="checkbox"
+                  checked
+                  disabled={s.cls === 'is-disabled'}
+                />
+                <label for={`gdpr-${s.label}`}>Съгласявам се с политиката за поверителност</label>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <hr />
+
+    <section>
+      <h2>Бележка</h2>
+      <p class="note">
+        Хостингът е за моя сметка по време на изпълнението и се прехвърля на Вас след приемането.
+        Това е единственият фон <code>--color-accent-soft</code> на страницата.
+      </p>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .wrap {
+    max-width: var(--container);
+    margin-inline: auto;
+    padding: var(--spacing-12) var(--spacing-6) var(--spacing-24);
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+  }
+
+  h2 {
+    font-size: var(--text-lg);
+    margin-block: var(--spacing-12) var(--spacing-6);
+  }
+
+  h3 {
+    font-size: var(--text-sm);
+  }
+
+  .lede {
+    max-width: var(--measure);
+    line-height: 1.6;
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid var(--color-line);
+    margin-block: var(--spacing-12);
+  }
+
+  code,
+  .mono {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+
+  /* Цветове */
+  .swatches {
+    display: grid;
+    /* 192 px = най-дългото име на токен (--color-primary-strong) в mono 14 px. */
+    grid-template-columns: repeat(auto-fill, minmax(calc(var(--spacing-32) + var(--spacing-16)), 1fr));
+    gap: var(--spacing-6);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .swatch {
+    height: var(--spacing-16);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-sm);
+  }
+
+  .swatches .name,
+  .swatches .value {
+    display: block;
+    margin-top: var(--spacing-1);
+  }
+
+  .swatches .value {
+    color: var(--color-muted);
+  }
+
+  /* Типография */
+  .face {
+    margin-bottom: var(--spacing-12);
+  }
+
+  .face-label {
+    color: var(--color-muted);
+    border-bottom: 1px solid var(--color-line);
+    padding-bottom: var(--spacing-2);
+    margin-bottom: var(--spacing-6);
+  }
+
+  .row {
+    margin-bottom: var(--spacing-4);
+  }
+
+  .size-label {
+    display: block;
+    color: var(--color-muted);
+  }
+
+  .row p {
+    margin: 0;
+    line-height: 1.2;
+    /* 64 px текст в 342 px колона на 390 px екран: „Домоуправител“ е по-широка от
+       колоната и без това страницата се скролва хоризонтално. */
+    overflow-wrap: anywhere;
+  }
+
+  .f-display-700 {
+    font-family: var(--font-display);
+    font-weight: 700;
+  }
+
+  .f-display-300 {
+    font-family: var(--font-display);
+    font-weight: 300;
+  }
+
+  .f-body-400 {
+    font-family: var(--font-body);
+    font-weight: 400;
+  }
+
+  .f-body-600 {
+    font-family: var(--font-body);
+    font-weight: 600;
+  }
+
+  .f-mono-400 {
+    font-family: var(--font-mono);
+    font-weight: 400;
+  }
+
+  .measure {
+    max-width: var(--measure);
+    font-size: var(--text-base);
+    line-height: 1.6;
+  }
+
+  /* Състояния */
+  .states {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-8);
+    align-items: flex-start;
+  }
+
+  .state {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+  }
+
+  .btn {
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-surface);
+    background: var(--color-primary);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-3) var(--spacing-6);
+    cursor: pointer;
+    transition: background-color 120ms ease-out;
+  }
+
+  .btn:hover,
+  .btn.is-hover {
+    background: var(--color-primary-strong);
+    border-color: var(--color-primary-strong);
+  }
+
+  .btn.is-focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  .btn:disabled {
+    background: var(--color-muted);
+    border-color: var(--color-muted);
+    cursor: not-allowed;
+  }
+
+  /* Underline-slide: псевдоелемент със scaleX, без градиент. */
+  .arrow-link {
+    position: relative;
+    align-self: flex-start;
+    font-size: var(--text-sm);
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .arrow-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 1px;
+    background: var(--color-primary);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 160ms ease-out;
+  }
+
+  .arrow-link:hover::after,
+  .arrow-link.is-hover::after {
+    transform: scaleX(1);
+  }
+
+  .arrow-link.is-focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  .arrow-link[aria-disabled='true'] {
+    color: var(--color-muted);
+    pointer-events: none;
+  }
+
+  /* Поле */
+  .field label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .input {
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    color: var(--color-ink);
+    background: var(--color-surface);
+    border: 1px solid var(--color-error);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-2) var(--spacing-3);
+    width: calc(var(--spacing-32) * 2);
+  }
+
+  .input:hover,
+  .input.is-hover {
+    border-color: var(--color-ink);
+  }
+
+  .input.is-focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  .input:disabled {
+    color: var(--color-muted);
+    background: var(--color-paper);
+    border-color: var(--color-line);
+  }
+
+  .error {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-error);
+  }
+
+  /* Чекбокс */
+  .check {
+    display: flex;
+    gap: var(--spacing-2);
+    align-items: flex-start;
+    max-width: calc(var(--spacing-32) * 2);
+  }
+
+  .checkbox {
+    accent-color: var(--color-primary);
+    width: var(--spacing-4);
+    height: var(--spacing-4);
+    margin-top: var(--spacing-1);
+  }
+
+  .checkbox.is-focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  .check label {
+    font-size: var(--text-xs);
+    line-height: 1.4;
+  }
+
+  .checkbox:disabled + label {
+    color: var(--color-muted);
+  }
+
+  /* Бележка */
+  .note {
+    max-width: var(--measure);
+    background: var(--color-accent-soft);
+    padding: var(--spacing-4) var(--spacing-6);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+  }
+</style>
