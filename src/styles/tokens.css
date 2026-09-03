@@ -90,6 +90,9 @@
   /* Layout */
   --container: 1200px;
   --measure: 68ch;
+  /* Под md: мобилно меню, footer в една колона. Custom properties не работят в @media,
+     затова компонентите пишат `@media (min-width: 48rem)` с коментар към този токен. */
+  --breakpoint-md: 48rem;
 }
 
 :root {
