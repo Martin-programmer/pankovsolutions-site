@@ -14,10 +14,17 @@ await page.evaluate(() => document.fonts.ready);
 const result = await page.evaluate(() => {
   const vw = document.documentElement.clientWidth;
   const out = [];
+  // Елемент в клипнат родител (visually-hidden модел, overflow: hidden) не може да прелее към страницата.
+  const clipped = (el) => {
+    for (let p = el; p && p !== document.body; p = p.parentElement) {
+      if (getComputedStyle(p).overflowX !== 'visible') return true;
+    }
+    return false;
+  };
   for (const el of document.querySelectorAll('body *')) {
     const r = el.getBoundingClientRect();
     // Извън екрана, или съдържание, което прелива вътре в елемента (дълга дума/URL).
-    const inner = el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).overflowX === 'visible';
+    const inner = el.scrollWidth > el.clientWidth + 1 && !clipped(el);
     if (r.width > 0 && (r.right > vw + 1 || inner)) {
       out.push({
         tag: el.tagName.toLowerCase(),
