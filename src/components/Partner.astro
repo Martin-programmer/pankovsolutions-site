@@ -1,0 +1,89 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { useTranslations, type Locale } from '../i18n/utils';
+
+// „Партньор: отделен блок с лого на „Еко Глоуб“ + 3 изречения + кой какво прави“ —
+// DESIGN.md §Вместо това. Логото е от content/bg/clients.yaml (partner: true), текстът
+// идва от markdown-а на страницата. Placeholder лого: в dev — име + етикет, в production —
+// само текстът (CLAUDE.md §Правила 1).
+interface Props {
+  partner?: CollectionEntry<'clients'>;
+  html: string;
+  locale: Locale;
+}
+
+const { partner, html, locale } = Astro.props;
+const t = useTranslations(locale);
+const isProd = import.meta.env.PROD;
+const showLogo = partner && (!partner.data.placeholder || !isProd);
+---
+
+<aside class:list={['partner', showLogo && 'has-logo']} aria-label={t('partner.label')}>
+  {
+    showLogo && (
+      <div class="logo">
+        {partner.data.placeholder ? (
+          <>
+            <span class="mono">{partner.data.name}</span>
+            <span class="tag">{t('placeholder.sample')}</span>
+          </>
+        ) : (
+          <img src={partner.data.logo} alt={partner.data.name} height="28" />
+        )}
+      </div>
+    )
+  }
+  <div class="prose" set:html={html} />
+</aside>
+
+<style>
+  /* Отделен блок (DESIGN.md §Партньор): фон accent-soft — „фон на бележка/highlight“ —
+     вместо линии, които се сливат със секциите наоколо. */
+  .partner {
+    display: grid;
+    gap: var(--spacing-4) var(--spacing-6);
+    padding: var(--spacing-6);
+    background: var(--color-accent-soft);
+  }
+
+  .logo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--spacing-2);
+  }
+
+  .logo img {
+    display: block;
+    height: var(--logo-height);
+    width: auto;
+  }
+
+  .logo .tag {
+    margin: 0;
+  }
+
+  /* Текстът запълва блока — иначе вдясно в оцветения фон остава празна ивица. */
+  .prose {
+    max-width: none;
+  }
+
+  .prose :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  /* = --breakpoint-md в tokens.css */
+  @media (min-width: 48rem) {
+    .has-logo {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+
+    .has-logo .logo {
+      grid-column: 1 / span 3;
+    }
+
+    .has-logo .prose {
+      grid-column: 4 / span 9;
+    }
+  }
+</style>

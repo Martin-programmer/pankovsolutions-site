@@ -56,6 +56,8 @@ const bg = {
   'facts.program': 'Програма',
   'breadcrumb.home': 'Начало',
   'breadcrumb.label': 'Път до страницата',
+  'toc.label': 'На тази страница',
+  'partner.label': 'Партньор',
 } as const;
 
 export type UiKey = keyof typeof bg;
@@ -103,6 +105,8 @@ const en: Record<UiKey, string> = {
   'facts.program': 'Programme',
   'breadcrumb.home': 'Home',
   'breadcrumb.label': 'Breadcrumb',
+  'toc.label': 'On this page',
+  'partner.label': 'Partner',
 };
 
 export const ui: Record<Locale, Record<UiKey, string>> = { bg, en };
