@@ -12,9 +12,10 @@ export function stripComments(html: string): string {
 // За рендериран markdown: маха коментарите и елементите, които остават празни без тях
 // (например <li>, в което е имало само TODO — иначе излиза празна точка).
 export function cleanHtml(html: string): string {
+  // <li>/<p>, в които след коментарите остава само пунктуация („ · “ между два TODO), също падат.
   return stripComments(html)
-    .replace(/<li>\s*<\/li>/g, '')
-    .replace(/<p>\s*<\/p>/g, '')
+    .replace(/<li>[\s·.,;:–—-]*<\/li>/g, '')
+    .replace(/<p>[\s·.,;:–—-]*<\/p>/g, '')
     .replace(/<ul>\s*<\/ul>/g, '');
 }
 

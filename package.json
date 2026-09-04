@@ -10,10 +10,12 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "dev:functions": "wrangler pages dev dist --kv INQUIRY_RL --port 8788",
     "check": "astro check",
     "shot": "node scripts/screenshot.mjs",
     "overflow": "node scripts/overflow.mjs",
     "crop": "node scripts/crop.mjs",
+    "test:form": "node scripts/formtest.mjs",
     "astro": "astro"
   },
   "dependencies": {
@@ -22,11 +24,14 @@
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^5.18.2",
     "tailwindcss": "^4.3.3",
-    "yaml": "^2.9.0"
+    "yaml": "^2.9.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@cloudflare/workers-types": "^5.20260904.1",
     "playwright": "^1.62.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wrangler": "^4.129.0"
   }
 }

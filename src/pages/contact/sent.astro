@@ -1,0 +1,44 @@
+---
+import { getEntry } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { company } from '../../data/company';
+import { localeUrl, useTranslations, type Locale } from '../../i18n/utils';
+
+// Страница след изпращане без JS (сървърът пренасочва тук с 303). Текстът при успех е
+// от content/bg/contact.md („Успех: „…““); с JS същият смисъл се показва на място.
+const locale: Locale = 'bg';
+const t = useTranslations(locale);
+const page = await getEntry('pages', 'bg/contact');
+const successText = page?.body?.match(/Успех:\s*„([^“]+)“/)?.[1] ?? t('form.success').replace(' на {email}', '');
+---
+
+<Base title={`${t('form.sentTitle')} – ${company.brand}`} locale={locale} noindex>
+  <div class="wrap">
+    <div class="page">
+      <h1>{t('form.sentTitle')}</h1>
+      <p class="form-success" role="status">{successText}</p>
+      <p><a class="arrow-link" href={localeUrl(locale, '/projects')}>{t('projects.all')}</a></p>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .page {
+    padding-block: var(--spacing-16) var(--spacing-32);
+    max-width: var(--measure);
+  }
+
+  h1 {
+    font-size: var(--text-xl);
+    line-height: 1.15;
+    margin: 0 0 var(--spacing-6);
+  }
+
+  .form-success {
+    margin: 0 0 var(--spacing-8);
+    padding: var(--spacing-4) var(--spacing-6);
+    background: var(--color-accent-soft);
+    font-size: var(--text-base);
+    line-height: 1.6;
+  }
+</style>

@@ -1,0 +1,54 @@
+---
+import Base from '../../layouts/Base.astro';
+import { company } from '../../data/company';
+import { localeUrl, useTranslations, type Locale } from '../../i18n/utils';
+
+// Страница при грешка без JS (сървърът пренасочва тук с 303). С JS грешките се показват
+// по поле на място; тук може само общото съобщение + телефон и имейл.
+const locale: Locale = 'bg';
+const t = useTranslations(locale);
+---
+
+<Base title={`${t('form.errorTitle')} – ${company.brand}`} locale={locale} noindex>
+  <div class="wrap">
+    <div class="page">
+      <h1>{t('form.errorTitle')}</h1>
+      <p class="form-status" role="alert">{t('error.generic')}</p>
+      <p class="direct">
+        <a class="mono" href={company.phoneHref}>{company.phone}</a>&nbsp;·
+        <a class="mono" href={`mailto:${company.email}`}>{company.email}</a>
+      </p>
+      <p><a class="arrow-link" href={`${localeUrl(locale, '/contact')}#inquiry`}>{t('nav.contact')} →</a></p>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .page {
+    padding-block: var(--spacing-16) var(--spacing-32);
+    max-width: var(--measure);
+  }
+
+  h1 {
+    font-size: var(--text-xl);
+    line-height: 1.15;
+    margin: 0 0 var(--spacing-6);
+  }
+
+  .form-status {
+    margin: 0 0 var(--spacing-6);
+    padding: var(--spacing-3) var(--spacing-4);
+    border: 1px solid var(--color-error);
+    color: var(--color-error);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+  }
+
+  .direct {
+    margin: 0 0 var(--spacing-8);
+  }
+
+  .direct a {
+    color: var(--color-primary);
+  }
+</style>

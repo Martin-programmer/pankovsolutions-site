@@ -1,0 +1,10 @@
+# Копирай като .dev.vars (в .gitignore) за `npm run dev:functions` (wrangler pages dev).
+# Без ключове: INQUIRY_MOCK=1 — функцията минава honeypot/timing/rate limit/Zod, пропуска
+# Turnstile и логва payload-а в конзолата вместо да праща имейли и Telegram.
+INQUIRY_MOCK=1
+
+# С реални ключове (виж README.md §Форма – настройка) махни INQUIRY_MOCK и попълни:
+# TURNSTILE_SECRET=
+# RESEND_API_KEY=
+# TELEGRAM_BOT_TOKEN=
+# TELEGRAM_CHAT_ID=
