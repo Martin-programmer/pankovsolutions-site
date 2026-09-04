@@ -1,0 +1,145 @@
+---
+import { getEntry } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Placeholder from '../components/Placeholder.astro';
+import { useTranslations, type Locale } from '../i18n/utils';
+import { md, mdInline, splitH2, takeHeading } from '../lib/markdown';
+import { cleanHtml, warnTodos } from '../lib/todos';
+
+// Само от content/bg/products.md. „Една карта, етикет „в разработка“, без линк, описание,
+// един кадър от AR менюто“ — DESIGN.md §Продукти. Кадърът е placeholder до качване.
+const locale: Locale = 'bg';
+const t = useTranslations(locale);
+
+const page = await getEntry('pages', 'bg/products');
+if (!page) throw new Error('content/bg/products.md липсва');
+warnTodos(page.filePath ?? page.id, page.body);
+
+const { preface, sections } = splitH2(page.body ?? '');
+const { heading: h1, rest: ledeMd } = takeHeading(preface, 1);
+const lede = cleanHtml(await md(ledeMd));
+
+// „## FudiAR `в разработка`“ → име + етикет (кодът в заглавието е етикетът).
+const products = [];
+for (const s of sections) {
+  const m = s.heading.match(/^(.*?)\s*`([^`]+)`\s*$/);
+  products.push({
+    name: await mdInline(m ? m[1] : s.heading),
+    label: m ? m[2] : '',
+    html: cleanHtml(await md(s.body)),
+  });
+}
+---
+
+<Base title={page.data.title} description={page.data.description} locale={locale}>
+  <header class="wrap head">
+    <h1 set:html={await mdInline(h1)} />
+    <div class="prose lede" set:html={lede} />
+  </header>
+
+  <section class="wrap">
+    {
+      products.map((p) => (
+        <article class="product">
+          <div class="media">
+            <Placeholder label={t('placeholder.screenshot')} ratio="4 / 5" />
+          </div>
+          <div class="text">
+            <!-- Етикетът е извън <h2>, за да не влиза в името на продукта за четци и outline. -->
+            <div class="title">
+              <h2 set:html={p.name} />
+              {p.label && <span class="tag">{p.label}</span>}
+            </div>
+            <div class="prose" set:html={p.html} />
+          </div>
+        </article>
+      ))
+    }
+  </section>
+</Base>
+
+<style>
+  .head {
+    padding-block: var(--spacing-12) var(--spacing-8);
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--spacing-6);
+  }
+
+  .lede :global(p) {
+    font-size: var(--text-base);
+  }
+
+  section {
+    padding-block: var(--spacing-8) var(--spacing-24);
+  }
+
+  /* Една карта: плоска, 1px рамка, без сянка и без линк. Кадър 4:5 вляво, текст вдясно. */
+  .product {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--spacing-6);
+    padding: var(--spacing-6);
+    border: 1px solid var(--color-line);
+    background: var(--color-surface);
+  }
+
+  .media,
+  .text {
+    grid-column: 1 / -1;
+  }
+
+  .title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--spacing-3);
+    margin: 0 0 var(--spacing-4);
+  }
+
+  .product h2 {
+    font-size: var(--text-xl);
+    line-height: 1.15;
+    margin: 0;
+  }
+
+  .product .tag {
+    margin: 0;
+  }
+
+  .prose :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  /* = --breakpoint-md в tokens.css */
+  @media (min-width: 48rem) {
+    .head {
+      padding-block: var(--spacing-16) var(--spacing-12);
+    }
+
+    h1 {
+      font-size: var(--text-3xl);
+    }
+
+    section {
+      padding-block: var(--spacing-8) var(--spacing-32);
+    }
+
+    .product {
+      padding: var(--spacing-8);
+    }
+
+    .media {
+      grid-column: 1 / span 4;
+    }
+
+    .text {
+      grid-column: 5 / span 8;
+      align-self: center;
+    }
+  }
+</style>
