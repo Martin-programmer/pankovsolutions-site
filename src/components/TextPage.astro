@@ -1,0 +1,51 @@
+---
+import { getEntry } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { type Locale } from '../i18n/utils';
+import { md, mdInline, takeHeading } from '../lib/markdown';
+import { cleanHtml, warnTodos } from '../lib/todos';
+
+// Текстова страница (политика, декларация): h1 + проза в мярка 68ch, само от content/.
+interface Props {
+  id: string;
+  locale?: Locale;
+}
+
+const { id, locale = 'bg' } = Astro.props;
+const page = await getEntry('pages', id);
+if (!page) throw new Error(`content/${id}.md липсва`);
+warnTodos(page.filePath ?? page.id, page.body);
+
+const { heading, rest } = takeHeading(page.body ?? '', 1);
+const html = cleanHtml(await md(rest));
+---
+
+<Base title={page.data.title} description={page.data.description} locale={locale}>
+  <article class="wrap">
+    <div class="doc">
+      <h1 set:html={await mdInline(heading)} />
+      <div class="prose" set:html={html} />
+    </div>
+  </article>
+</Base>
+
+<style>
+  .doc {
+    max-width: var(--measure);
+    padding-block: var(--spacing-12) var(--spacing-24);
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--spacing-8);
+  }
+
+  /* = --breakpoint-md в tokens.css */
+  @media (min-width: 48rem) {
+    .doc {
+      padding-block: var(--spacing-16) var(--spacing-32);
+    }
+  }
+</style>

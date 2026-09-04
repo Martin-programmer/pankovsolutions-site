@@ -4,7 +4,7 @@ import Base from '../layouts/Base.astro';
 import Partner from '../components/Partner.astro';
 import Portrait from '../components/Portrait.astro';
 import { company } from '../data/company';
-import { useTranslations, type Locale } from '../i18n/utils';
+import { type Locale } from '../i18n/utils';
 import { publicFileExists } from '../lib/assets';
 import { toJsonLd } from '../lib/jsonld';
 import {
@@ -24,7 +24,6 @@ import { cleanHtml, cleanText, stripComments, warnTodos } from '../lib/todos';
 // е опитът, три абзаца с удебелено начало са правилата, абзацът с името на партньора от
 // clients.yaml минава през Partner.astro, останалото е проза.
 const locale: Locale = 'bg';
-const t = useTranslations(locale);
 
 const page = await getEntry('pages', 'bg/about');
 if (!page) throw new Error('content/bg/about.md липсва');

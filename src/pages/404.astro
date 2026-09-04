@@ -1,0 +1,48 @@
+---
+import Base from '../layouts/Base.astro';
+import { company } from '../data/company';
+import { localeUrl, useTranslations, type Locale } from '../i18n/utils';
+
+// COPY.md §Микрокопи: „Тази страница не съществува. Вижте проектите или ми пишете.“
+const locale: Locale = 'bg';
+const t = useTranslations(locale);
+---
+
+<Base title={`${t('notfound.title')} – ${company.brand}`} locale={locale} noindex ogImage="/og/index.png">
+  <div class="wrap">
+    <div class="page">
+      <p class="mono code">404</p>
+      <h1>{t('notfound.title')}</h1>
+      <p class="lead">
+        <a class="arrow-link" href={localeUrl(locale, '/projects')}>{t('notfound.projects')}</a>
+        {' '}{t('notfound.or')}{' '}
+        <a class="arrow-link" href={localeUrl(locale, '/contact')}>{t('notfound.write')}</a>.
+      </p>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .page {
+    max-width: var(--measure);
+    padding-block: var(--spacing-16) var(--spacing-32);
+  }
+
+  .code {
+    margin: 0 0 var(--spacing-4);
+    color: var(--color-muted);
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--spacing-6);
+  }
+
+  .lead {
+    font-size: var(--text-base);
+    line-height: 1.6;
+    margin: 0;
+  }
+</style>

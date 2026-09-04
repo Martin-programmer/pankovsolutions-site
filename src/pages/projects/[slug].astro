@@ -125,7 +125,7 @@ const jsonLd = {
 };
 ---
 
-<Base title={cleanText(d.title)} description={result} locale={locale}>
+<Base title={cleanText(d.title)} description={result} locale={locale} ogType="article">
   <script is:inline type="application/ld+json" slot="head" set:html={toJsonLd(jsonLd)} />
 
   <article class="wrap case">

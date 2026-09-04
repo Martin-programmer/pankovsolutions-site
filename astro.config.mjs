@@ -17,9 +17,14 @@ export default defineConfig({
   integrations: [
     sitemap({
       i18n: { defaultLocale: 'bg', locales: { bg: 'bg-BG', en: 'en-US' } },
-      // /styleguide е вътрешна и noindex — не влиза в sitemap-а.
-      filter: (page) => !page.includes('/styleguide'),
+      // Вътрешните/noindex страници не влизат в sitemap-а.
+      filter: (page) =>
+        !/\/(styleguide|contact\/sent|contact\/error|404)(\/|$)/.test(page) && !page.includes('/og/'),
     }),
   ],
-  vite: { plugins: [tailwindcss()] },
+  vite: {
+    plugins: [tailwindcss()],
+    // Скриптовете винаги като външни файлове — CSP script-src без 'unsafe-inline' (public/_headers).
+    build: { assetsInlineLimit: 0 },
+  },
 });

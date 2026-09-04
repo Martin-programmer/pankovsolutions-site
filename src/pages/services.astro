@@ -2,7 +2,7 @@
 import { getEntry } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Process from '../components/Process.astro';
-import { useTranslations, type Locale } from '../i18n/utils';
+import { type Locale } from '../i18n/utils';
 import { toJsonLd } from '../lib/jsonld';
 import {
   md,
@@ -19,7 +19,6 @@ import { cleanHtml, warnTodos } from '../lib/todos';
 // Само от content/bg/services.md. Секциите се разпознават по формата си: „## 01 · …“ е
 // услуга, номериран списък е процесът, „**Въпрос?** отговор“ е FAQ.
 const locale: Locale = 'bg';
-const t = useTranslations(locale);
 
 const page = await getEntry('pages', 'bg/services');
 if (!page) throw new Error('content/bg/services.md липсва');

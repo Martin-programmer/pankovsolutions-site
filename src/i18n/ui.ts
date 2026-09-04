@@ -88,6 +88,13 @@ const bg = {
   'breadcrumb.label': 'Път до страницата',
   'toc.label': 'На тази страница',
   'partner.label': 'Партньор',
+  // 404 (COPY.md §Микрокопи: „Тази страница не съществува. Вижте проектите или ми пишете.“)
+  'notfound.title': 'Тази страница не съществува.',
+  'notfound.projects': 'Вижте проектите',
+  'notfound.or': 'или',
+  'notfound.write': 'ми пишете',
+  'llms.pages': 'Страници',
+  'llms.projects': 'Проекти (кейс стъдита)',
 } as const;
 
 export type UiKey = keyof typeof bg;
@@ -163,6 +170,12 @@ const en: Record<UiKey, string> = {
   'breadcrumb.label': 'Breadcrumb',
   'toc.label': 'On this page',
   'partner.label': 'Partner',
+  'notfound.title': 'This page does not exist.',
+  'notfound.projects': 'See the projects',
+  'notfound.or': 'or',
+  'notfound.write': 'write to me',
+  'llms.pages': 'Pages',
+  'llms.projects': 'Projects (case studies)',
 };
 
 export const ui: Record<Locale, Record<UiKey, string>> = { bg, en };

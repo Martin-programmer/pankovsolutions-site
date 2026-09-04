@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && node scripts/headers.mjs",
     "preview": "astro preview",
     "dev:functions": "wrangler pages dev dist --kv INQUIRY_RL --port 8788",
     "check": "astro check",
@@ -21,8 +21,10 @@
   "dependencies": {
     "@astrojs/markdown-remark": "^6.3.11",
     "@astrojs/sitemap": "^3.7.4",
+    "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^5.18.2",
+    "satori": "^0.33.4",
     "tailwindcss": "^4.3.3",
     "yaml": "^2.9.0",
     "zod": "^3.25.76"

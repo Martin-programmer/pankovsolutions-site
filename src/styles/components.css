@@ -124,6 +124,8 @@
 /* Рендериран markdown от content/: мярка 68ch, ритъм по скалата. */
 .prose {
   max-width: var(--measure);
+  /* Дълги имейли и URL-и в текста се чупят, вместо да преливат на 390 px. */
+  overflow-wrap: break-word;
 }
 
 .prose h2 {
