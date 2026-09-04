@@ -6,6 +6,7 @@ import Placeholder from '../components/Placeholder.astro';
 import { company } from '../data/company';
 import { useTranslations, type Locale } from '../i18n/utils';
 import { publicFileExists } from '../lib/assets';
+import { toJsonLd } from '../lib/jsonld';
 import {
   mdInline,
   parseHero,
@@ -99,7 +100,7 @@ const jsonLd = {
 ---
 
 <Base title={page.data.title} description={page.data.description} locale={locale}>
-  <script is:inline type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
+  <script is:inline type="application/ld+json" slot="head" set:html={toJsonLd(jsonLd)} />
 
   <!-- HERO — 7/12 текст, 5/12 реален скрийншот в плоска рамка -->
   <section class="hero wrap grid12">
@@ -226,16 +227,18 @@ const jsonLd = {
         <h2 set:html={testimonialsSection.heading} />
         <div class="quotes">
           {testimonials.map((x) => (
-            <blockquote class="quote">
-              <span class="open" aria-hidden="true">
-                „
-              </span>
-              <p>{x.data.quote}</p>
-              <footer>
+            <figure class="quote">
+              <blockquote>
+                <span class="open" aria-hidden="true">
+                  „
+                </span>
+                <p>{x.data.quote}</p>
+              </blockquote>
+              <figcaption>
                 <span class="who">{x.data.name}</span>, {x.data.role}, {x.data.company}
-                {x.data.placeholder && <span class="mono tag">{t('placeholder.sample')}</span>}
-              </footer>
-            </blockquote>
+                {x.data.placeholder && <span class="tag">{t('placeholder.sample')}</span>}
+              </figcaption>
+            </figure>
           ))}
         </div>
       </section>
@@ -517,40 +520,7 @@ const jsonLd = {
     gap: var(--spacing-8);
   }
 
-  .quote {
-    margin: 0;
-  }
-
-  .open {
-    display: block;
-    font-family: var(--font-display);
-    font-weight: 300;
-    font-size: var(--text-3xl);
-    line-height: 0.6;
-    color: var(--color-muted);
-    margin-bottom: var(--spacing-2);
-  }
-
-  .quote p {
-    font-size: var(--text-base);
-    line-height: 1.6;
-    margin: 0 0 var(--spacing-3);
-  }
-
-  .quote footer {
-    font-size: var(--text-sm);
-    color: var(--color-muted);
-  }
-
-  .who {
-    font-weight: 600;
-    color: var(--color-ink);
-  }
-
-  .quote .tag {
-    display: block;
-    margin-top: var(--spacing-1);
-  }
+  /* .quote, .open, .who — глобални (components.css), споделени с кейсовете. */
 
   /* За мен */
   .portrait,

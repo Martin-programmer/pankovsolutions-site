@@ -6,7 +6,8 @@ import { useTranslations, type Locale } from '../i18n/utils';
 
 interface Props {
   title: string;
-  description: string;
+  // Без description, когато в content/ още няма такова — празен meta таг е по-лошо от липсващ.
+  description?: string;
   locale?: Locale;
   noindex?: boolean;
 }
@@ -27,7 +28,7 @@ const t = useTranslations(locale);
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
-    <meta name="description" content={description} />
+    {description && <meta name="description" content={description} />}
     {noindex && <meta name="robots" content="noindex, nofollow" />}
     <!-- Само двата основни: body 400 и display 700. Останалите три тегла се свалят
          при нужда — preload на петте би се борил за честотна лента с LCP. -->

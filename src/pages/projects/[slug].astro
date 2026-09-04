@@ -1,0 +1,420 @@
+---
+import { getCollection } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Placeholder from '../../components/Placeholder.astro';
+import { company } from '../../data/company';
+import { localeUrl, useTranslations, type Locale } from '../../i18n/utils';
+import { publicFileExists } from '../../lib/assets';
+import { toJsonLd } from '../../lib/jsonld';
+import { md, takeLastLinkLine } from '../../lib/markdown';
+import { cleanHtml, cleanText, warnTodos } from '../../lib/todos';
+
+// Кейс стъди: h1 = резултатът, лента с факти, markdown-ът с вмъкнати изображения, отзив,
+// следващ проект, CTA (DESIGN.md §Проекти, docs/05 шаблон). Само от колекцията projects.
+type Project = CollectionEntry<'projects'>;
+const slugOf = (id: string) => id.replace(/^bg\/projects\//, '');
+
+export async function getStaticPaths() {
+  const all = (await getCollection('projects', (p) => p.id.startsWith('bg/'))).sort(
+    (a, b) => a.data.order - b.data.order,
+  );
+  return all.map((entry, i) => ({
+    params: { slug: entry.id.replace(/^bg\/projects\//, '') },
+    props: { entry, next: all[(i + 1) % all.length] },
+  }));
+}
+
+interface Props {
+  entry: Project;
+  next: Project;
+}
+
+const { entry, next } = Astro.props;
+const locale: Locale = 'bg';
+const t = useTranslations(locale);
+const isProd = import.meta.env.PROD;
+const slug = slugOf(entry.id);
+const d = entry.data;
+
+// TODO бележките се логват при build с името на файла и се махат от HTML-а.
+warnTodos(
+  entry.filePath ?? entry.id,
+  entry.body,
+  d.title,
+  d.result,
+  d.client,
+  d.industry,
+  d.duration,
+  d.program,
+  ...d.images.map((i) => i.alt),
+);
+
+// CTA линкът в края на markdown-а не се рендерира — един CTA на страница, във .foot.
+const { rest: bodyMd } = takeLastLinkLine(entry.body ?? '');
+const html = cleanHtml(await md(bodyMd));
+// Секции по <h2>; секция само със заглавие (тялото ѝ е било TODO) отпада.
+const sections = html
+  .split(/(?=<h2)/)
+  .filter((s) => s.trim())
+  .filter((s) => !/^<h2[^>]*>[\s\S]*?<\/h2>\s*$/.test(s.trim()));
+// Изображенията от frontmatter-а се разпределят равномерно между секциите.
+const insertAfter = new Map<number, number>();
+d.images.forEach((_, k) => {
+  const at = Math.round(((k + 1) * sections.length) / (d.images.length + 1)) - 1;
+  if (!insertAfter.has(at)) insertAfter.set(at, k);
+});
+const blocks: Array<{ html: string } | { image: (typeof d.images)[number] }> = [];
+let imageIndex = 0;
+sections.forEach((section, i) => {
+  blocks.push({ html: section });
+  if (insertAfter.has(i) && d.images[imageIndex]) blocks.push({ image: d.images[imageIndex++] });
+});
+// Останалите изображения — след текста.
+for (; imageIndex < d.images.length; imageIndex++) blocks.push({ image: d.images[imageIndex] });
+const firstImageBlock = blocks.findIndex((b) => 'image' in b);
+
+const result = cleanText(d.result);
+// [етикет, стойност, mono?] — mono само за латиница и числа (година, стек).
+const facts: Array<[string, string, boolean?]> = [
+  [t('facts.client'), cleanText(d.client)],
+  [t('facts.industry'), cleanText(d.industry)],
+  [t('facts.services'), d.services.join(' · ')],
+  [t('facts.stack'), d.stack.join(' · '), true],
+  [t('facts.year'), String(d.year), true],
+  [t('facts.duration'), cleanText(d.duration)],
+  [t('facts.program'), cleanText(d.program)],
+];
+const shownFacts = facts.filter(([, value]) => value);
+
+const testimonial = (await getCollection('testimonials')).find(
+  (x) => x.data.project === slug && (!x.data.placeholder || !isProd),
+);
+
+const site = Astro.site?.href ?? 'https://pankovsolutions.com/';
+const url = new URL(Astro.url.pathname, site).href;
+const projectsUrl = new URL(localeUrl(locale, '/projects'), site).href;
+const firstImage = d.images.find((i) => publicFileExists(i.src));
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: t('breadcrumb.home'), item: site },
+        { '@type': 'ListItem', position: 2, name: t('nav.projects'), item: projectsUrl },
+        { '@type': 'ListItem', position: 3, name: cleanText(d.title), item: url },
+      ],
+    },
+    {
+      '@type': 'Article',
+      '@id': `${url}#article`,
+      headline: cleanText(d.title),
+      description: result,
+      inLanguage: locale,
+      mainEntityOfPage: url,
+      datePublished: String(d.year),
+      author: { '@type': 'Person', name: company.founder },
+      publisher: { '@type': 'Organization', '@id': `${site}#organization`, name: company.brand },
+      about: { '@type': 'Organization', name: cleanText(d.client) },
+      keywords: [...d.services, ...d.stack].join(', '),
+      ...(firstImage ? { image: new URL(firstImage.src, site).href } : {}),
+    },
+  ],
+};
+---
+
+<Base title={cleanText(d.title)} description={result} locale={locale}>
+  <script is:inline type="application/ld+json" slot="head" set:html={toJsonLd(jsonLd)} />
+
+  <article class="wrap case">
+    <header class="head">
+      <nav class="kicker" aria-label={t('breadcrumb.label')}>
+        <a href={localeUrl(locale, '/projects')}>{t('nav.projects')}</a>&nbsp;·
+        <span class="mono">{d.year}</span>
+        {d.status === 'in-progress' && <span class="tag">{t('projects.inProgress')}</span>}
+      </nav>
+      <h1>{result}</h1>
+
+      <dl class="facts">
+        {
+          shownFacts.map(([label, value, mono]) => (
+            <div>
+              <dt>{label}</dt>
+              <dd class:list={[mono && 'mono']}>{value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </header>
+
+    <div class="body">
+      {
+        blocks.map((b, i) =>
+          'html' in b ? (
+            <div class="prose" set:html={b.html} />
+          ) : (
+            <figure class="figure">
+              {publicFileExists(b.image.src) ? (
+                <img
+                  class="shot"
+                  src={b.image.src}
+                  alt={b.image.alt}
+                  width="1200"
+                  height="750"
+                  loading={i === firstImageBlock ? 'eager' : 'lazy'}
+                  fetchpriority={i === firstImageBlock ? 'high' : undefined}
+                />
+              ) : (
+                <Placeholder label={t('placeholder.screenshot')} ratio="16 / 10" />
+              )}
+              <figcaption>{b.image.alt}</figcaption>
+            </figure>
+          ),
+        )
+      }
+    </div>
+
+    {
+      testimonial && (
+        <figure class="quote">
+          <blockquote>
+            <span class="open" aria-hidden="true">
+              „
+            </span>
+            <p>{testimonial.data.quote}</p>
+          </blockquote>
+          <figcaption>
+            <span class="who">{testimonial.data.name}</span>, {testimonial.data.role}, {testimonial.data.company}
+            {testimonial.data.placeholder && <span class="tag">{t('placeholder.sample')}</span>}
+          </figcaption>
+        </figure>
+      )
+    }
+
+    <footer class="foot">
+      <a class="next" href={localeUrl(locale, `/projects/${slugOf(next.id)}`)}>
+        <span class="next-label">{t('projects.next')}</span>
+        <span class="next-title">{cleanText(next.data.result)}</span>
+      </a>
+
+      <div class="cta">
+        <a class="btn" href={localeUrl(locale, '/contact')}>{t('cta.inquiry')}</a>
+        <a class="arrow-link" href={localeUrl(locale, '/projects')}>{t('projects.all')}</a>
+      </div>
+    </footer>
+  </article>
+</Base>
+
+<style>
+  .case {
+    padding-block: var(--spacing-12) var(--spacing-24);
+  }
+
+  .kicker {
+    margin: 0 0 var(--spacing-4);
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+  }
+
+  /* ≥ 44 px зона за докосване без да мести реда. */
+  .kicker a {
+    display: inline-block;
+    padding-block: var(--spacing-3);
+    margin-block: calc(-1 * var(--spacing-3));
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .kicker a:hover {
+    text-decoration: underline;
+    text-underline-offset: var(--spacing-1);
+  }
+
+  h1 {
+    font-size: var(--text-xl);
+    line-height: 1.1;
+    margin: 0 0 var(--spacing-8);
+  }
+
+  /* Лента с факти: две колони на десктоп, етикет + стойност. Body шрифт (българските
+     етикети и стойности), mono само на година и стек (клас върху dd). */
+  .facts {
+    display: grid;
+    gap: var(--spacing-2) var(--spacing-12);
+    margin: 0;
+    padding-block: var(--spacing-4);
+    border-block: 1px solid var(--color-line);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+  }
+
+  .facts div {
+    display: grid;
+    grid-template-columns: var(--spacing-24) 1fr;
+    gap: var(--spacing-3);
+  }
+
+  .facts dt {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-muted);
+    padding-top: var(--spacing-1);
+  }
+
+  .facts dd {
+    margin: 0;
+  }
+
+  .facts dd.mono {
+    font-size: var(--text-xs);
+    padding-top: var(--spacing-1);
+  }
+
+  /* Тялото е на 12-колонна решетка: прозата в 7/12, фигурите в 8/12 с надписа в
+     свободните 4/12 — за да не стои половината контейнер празен по цялата дължина. */
+  .body {
+    margin-top: var(--spacing-12);
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--spacing-6);
+    row-gap: var(--spacing-8);
+  }
+
+  .prose,
+  .figure {
+    grid-column: 1 / -1;
+  }
+
+  .prose {
+    max-width: var(--measure);
+  }
+
+  .figure {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--spacing-6);
+  }
+
+  .figure :global(.shot),
+  .figure :global(.ph),
+  .figure figcaption {
+    grid-column: 1 / -1;
+  }
+
+  .prose :global(h2) {
+    font-size: var(--text-lg);
+    line-height: 1.25;
+    margin: var(--spacing-4) 0 var(--spacing-3);
+  }
+
+  .prose :global(p),
+  .prose :global(li) {
+    line-height: 1.6;
+  }
+
+  .prose :global(p) {
+    margin: 0 0 var(--spacing-4);
+  }
+
+  .prose :global(ul) {
+    margin: 0 0 var(--spacing-4);
+    padding-left: var(--spacing-6);
+    list-style: disc;
+  }
+
+  .prose :global(li) {
+    margin-bottom: var(--spacing-2);
+  }
+
+  .prose :global(a) {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: var(--spacing-1);
+    text-decoration-thickness: 1px;
+  }
+
+  .quote {
+    max-width: var(--measure);
+    margin-top: var(--spacing-16);
+  }
+
+  .foot {
+    margin-top: var(--spacing-24);
+    padding-top: var(--spacing-8);
+    border-top: 1px solid var(--color-line);
+    display: grid;
+    gap: var(--spacing-12);
+  }
+
+  .next {
+    display: grid;
+    gap: var(--spacing-2);
+    max-width: var(--measure);
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+
+  .next-label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-primary);
+  }
+
+  .next-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-lg);
+    line-height: 1.25;
+  }
+
+  .next:hover .next-title {
+    text-decoration: underline;
+    text-underline-offset: var(--spacing-1);
+    text-decoration-thickness: 1px;
+  }
+
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-6);
+  }
+
+  /* = --breakpoint-md в tokens.css */
+  @media (min-width: 48rem) {
+    .case {
+      padding-block: var(--spacing-16) var(--spacing-32);
+    }
+
+    h1 {
+      font-size: var(--text-2xl);
+      letter-spacing: -0.01em;
+    }
+
+    .facts {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .prose {
+      grid-column: 1 / span 7;
+    }
+
+    .figure :global(.shot),
+    .figure :global(.ph) {
+      grid-column: 1 / span 8;
+    }
+
+    .figure figcaption {
+      grid-column: 9 / span 4;
+      align-self: end;
+      margin-top: 0;
+    }
+
+    .foot {
+      grid-template-columns: 1fr 1fr;
+      align-items: end;
+    }
+  }
+</style>

@@ -38,10 +38,14 @@
   cursor: not-allowed;
 }
 
-/* Underline-slide: псевдоелемент със scaleX, без градиент. Стрелката е част от текста. */
+/* Underline-slide: псевдоелемент със scaleX, без градиент. Стрелката е част от текста.
+   Вертикалният padding + отрицателен margin дават ≥ 44 px зона за докосване, без да
+   местят текста. */
 .arrow-link {
   position: relative;
   display: inline-block;
+  padding-block: var(--spacing-3);
+  margin-block: calc(-1 * var(--spacing-3));
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-primary);
@@ -53,7 +57,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(-1 * var(--spacing-1));
+  bottom: calc(var(--spacing-3) - var(--spacing-1));
   height: 1px;
   background: var(--color-primary);
   transform: scaleX(0);
@@ -63,4 +67,75 @@
 
 .arrow-link:hover::after {
   transform: scaleX(1);
+}
+
+/* Отзив: пълен текст, име, длъжност, фирма; голяма отваряща кавичка в Source Serif 300
+   (DESIGN.md §Отзиви). Ползва се на началната и в кейсовете. */
+.quote {
+  margin: 0;
+}
+
+.quote .open {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: var(--text-3xl);
+  line-height: 0.6;
+  color: var(--color-muted);
+  margin-bottom: var(--spacing-2);
+}
+
+.quote p {
+  font-size: var(--text-base);
+  line-height: 1.6;
+  margin: 0 0 var(--spacing-3);
+}
+
+/* Авторът е извън <blockquote> (figcaption), иначе по спецификация е част от цитата. */
+.quote figcaption {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.quote blockquote {
+  margin: 0;
+}
+
+.quote .who {
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+/* Етикет („в изпълнение“, „примерен – ще бъде заменен“): body шрифт, не mono — етикетите
+   са на български, а mono-то няма български форми. */
+.tag {
+  margin-left: var(--spacing-2);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.quote .tag {
+  display: block;
+  margin: var(--spacing-1) 0 0;
+}
+
+/* Изображение в плоска рамка с надпис (alt) под него. */
+.figure {
+  margin: 0;
+}
+
+.figure .shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--color-line);
+}
+
+.figure figcaption {
+  margin-top: var(--spacing-2);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  line-height: 1.4;
 }

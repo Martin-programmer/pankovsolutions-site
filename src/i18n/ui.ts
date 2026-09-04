@@ -42,6 +42,20 @@ const bg = {
   'placeholder.photo': 'снимка',
   'placeholder.sample': 'примерен – ще бъде заменен',
   'trust.clients': 'Клиенти',
+  // Проекти: листинг и кейс
+  'projects.archive': 'Архив',
+  'projects.inProgress': 'в изпълнение',
+  'projects.next': 'Следващ проект →',
+  'projects.all': 'Всички проекти →',
+  'facts.client': 'Клиент',
+  'facts.industry': 'Индустрия',
+  'facts.services': 'Услуги',
+  'facts.stack': 'Стек',
+  'facts.year': 'Година',
+  'facts.duration': 'Срок',
+  'facts.program': 'Програма',
+  'breadcrumb.home': 'Начало',
+  'breadcrumb.label': 'Път до страницата',
 } as const;
 
 export type UiKey = keyof typeof bg;
@@ -76,6 +90,19 @@ const en: Record<UiKey, string> = {
   'placeholder.photo': 'photo',
   'placeholder.sample': 'sample – to be replaced',
   'trust.clients': 'Clients',
+  'projects.archive': 'Archive',
+  'projects.inProgress': 'in progress',
+  'projects.next': 'Next project →',
+  'projects.all': 'All projects →',
+  'facts.client': 'Client',
+  'facts.industry': 'Industry',
+  'facts.services': 'Services',
+  'facts.stack': 'Stack',
+  'facts.year': 'Year',
+  'facts.duration': 'Duration',
+  'facts.program': 'Programme',
+  'breadcrumb.home': 'Home',
+  'breadcrumb.label': 'Breadcrumb',
 };
 
 export const ui: Record<Locale, Record<UiKey, string>> = { bg, en };
