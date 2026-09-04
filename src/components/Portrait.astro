@@ -1,0 +1,44 @@
+---
+import Placeholder from './Placeholder.astro';
+import { useTranslations, type Locale } from '../i18n/utils';
+import { publicFileExists } from '../lib/assets';
+
+// Портрет 4:5 (DESIGN.md §Изображения). Ако файлът в public/ съществува — реалната снимка;
+// иначе placeholder блок в accent-soft с mono „снимка“, който изчезва сам при качване.
+interface Props {
+  src: string;
+  alt: string;
+  locale: Locale;
+  eager?: boolean;
+}
+
+const { src, alt, locale, eager = false } = Astro.props;
+const t = useTranslations(locale);
+---
+
+{
+  publicFileExists(src) ? (
+    <img
+      class="portrait"
+      src={src}
+      alt={alt}
+      width="800"
+      height="1000"
+      loading={eager ? 'eager' : 'lazy'}
+      fetchpriority={eager ? 'high' : undefined}
+    />
+  ) : (
+    <Placeholder variant="photo" label={t('placeholder.photo')} caption={alt} ratio="4 / 5" />
+  )
+}
+
+<style>
+  .portrait {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border: 1px solid var(--color-line);
+  }
+</style>

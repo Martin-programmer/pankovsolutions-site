@@ -33,7 +33,7 @@ export function splitSections(body: string): Map<string, string> {
 
 const LINK = /\[([^\]]+)\]\(([^)]+)\)/g;
 
-function paragraphs(source: string): string[] {
+export function paragraphs(source: string): string[] {
   return source
     .split(/\n\s*\n/)
     .map((p) => p.trim())
@@ -65,7 +65,7 @@ function takeTrailingLink(paragraph: string): { rest: string; link: Link | null 
 }
 
 // Заглавията в run-in форма („**01 · Заглавие.** текст“) завършват с точка; като <h3> тя пада.
-const trimDot = (s: string) => s.replace(/\.\s*$/, '');
+export const trimDot = (s: string) => s.replace(/\.\s*$/, '');
 
 export async function parseHero(source: string) {
   const { heading, rest } = takeHeading(source, 1);

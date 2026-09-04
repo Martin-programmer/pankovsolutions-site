@@ -44,6 +44,8 @@ const showLogo = partner && (!partner.data.placeholder || !isProd);
     gap: var(--spacing-4) var(--spacing-6);
     padding: var(--spacing-6);
     background: var(--color-accent-soft);
+    /* Блокът завършва с текста: мярка 68ch + вътрешният отстъп. */
+    max-width: calc(var(--measure) + 2 * var(--spacing-6));
   }
 
   .logo {
@@ -61,11 +63,6 @@ const showLogo = partner && (!partner.data.placeholder || !isProd);
 
   .logo .tag {
     margin: 0;
-  }
-
-  /* Текстът запълва блока — иначе вдясно в оцветения фон остава празна ивица. */
-  .prose {
-    max-width: none;
   }
 
   .prose :global(p:last-child) {

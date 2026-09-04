@@ -1,0 +1,374 @@
+---
+import { getCollection, getEntry } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Partner from '../components/Partner.astro';
+import Portrait from '../components/Portrait.astro';
+import { company } from '../data/company';
+import { useTranslations, type Locale } from '../i18n/utils';
+import { publicFileExists } from '../lib/assets';
+import { toJsonLd } from '../lib/jsonld';
+import {
+  md,
+  mdInline,
+  paragraphs,
+  plainText,
+  slugify,
+  splitH2,
+  takeHeading,
+  takeLastLinkLine,
+  trimDot,
+} from '../lib/markdown';
+import { cleanHtml, cleanText, stripComments, warnTodos } from '../lib/todos';
+
+// Само от content/bg/about.md. Секциите се разпознават по форма: списък с „- **Роля** – …“
+// е опитът, три абзаца с удебелено начало са правилата, абзацът с името на партньора от
+// clients.yaml минава през Partner.astro, останалото е проза.
+const locale: Locale = 'bg';
+const t = useTranslations(locale);
+
+const page = await getEntry('pages', 'bg/about');
+if (!page) throw new Error('content/bg/about.md липсва');
+warnTodos(page.filePath ?? page.id, page.body);
+
+const partner = (await getCollection('clients')).find((c) => c.data.partner);
+const partnerKey = partner?.data.name.replace(/\s*(ООД|ЕООД|АД|ЕАД)$/, '') ?? '';
+
+const { preface, sections: raw } = splitH2(page.body ?? '');
+const { heading: h1, rest: ledeMd } = takeHeading(preface, 1);
+const lede = cleanHtml(await md(ledeMd));
+
+const portrait = { src: '/img/marti.jpg', alt: company.founder };
+
+type Experience = { role: string; meta: string; text: string };
+type Rule = { title: string; html: string };
+type Block =
+  | { kind: 'experience'; items: Experience[] }
+  | { kind: 'rules'; items: Rule[] }
+  | { kind: 'partner'; html: string }
+  | { kind: 'prose'; html: string };
+
+// „- **Роля** – организация, период. Описание.“ (тирето и метаданните са по избор)
+async function parseExperience(body: string): Promise<Experience[]> {
+  const items: Experience[] = [];
+  for (const raw of body.split('\n')) {
+    const line = stripComments(raw);
+    const m = line.match(/^-\s*\*\*(.+?)\*\*\s*(?:[–—]\s*([^.]*)\.)?\s*([\s\S]*)$/);
+    if (!m) continue;
+    items.push({
+      role: await mdInline(trimDot(m[1])),
+      meta: cleanText(m[2] ?? ''),
+      text: cleanHtml(await mdInline((m[3] ?? '').replace(/^\.\s*/, ''))),
+    });
+  }
+  return items;
+}
+
+let cta: { text: string; href: string } | null = null;
+const sections = [];
+for (const [i, s] of raw.entries()) {
+  let body = s.body;
+  if (i === raw.length - 1) {
+    const { rest, links } = takeLastLinkLine(body);
+    body = rest;
+    cta = links[0] ?? null;
+  }
+  const paras = paragraphs(stripComments(body));
+  const blocks: Block[] = [];
+
+  if (/^-\s*\*\*/m.test(body)) {
+    blocks.push({ kind: 'experience', items: await parseExperience(body) });
+  } else if (paras.length >= 3 && paras.every((p) => /^\*\*.+?\*\*/.test(p)) && !body.includes(partnerKey)) {
+    const items: Rule[] = [];
+    for (const p of paras) {
+      const m = p.match(/^\*\*(.+?)\*\*\s*([\s\S]*)$/);
+      if (m) items.push({ title: await mdInline(trimDot(m[1])), html: cleanHtml(await md(m[2])) });
+    }
+    blocks.push({ kind: 'rules', items });
+  } else {
+    let buffer: string[] = [];
+    const flush = async () => {
+      if (buffer.length) blocks.push({ kind: 'prose', html: cleanHtml(await md(buffer.join('\n\n'))) });
+      buffer = [];
+    };
+    for (const p of paras) {
+      if (partnerKey && p.includes(partnerKey)) {
+        await flush();
+        blocks.push({ kind: 'partner', html: cleanHtml(await md(p)) });
+      } else {
+        buffer.push(p);
+      }
+    }
+    await flush();
+  }
+
+  // Къса секция (един абзац проза) не получава пълния „секционен“ костюм.
+  const isShort =
+    blocks.length === 1 && blocks[0].kind === 'prose' && plainText(blocks[0].html).length < 200;
+  sections.push({ id: slugify(s.heading), heading: await mdInline(s.heading), blocks, isShort });
+}
+
+const experience = sections.flatMap((s) => s.blocks).find((b) => b.kind === 'experience');
+const jobTitle = experience?.kind === 'experience' ? plainText(experience.items[0]?.role ?? '') : '';
+
+const site = Astro.site?.href ?? 'https://pankovsolutions.com/';
+const url = new URL(Astro.url.pathname, site).href;
+const sameAs = [company.linkedin, company.github].filter((x): x is string => Boolean(x));
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  '@id': `${site}#person`,
+  name: company.founder,
+  url,
+  ...(jobTitle ? { jobTitle } : {}),
+  worksFor: { '@type': 'Organization', '@id': `${site}#organization`, name: company.brand },
+  alumniOf: { '@type': 'CollegeOrUniversity', name: company.founderAlumniOf },
+  ...(publicFileExists(portrait.src) ? { image: new URL(portrait.src, site).href } : {}),
+  ...(sameAs.length ? { sameAs } : {}),
+};
+---
+
+<Base title={page.data.title} description={page.data.description} locale={locale}>
+  <script is:inline type="application/ld+json" slot="head" set:html={toJsonLd(jsonLd)} />
+
+  <!-- Три деца на решетката: на мобилно — заглавие, портрет, текст; на десктоп портретът е
+       вляво в двата реда (sticky), заглавието и текстът вдясно. -->
+  <div class="wrap layout">
+    <header class="head">
+      <h1 set:html={await mdInline(h1)} />
+      <div class="prose lede" set:html={lede} />
+    </header>
+
+    <div class="portrait-col">
+      <Portrait src={portrait.src} alt={portrait.alt} locale={locale} eager />
+    </div>
+
+    <div class="content">
+      {
+        sections.map((s) => (
+          <section id={s.id} class:list={[s.isShort && 'short']} aria-labelledby={`${s.id}-title`}>
+            <h2 id={`${s.id}-title`} set:html={s.heading} />
+            {s.blocks.map((b) =>
+              b.kind === 'experience' ? (
+                <ol class="exp">
+                  {b.items.map((item) => (
+                    <li class:list={[!item.meta && 'no-meta']}>
+                      {item.meta && <p class="meta">{item.meta}</p>}
+                      <div>
+                        <h3 set:html={item.role} />
+                        {item.text && <p class="exp-text" set:html={item.text} />}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              ) : b.kind === 'rules' ? (
+                <div class="rules">
+                  {b.items.map((rule) => (
+                    <article class="rule">
+                      <h3 set:html={rule.title} />
+                      <div class="prose" set:html={rule.html} />
+                    </article>
+                  ))}
+                </div>
+              ) : b.kind === 'partner' ? (
+                <Partner partner={partner} html={b.html} locale={locale} />
+              ) : (
+                <div class="prose" set:html={b.html} />
+              ),
+            )}
+          </section>
+        ))
+      }
+
+      {
+        cta && (
+          <p class="cta">
+            <a class="btn" href={cta.href}>
+              {cta.text}
+            </a>
+          </p>
+        )
+      }
+    </div>
+  </div>
+</Base>
+
+<style>
+  .layout {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--spacing-6);
+    row-gap: var(--spacing-8);
+    padding-block: var(--spacing-12) var(--spacing-24);
+  }
+
+  .head,
+  .portrait-col,
+  .content {
+    grid-column: 1 / -1;
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--spacing-6);
+  }
+
+  .lede :global(p) {
+    font-size: var(--text-base);
+  }
+
+  section {
+    padding-block: var(--spacing-8);
+    border-top: 1px solid var(--color-line);
+  }
+
+  section h2 {
+    font-size: var(--text-lg);
+    line-height: 1.25;
+    margin: 0 0 var(--spacing-6);
+  }
+
+  /* Къса секция: по-малко заглавие и отстъп — не всяка секция е еднакво важна. */
+  section.short {
+    padding-block: var(--spacing-6);
+  }
+
+  section.short h2 {
+    font-size: var(--text-md);
+    margin-bottom: var(--spacing-3);
+  }
+
+  .prose :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  /* Опит: роля · организация, период · описание. Списък с линии, без карти. */
+  .exp {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--color-line);
+  }
+
+  .exp li {
+    display: grid;
+    gap: var(--spacing-1) var(--spacing-6);
+    padding-block: var(--spacing-4);
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .meta {
+    margin: 0;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-muted);
+    line-height: 1.5;
+    padding-top: var(--spacing-1);
+  }
+
+  .exp h3 {
+    font-size: var(--text-md);
+    line-height: 1.25;
+    margin: 0 0 var(--spacing-2);
+  }
+
+  .exp h3:last-child {
+    margin-bottom: 0;
+  }
+
+  .exp-text {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: 1.6;
+  }
+
+  /* Три правила: голямо серифно заглавие с тегло 300, абзац под него. */
+  .rule {
+    padding-block: var(--spacing-6);
+    border-top: 1px solid var(--color-line);
+  }
+
+  .rule:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  /* Голямо и леко (300), но една стъпка под h2 на секцията — йерархията остава. */
+  .rule h3 {
+    font-weight: 300;
+    font-size: var(--text-md);
+    line-height: 1.15;
+    margin: 0 0 var(--spacing-3);
+  }
+
+  .cta {
+    margin: var(--spacing-12) 0 0;
+  }
+
+  /* = --breakpoint-md в tokens.css */
+  @media (min-width: 48rem) {
+    .layout {
+      padding-block: var(--spacing-16) var(--spacing-32);
+    }
+
+    /* Портретът е вляво в двата реда и върви със съдържанието (sticky в своята област). */
+    .portrait-col {
+      grid-column: 1 / span 4;
+      grid-row: 1 / span 2;
+      position: sticky;
+      top: var(--spacing-8);
+      align-self: start;
+    }
+
+    .head {
+      grid-column: 5 / span 8;
+      grid-row: 1;
+      margin-bottom: var(--spacing-4);
+    }
+
+    .content {
+      grid-column: 5 / span 8;
+      grid-row: 2;
+    }
+
+    h1 {
+      font-size: var(--text-3xl);
+    }
+
+    .lede :global(p) {
+      font-size: var(--text-md);
+    }
+
+    section {
+      padding-block: var(--spacing-12);
+    }
+
+    section h2 {
+      font-size: var(--text-xl);
+      line-height: 1.15;
+    }
+
+    section.short {
+      padding-block: var(--spacing-8);
+    }
+
+    section.short h2 {
+      font-size: var(--text-md);
+    }
+
+    /* Ролята и текстът са винаги във 2-рата колона — редовете не зигзагват; лявата клетка
+       на редовете без период (TODO) остава празна до попълване. */
+    .exp li {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    }
+
+    .exp li.no-meta > div {
+      grid-column: 2;
+    }
+
+    .rule h3 {
+      font-size: var(--text-lg);
+    }
+  }
+</style>
