@@ -98,18 +98,79 @@ export async function parseServices(source: string) {
   return { heading: await mdInline(heading), items };
 }
 
-// „1. **Заглавие.** Едно изречение.“ — номериран списък със стъпки.
-export async function parseSteps(source: string) {
-  const { heading, rest } = takeHeading(source, 2);
+// Номериран списък със стъпки. Две форми от content/:
+//   „1. **Заглавие.** Едно изречение.“      (home.md)
+//   „1. Заглавие – едно изречение.“          (services.md)
+export async function parseStepLines(source: string) {
   const items = [];
-  for (const line of rest.split('\n')) {
-    const m = line.match(/^(\d+)\.\s+\*\*(.+?)\*\*\s*(.*)$/);
+  for (const line of source.split('\n')) {
+    const m = line.match(/^(\d+)\.\s+(.*)$/);
     if (!m) continue;
+    let title = m[2];
+    let text = '';
+    const bold = title.match(/^\*\*(.+?)\*\*\s*(.*)$/);
+    const dash = title.search(/\s[–—]\s/);
+    if (bold) {
+      title = bold[1];
+      text = bold[2];
+    } else if (dash >= 0) {
+      text = title.slice(dash + 3);
+      title = title.slice(0, dash);
+    }
     items.push({
       number: m[1].padStart(2, '0'),
-      title: await mdInline(trimDot(m[2])),
-      text: await mdInline(m[3]),
+      title: await mdInline(trimDot(title)),
+      text: await mdInline(text),
     });
   }
-  return { heading: await mdInline(heading), items };
+  return items;
+}
+
+export async function parseSteps(source: string) {
+  const { heading, rest } = takeHeading(source, 2);
+  return { heading: await mdInline(heading), items: await parseStepLines(rest) };
+}
+
+// Страница, нарязана по „## “: текстът преди първото h2 + секциите.
+export function splitH2(source: string): { preface: string; sections: Array<{ heading: string; body: string }> } {
+  const parts = source.split(/^(?=## )/m);
+  const preface = parts[0]?.trim() ?? '';
+  const sections = parts.slice(1).map((p) => {
+    const { heading, rest } = takeHeading(p, 2);
+    return { heading, body: rest };
+  });
+  return { preface, sections };
+}
+
+// „**Въпрос?** Отговор.“ — по един абзац на въпрос.
+export async function parseFaq(source: string) {
+  const items = [];
+  for (const p of paragraphs(source)) {
+    const m = p.match(/^\*\*(.+?)\*\*\s*([\s\S]*)$/);
+    if (!m) continue;
+    items.push({ question: await mdInline(m[1]), answer: await md(m[2]) });
+  }
+  return items;
+}
+
+// id за котва от заглавие: малки букви, само букви/цифри, тирета.
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/<[^>]+>/g, '')
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
+    .trim()
+    .replace(/\s+/g, '-');
+}
+
+// Само текстът от HTML — за JSON-LD.
+export function plainText(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
 }

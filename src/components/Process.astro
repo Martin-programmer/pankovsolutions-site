@@ -1,0 +1,63 @@
+---
+// „Процес: 5 стъпки в един хоризонтален ред на десктоп (номер mono + 1 изречение),
+// вертикален на мобилно“ — DESIGN.md §Вместо това. Ползва се на началната и в /services.
+interface Props {
+  items: Array<{ number: string; title: string; text: string }>;
+}
+
+const { items } = Astro.props;
+---
+
+<ol class="steps">
+  {
+    items.map((step) => (
+      <li>
+        <span class="num" aria-hidden="true">{step.number}</span>
+        <h3 set:html={step.title} />
+        {step.text && <p set:html={step.text} />}
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .steps {
+    display: grid;
+    gap: var(--spacing-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .steps li {
+    border-top: 1px solid var(--color-line);
+    padding-top: var(--spacing-3);
+  }
+
+  /* Ink, не охра: 16 px в охра е 3,25:1 върху paper. */
+  .num {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+  }
+
+  /* Наследява serif 700 от tokens.css (CHECKLIST §A: заглавия само 700/300). */
+  h3 {
+    font-size: var(--text-base);
+    text-wrap: pretty;
+    margin: var(--spacing-2) 0 var(--spacing-1);
+  }
+
+  p {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: 1.6;
+  }
+
+  /* = --breakpoint-md в tokens.css */
+  @media (min-width: 48rem) {
+    .steps {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+</style>

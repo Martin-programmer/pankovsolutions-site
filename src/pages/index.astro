@@ -3,6 +3,7 @@ import { getCollection, getEntry } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import InquiryForm from '../components/InquiryForm.astro';
 import Placeholder from '../components/Placeholder.astro';
+import Process from '../components/Process.astro';
 import { company } from '../data/company';
 import { useTranslations, type Locale } from '../i18n/utils';
 import { publicFileExists } from '../lib/assets';
@@ -207,17 +208,7 @@ const jsonLd = {
   <!-- ПРОЦЕС — 5 стъпки в един ред на десктоп, вертикално на мобилно -->
   <section class="section section-process wrap">
     <h2 set:html={steps.heading} />
-    <ol class="steps">
-      {
-        steps.items.map((step) => (
-          <li>
-            <span class="num" aria-hidden="true">{step.number}</span>
-            <h3 set:html={step.title} />
-            <p set:html={step.text} />
-          </li>
-        ))
-      }
-    </ol>
+    <Process items={steps.items} />
   </section>
 
   <!-- ОТЗИВИ — пълен текст, име, длъжност, фирма; без снимки; максимум 3 -->
@@ -487,32 +478,7 @@ const jsonLd = {
     color: var(--color-muted);
   }
 
-  /* Процес: 5 стъпки в ред */
-  .steps {
-    display: grid;
-    gap: var(--spacing-6);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .steps li {
-    border-top: 1px solid var(--color-line);
-    padding-top: var(--spacing-3);
-  }
-
-  /* Наследява serif 700 от tokens.css (CHECKLIST §A: заглавия само 700/300). */
-  .steps h3 {
-    font-size: var(--text-base);
-    text-wrap: pretty;
-    margin: var(--spacing-2) 0 var(--spacing-1);
-  }
-
-  .steps p {
-    margin: 0;
-    font-size: var(--text-sm);
-    line-height: 1.6;
-  }
+  /* Процесът е в components/Process.astro (споделен с /services). */
 
   /* Отзиви */
   .quotes {
@@ -603,10 +569,6 @@ const jsonLd = {
     .project:nth-child(even) .text {
       grid-column: 1 / span 6;
       grid-row: 1;
-    }
-
-    .steps {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
     }
 
     .quotes {

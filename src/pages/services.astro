@@ -1,0 +1,323 @@
+---
+import { getEntry } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Process from '../components/Process.astro';
+import { useTranslations, type Locale } from '../i18n/utils';
+import { toJsonLd } from '../lib/jsonld';
+import {
+  md,
+  mdInline,
+  parseFaq,
+  parseStepLines,
+  plainText,
+  splitH2,
+  takeHeading,
+  takeLastLinkLine,
+} from '../lib/markdown';
+import { cleanHtml, warnTodos } from '../lib/todos';
+
+// Само от content/bg/services.md. Секциите се разпознават по формата си: „## 01 · …“ е
+// услуга, номериран списък е процесът, „**Въпрос?** отговор“ е FAQ.
+const locale: Locale = 'bg';
+const t = useTranslations(locale);
+
+const page = await getEntry('pages', 'bg/services');
+if (!page) throw new Error('content/bg/services.md липсва');
+warnTodos(page.filePath ?? page.id, page.body);
+
+const { preface, sections } = splitH2(page.body ?? '');
+const { heading: h1, rest: ledeMd } = takeHeading(preface, 1);
+const lede = cleanHtml(await md(ledeMd));
+
+// „Ръчна котва“ (CHECKLIST §A): абзац от вида „Етикет: а · б · в · …“ (три и повече
+// разделителя, без вложени тагове) се набира като номериран spec-списък, не като абзац.
+function specList(html: string): string {
+  return html.replace(
+    /<p>([^<:]{3,80}):\s*([^<]*?(?:\s·\s[^<]*?){2,})<\/p>/g,
+    (_, label: string, items: string) =>
+      `<div class="spec"><p class="spec-title">${label}</p><ol class="spec-list">` +
+      items
+        .split(/\s·\s/)
+        .map((item) => `<li>${item.trim()}</li>`)
+        .join('') +
+      `</ol></div>`,
+  );
+}
+
+type Link = { text: string; href: string };
+const services: Array<{ number: string; title: string; html: string; links: Link[] }> = [];
+let process: { heading: string; items: Awaited<ReturnType<typeof parseStepLines>> } | null = null;
+let faq: { heading: string; items: Awaited<ReturnType<typeof parseFaq>>; cta: Link | null } | null = null;
+
+for (const s of sections) {
+  const numbered = s.heading.match(/^(\d+)\s*·\s*(.+)$/);
+  if (numbered) {
+    const { rest, links } = takeLastLinkLine(s.body);
+    services.push({
+      number: numbered[1],
+      title: await mdInline(numbered[2]),
+      html: specList(cleanHtml(await md(rest))),
+      links,
+    });
+  } else if (/^\d+\.\s/m.test(s.body)) {
+    process = { heading: await mdInline(s.heading), items: await parseStepLines(s.body) };
+  } else if (/^\*\*.+\?\*\*/m.test(s.body)) {
+    const { rest, links } = takeLastLinkLine(s.body);
+    faq = { heading: await mdInline(s.heading), items: await parseFaq(rest), cta: links[0] ?? null };
+  }
+}
+
+const jsonLd = faq && {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faq.items.map((item) => ({
+    '@type': 'Question',
+    name: plainText(item.question),
+    acceptedAnswer: { '@type': 'Answer', text: plainText(item.answer) },
+  })),
+};
+---
+
+<Base title={page.data.title} description={page.data.description} locale={locale}>
+  {jsonLd && <script is:inline type="application/ld+json" slot="head" set:html={toJsonLd(jsonLd)} />}
+
+  <header class="wrap head">
+    <h1 set:html={await mdInline(h1)} />
+    <div class="prose lede" set:html={lede} />
+  </header>
+
+  {
+    services.map((s) => (
+      <section class="wrap service" id={`service-${s.number}`} aria-labelledby={`service-${s.number}-title`}>
+        <span class="num" aria-hidden="true">
+          {s.number}
+        </span>
+        <div class="service-body">
+          <h2 id={`service-${s.number}-title`} set:html={s.title} />
+          <div class="prose" set:html={s.html} />
+          {s.links.length > 0 && (
+            <ul class="links">
+              {s.links.map((l) => (
+                <li>
+                  <a class="arrow-link" href={l.href}>
+                    {l.text}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+    ))
+  }
+
+  {
+    process && (
+      <section class="wrap section" aria-labelledby="process-title">
+        <h2 id="process-title" set:html={process.heading} />
+        <Process items={process.items} />
+      </section>
+    )
+  }
+
+  {
+    faq && (
+      <section class="wrap section faq" aria-labelledby="faq-title">
+        <h2 id="faq-title" set:html={faq.heading} />
+        <div class="faq-list">
+          {faq.items.map((item) => (
+            <details>
+              <summary set:html={item.question} />
+              <div class="prose answer" set:html={item.answer} />
+            </details>
+          ))}
+        </div>
+        {faq.cta && (
+          <p class="cta">
+            <a class="btn" href={faq.cta.href}>
+              {faq.cta.text}
+            </a>
+          </p>
+        )}
+      </section>
+    )
+  }
+</Base>
+
+<style>
+  .head {
+    padding-block: var(--spacing-12) var(--spacing-8);
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--spacing-6);
+  }
+
+  .lede :global(p) {
+    font-size: var(--text-base);
+  }
+
+  /* Услуга: mono номер в охра (28 px → над прага 3:1 за едър текст) вляво, съдържание вдясно. */
+  .service {
+    display: grid;
+    grid-template-columns: var(--spacing-12) 1fr;
+    column-gap: var(--spacing-4);
+    /* Номерът и h2 на една базова линия. */
+    align-items: baseline;
+    padding-block: var(--spacing-12);
+    border-top: 1px solid var(--color-line);
+  }
+
+  .num {
+    font-family: var(--font-mono);
+    font-size: var(--text-lg);
+    line-height: 1.15;
+    color: var(--color-accent);
+  }
+
+  .service h2 {
+    font-size: var(--text-xl);
+    line-height: 1.15;
+    margin: 0 0 var(--spacing-6);
+  }
+
+  /* Row-gap 24 px: зоните за докосване на .arrow-link (±12 px) не се припокриват при пренасяне. */
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-6) var(--spacing-8);
+    margin: var(--spacing-2) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Spec-списък: ръчно набрана таблица с mono номера и линии между редовете. */
+  .service :global(.spec-title) {
+    margin: 0 0 var(--spacing-2);
+    font-weight: 600;
+  }
+
+  .service :global(.spec-list) {
+    list-style: none;
+    counter-reset: spec;
+    margin: 0 0 var(--spacing-4);
+    padding: 0;
+    border-top: 1px solid var(--color-line);
+  }
+
+  .service :global(.spec-list li) {
+    counter-increment: spec;
+    display: grid;
+    grid-template-columns: 4ch 1fr;
+    gap: var(--spacing-3);
+    padding-block: var(--spacing-2);
+    margin: 0;
+    border-bottom: 1px solid var(--color-line);
+    line-height: 1.5;
+  }
+
+  .service :global(.spec-list li::before) {
+    content: counter(spec, decimal-leading-zero);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    padding-top: var(--spacing-1);
+  }
+
+  .section {
+    padding-block: var(--spacing-16);
+    border-top: 1px solid var(--color-line);
+  }
+
+  .section h2 {
+    font-size: var(--text-xl);
+    line-height: 1.15;
+    margin: 0 0 var(--spacing-8);
+  }
+
+  /* FAQ: <details>/<summary> без икона и без анимация. Състоянието се показва с текстов
+     маркер в mono („+“ / „–“) вдясно; въпросът не имитира линк. */
+  .faq-list {
+    max-width: var(--measure);
+    border-top: 1px solid var(--color-line);
+  }
+
+  details {
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--spacing-4);
+    list-style: none;
+    cursor: pointer;
+    padding-block: var(--spacing-4);
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary::after {
+    content: '+';
+    flex: none;
+    font-family: var(--font-mono);
+    font-weight: 400;
+    color: var(--color-muted);
+  }
+
+  details[open] summary::after {
+    content: '–';
+  }
+
+  summary:hover {
+    color: var(--color-primary);
+  }
+
+  details[open] summary {
+    padding-bottom: var(--spacing-2);
+  }
+
+  .answer {
+    padding-bottom: var(--spacing-4);
+  }
+
+  .answer :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  .cta {
+    margin: var(--spacing-12) 0 0;
+  }
+
+  /* = --breakpoint-md в tokens.css */
+  @media (min-width: 48rem) {
+    .head {
+      padding-block: var(--spacing-16) var(--spacing-12);
+    }
+
+    h1 {
+      font-size: var(--text-3xl);
+    }
+
+    .service {
+      grid-template-columns: var(--spacing-24) 1fr;
+      padding-block: var(--spacing-16);
+    }
+
+    .num {
+      font-size: var(--text-xl);
+    }
+
+    .section {
+      padding-block: var(--spacing-24);
+    }
+  }
+</style>
