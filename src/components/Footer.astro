@@ -23,6 +23,7 @@ const nav = [
 const social = [
   { label: 'LinkedIn', href: company.linkedin },
   { label: 'GitHub', href: company.github },
+  { label: 'Google Business Profile', href: company.google },
 ].filter((s): s is { label: string; href: string } => Boolean(s.href));
 
 // Статичен build: годината е годината на последния build.
@@ -87,12 +88,15 @@ const year = new Date().getFullYear();
             </ul>
           )
         }
-        <!-- TODO: Марти да даде: LinkedIn и GitHub URL в src/data/company.ts — дотогава блокът е празен. -->
+        <!-- TODO: Марти да даде: LinkedIn, GitHub и Google Business Profile URL в src/data/company.ts — дотогава блокът е празен. -->
       </section>
     </div>
 
-    <p class="colophon mono">
-      © {year} {company.name} · <a href={localeUrl(locale, '/privacy')}>{t('footer.privacy')}</a> ·
+    <!-- Mono само за „© година ФИРМА“ (главни букви и цифри — без разлика в кирилските форми);
+         линковете с малки букви са в body шрифта, за да са с български форми. -->
+    <p class="colophon">
+      <span class="mono">© {year} {company.name}</span>&nbsp;·
+      <a href={localeUrl(locale, '/privacy')}>{t('footer.privacy')}</a>&nbsp;·
       <!-- TODO: страница /accessibility (CHECKLIST §E, кратка декларация за достъпност) -->
       <a href={localeUrl(locale, '/accessibility')}>{t('footer.accessibility')}</a>
     </p>
@@ -131,8 +135,6 @@ const year = new Date().getFullYear();
      са с малки букви. */
   .col-title {
     font-size: var(--text-sm);
-    letter-spacing: 0;
-    color: var(--color-muted);
     margin: 0 0 var(--spacing-3);
   }
 
@@ -165,18 +167,15 @@ const year = new Date().getFullYear();
 
   a:hover {
     text-decoration: underline;
-    text-underline-offset: 3px;
+    text-underline-offset: var(--spacing-1);
   }
 
-  .mono {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-  }
-
+  /* .mono е глобален (components.css). */
   .colophon {
     margin-top: var(--spacing-12);
     padding-top: var(--spacing-4);
     border-top: 1px solid var(--color-line);
+    font-size: var(--text-xs);
     color: var(--color-muted);
   }
 </style>

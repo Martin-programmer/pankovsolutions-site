@@ -15,4 +15,5 @@ export const company = {
   vat: null as string | null, // TODO: Марти да даде: ДДС №, ако има регистрация
   linkedin: null as string | null, // TODO: Марти да даде: LinkedIn URL
   github: null as string | null, // TODO: Марти да даде: GitHub URL
+  google: null as string | null, // TODO: Марти да даде: Google Business Profile URL (CHECKLIST §C)
 };

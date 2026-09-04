@@ -38,6 +38,11 @@ const steps = await parseSteps(get('ПРОЦЕС'));
 const testimonialsSection = await parseSection(get('ОТЗИВИ'));
 const about = await parseSection(get('ЗА МЕН'));
 const cta = await parseSection(get('CTA + МИНИ-ФОРМА'));
+// Първият абзац стои над формата; останалите (контактният ред) — под бутона, през slot,
+// за да не се показват два пъти (DESIGN.md §Форма).
+const ctaParagraphs = cta.body.match(/<p>[\s\S]*?<\/p>/g) ?? [];
+const ctaLede = ctaParagraphs[0] ?? '';
+const ctaAfter = ctaParagraphs.slice(1).join('');
 
 const featured = (await getCollection('projects', (p) => p.id.startsWith('bg/') && p.data.featured))
   .sort((a, b) => a.data.order - b.data.order);
@@ -143,7 +148,7 @@ const jsonLd = {
   </section>
 
   <!-- УСЛУГИ — номериран вертикален списък, без икони -->
-  <section class="section wrap">
+  <section class="section section-services wrap">
     <h2 set:html={services.heading} />
     <ol class="services">
       {
@@ -166,7 +171,7 @@ const jsonLd = {
   </section>
 
   <!-- ИЗБРАНИ ПРОЕКТИ — редуващ се двуколонен layout, заглавие = резултатът -->
-  <section class="section wrap">
+  <section class="section section-projects wrap">
     <h2 set:html={projectsSection.heading} />
     <div class="projects">
       {
@@ -189,7 +194,7 @@ const jsonLd = {
                 <h3>
                   <a href={href} set:html={p.data.result} />
                 </h3>
-                <p class="mono stack">{p.data.stack.join(' · ')}</p>
+                <p class="mono stack">{p.data.stack.join(' · ')}</p>
               </div>
             </article>
           );
@@ -199,7 +204,7 @@ const jsonLd = {
   </section>
 
   <!-- ПРОЦЕС — 5 стъпки в един ред на десктоп, вертикално на мобилно -->
-  <section class="section wrap">
+  <section class="section section-process wrap">
     <h2 set:html={steps.heading} />
     <ol class="steps">
       {
@@ -258,8 +263,10 @@ const jsonLd = {
   <!-- CTA + МИНИ-ФОРМА -->
   <section class="section wrap cta">
     <h2 set:html={cta.heading} />
-    <div class="prose" set:html={cta.body} />
-    <InquiryForm locale={locale} variant="short" />
+    <div class="prose" set:html={ctaLede} />
+    <InquiryForm locale={locale} variant="short">
+      {ctaAfter && <div slot="after" class="cta-after" set:html={ctaAfter} />}
+    </InquiryForm>
   </section>
 </Base>
 
@@ -277,6 +284,8 @@ const jsonLd = {
 
   .section h2 {
     font-size: var(--text-xl);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
     margin: 0 0 var(--spacing-8);
   }
 
@@ -312,6 +321,7 @@ const jsonLd = {
   .hero h1 {
     font-size: var(--text-xl);
     line-height: 1.1;
+    letter-spacing: -0.01em;
     margin: 0 0 var(--spacing-6);
   }
 
@@ -350,16 +360,17 @@ const jsonLd = {
     padding-block: var(--spacing-4);
   }
 
+  /* Един размер и един цвят за целия ред; mono остава само за стека (латиница) —
+     българският текст в mono би излязъл с руски форми. */
   .trust-line {
     margin: 0;
     font-size: var(--text-sm);
-    color: var(--color-muted);
+    color: var(--color-ink);
   }
 
   .trust-line :global(code) {
     font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--color-ink);
+    font-size: var(--text-sm);
   }
 
   .logos {
@@ -374,8 +385,7 @@ const jsonLd = {
 
   .logo {
     display: block;
-    /* DESIGN.md: 28 px височина, естествен цвят, по baseline. */
-    height: calc(var(--spacing-6) + var(--spacing-1));
+    height: var(--logo-height);
     width: auto;
   }
 
@@ -400,6 +410,7 @@ const jsonLd = {
   .services li {
     display: grid;
     grid-template-columns: var(--spacing-12) 1fr;
+    align-items: baseline;
     gap: var(--spacing-4);
     padding-block: var(--spacing-6);
     border-top: 1px solid var(--color-line);
@@ -409,10 +420,11 @@ const jsonLd = {
     border-bottom: 1px solid var(--color-line);
   }
 
+  /* Охра (3,25:1 върху paper) само при ≥ 24 px, където прагът е 3:1; иначе ink. */
   .num {
     font-family: var(--font-mono);
     font-size: var(--text-sm);
-    color: var(--color-accent);
+    color: var(--color-ink);
     line-height: 1.6;
   }
 
@@ -422,10 +434,10 @@ const jsonLd = {
     margin: 0 0 var(--spacing-2);
   }
 
-  /* Номерът е в размера и line-height на заглавието, за да са на една базова линия. */
   .services .num {
-    font-size: var(--text-md);
-    line-height: 1.25;
+    font-size: var(--text-lg);
+    line-height: 1;
+    color: var(--color-accent);
   }
 
   .services p {
@@ -457,7 +469,7 @@ const jsonLd = {
 
   .project h3 a:hover {
     text-decoration: underline;
-    text-underline-offset: 4px;
+    text-underline-offset: var(--spacing-1);
     text-decoration-thickness: 1px;
   }
 
@@ -488,7 +500,8 @@ const jsonLd = {
 
   /* Наследява serif 700 от tokens.css (CHECKLIST §A: заглавия само 700/300). */
   .steps h3 {
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
+    text-wrap: pretty;
     margin: var(--spacing-2) 0 var(--spacing-1);
   }
 
@@ -554,10 +567,36 @@ const jsonLd = {
     max-width: var(--measure);
   }
 
+  .cta-after :global(p) {
+    margin: var(--spacing-4) 0 0;
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    line-height: 1.6;
+  }
+
+  .cta-after :global(a) {
+    font-family: var(--font-mono);
+    color: var(--color-primary);
+  }
+
   /* = --breakpoint-md в tokens.css */
   @media (min-width: 48rem) {
     .section {
       padding-block: var(--spacing-24);
+    }
+
+    /* Ритъмът не е метрономен: проектите и CTA са по-важни, процесът е по-малък. */
+    .section-projects,
+    .cta {
+      padding-top: var(--spacing-32);
+    }
+
+    .section-process {
+      padding-block: var(--spacing-16);
+    }
+
+    .cta h2 {
+      font-size: var(--text-2xl);
     }
 
     .hero {

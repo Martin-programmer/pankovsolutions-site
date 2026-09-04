@@ -48,11 +48,15 @@ const id = (name: string) => `inquiry-${variant}-${name}`;
 
   <button class="btn" type="submit">{t('form.submit')}</button>
 
-  <p class="promise">
-    {t('form.promise')}
-    <a class="mono" href={company.phoneHref}>{company.phone}</a> ·
-    <a class="mono" href={`mailto:${company.email}`}>{company.email}</a>
-  </p>
+  <!-- Редът под бутона (DESIGN.md §Форма). Страницата може да го подаде от content/ през
+       slot „after“; иначе се ползва UI низът + данните от company.ts. -->
+  <slot name="after">
+    <p class="promise">
+      {t('form.promise')}
+      <a class="mono" href={company.phoneHref}>{company.phone}</a>&nbsp;·
+      <a class="mono" href={`mailto:${company.email}`}>{company.email}</a>
+    </p>
+  </slot>
   <p class="gdpr">
     {t('form.gdpr')}
     <a href={localeUrl(locale, '/privacy')}>{t('footer.privacy')}</a>
@@ -84,7 +88,8 @@ const id = (name: string) => `inquiry-${variant}-${name}`;
     background: var(--color-surface);
     border: 1px solid var(--color-line);
     border-radius: var(--radius-sm);
-    padding: var(--spacing-2) var(--spacing-3);
+    /* ≥ 44 px високи полета на мобилно. */
+    padding: var(--spacing-3);
     width: 100%;
   }
 

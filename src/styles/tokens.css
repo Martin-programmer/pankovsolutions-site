@@ -93,6 +93,8 @@
   /* Под md: мобилно меню, footer в една колона. Custom properties не работят в @media,
      затова компонентите пишат `@media (min-width: 48rem)` с коментар към този токен. */
   --breakpoint-md: 48rem;
+  /* Лога на клиенти: DESIGN.md §Изображения — 28 px, естествен цвят, по baseline. */
+  --logo-height: 28px;
 }
 
 :root {
@@ -101,6 +103,10 @@
   -webkit-font-smoothing: antialiased;
 }
 html { background: var(--color-paper); color: var(--color-ink); font-family: var(--font-body); }
-h1, h2, h3 { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+/* DESIGN.md: body 18 px на десктоп, 16 на мобилно. На body, не на html — rem токените остават стабилни. */
+body { font-size: var(--text-sm); }
+@media (min-width: 48rem) { body { font-size: var(--text-base); } }
+/* letter-spacing -0.01em е само за заглавия над 36 px — задава се при тях, не тук. */
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; text-wrap: balance; }
 :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
