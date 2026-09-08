@@ -12,6 +12,7 @@
   font-size: var(--text-xs);
 }
 
+/* Pill бутон (DESIGN.md §Ревизия). */
 .btn {
   display: inline-block;
   font-family: var(--font-body);
@@ -20,8 +21,8 @@
   color: var(--color-surface);
   background: var(--color-primary);
   border: 1px solid var(--color-primary);
-  border-radius: var(--radius-sm);
-  padding: var(--spacing-3) var(--spacing-6);
+  border-radius: var(--radius-pill);
+  padding: var(--spacing-3) var(--spacing-8);
   text-decoration: none;
   cursor: pointer;
   transition: background-color 120ms ease-out;
@@ -54,8 +55,10 @@
    1px линия, без сянка. Hover: −2px и по-тъмна рамка — едно от трите движения. */
 .frame {
   border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
   background: var(--color-surface);
-  transition: transform 160ms ease-out, border-color 160ms ease-out;
+  transition: transform 160ms ease-out, border-color 160ms ease-out, box-shadow 160ms ease-out;
 }
 
 .frame-bar {
@@ -90,6 +93,46 @@ a:hover > .frame,
 .frame-link:hover .frame {
   transform: translateY(calc(-1 * var(--spacing-1) / 2));
   border-color: var(--color-muted);
+  box-shadow: var(--shadow-soft);
+}
+
+/* Плочки (DESIGN.md §Ревизия): заоблени панели върху хартията, вместо full-bleed ленти.
+   Без сянка в покой; съдържанието им носи ритъма. */
+.tile {
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-6);
+}
+
+.tile-surface {
+  background: var(--color-surface);
+}
+
+.tile-tint {
+  background: var(--color-accent-tint);
+}
+
+.tile-cool {
+  background: var(--color-primary-soft);
+}
+
+/* Reveal при скрол (Base.astro: IntersectionObserver слага .js на <html> и .is-in на
+   елемента веднъж). Без JS нищо не е скрито; reduced-motion маха прехода (tokens.css). */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(var(--spacing-3));
+  transition: opacity 600ms ease-out, transform 600ms ease-out;
+}
+
+.js .reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* = --breakpoint-md в tokens.css */
+@media (min-width: 48rem) {
+  .tile {
+    padding: var(--spacing-12);
+  }
 }
 
 /* Underline-slide: псевдоелемент със scaleX, без градиент. Стрелката е част от текста.

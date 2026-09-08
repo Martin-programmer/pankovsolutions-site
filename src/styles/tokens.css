@@ -89,10 +89,15 @@
   --spacing-6: 24px; --spacing-8: 32px; --spacing-12: 48px; --spacing-16: 64px;
   --spacing-24: 96px; --spacing-32: 128px;
 
-  /* Форма */
+  /* Форма — DESIGN.md §Ревизия: скала от радиуси за плочки, рамки, pill бутони */
   --radius-none: 0;
   --radius-sm: 4px;
+  --radius-md: 12px;   /* полета, малки изображения */
+  --radius-lg: 20px;   /* продуктови рамки, портрет */
+  --radius-xl: 28px;   /* плочки (секции) */
+  --radius-pill: 999px;
   --shadow-modal: 0 12px 32px rgb(22 25 29 / 0.16);
+  --shadow-soft: 0 8px 24px rgb(22 25 29 / 0.06);  /* само hover на рамка/плочка */
 
   /* Layout */
   --container: 1200px;

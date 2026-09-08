@@ -103,7 +103,11 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
 
 <style>
   /* Без sticky, без blur, без сянка — само 1px долна линия. */
+  /* Тънък sticky хедър (DESIGN.md §Ревизия) — плътен фон, без blur. */
   .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-line);
   }
@@ -135,7 +139,7 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
     color: var(--color-ink);
     background: transparent;
     border: 1px solid var(--color-line);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-pill);
     /* ≥ 44 px зона за докосване. */
     padding: var(--spacing-3) var(--spacing-4);
     cursor: pointer;

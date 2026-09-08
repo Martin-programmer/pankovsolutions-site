@@ -42,8 +42,7 @@ const edges = nodes
 >
   <title id="diagram-title">Схема на типична система: WooCommerce, Odoo, Metabase, Moodle и Telegram на Hetzner VPS</title>
 
-  <rect class="host" x="16" y="16" width="928" height="408" />
-  <text class="host-label" x="32" y="412">Hetzner VPS · собствен сървър на клиента след приемане</text>
+  <text class="host-label" x="48" y="418">Hetzner VPS · собствен сървър на клиента след приемане</text>
 
   {edges.map((e) => <path id={e.id} class="edge" d={e.d} />)}
 
@@ -60,7 +59,7 @@ const edges = nodes
   {
     nodes.map((n) => (
       <g class:list={['node', n.main && 'main']}>
-        <rect x={n.x} y={n.y} width={n.w} height={n.h} />
+        <rect x={n.x} y={n.y} width={n.w} height={n.h} rx="14" />
         <text class="title" x={n.x + 20} y={n.y + 32}>
           {n.title}
         </text>
@@ -68,9 +67,9 @@ const edges = nodes
           {n.sub}
         </text>
         {/* wireframe редове — интерфейс без съдържание */}
-        <rect class="wire" x={n.x + 20} y={n.y + (n.main ? 76 : 68)} width={n.w * 0.62} height="6" />
-        <rect class="wire" x={n.x + 20} y={n.y + (n.main ? 92 : 80)} width={n.w * 0.38} height="6" />
-        {n.main && <rect class="wire" x={n.x + 20} y={n.y + 108} width={n.w * 0.5} height="6" />}
+        <rect class="wire" x={n.x + 20} y={n.y + (n.main ? 76 : 68)} width={n.w * 0.62} height="6" rx="3" />
+        <rect class="wire" x={n.x + 20} y={n.y + (n.main ? 92 : 80)} width={n.w * 0.38} height="6" rx="3" />
+        {n.main && <rect class="wire" x={n.x + 20} y={n.y + 108} width={n.w * 0.5} height="6" rx="3" />}
       </g>
     ))
   }
@@ -82,13 +81,6 @@ const edges = nodes
     width: 100%;
     height: auto;
     font-family: var(--font-mono);
-  }
-
-  .host {
-    fill: none;
-    stroke: var(--color-muted);
-    stroke-width: 1;
-    stroke-dasharray: 4 6;
   }
 
   .host-label {

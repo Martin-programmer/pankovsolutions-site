@@ -14,6 +14,18 @@ for (const [name, width, height] of [
   const page = await browser.newPage({ viewport: { width, height } });
   await page.goto(url, { waitUntil: 'networkidle' });
   await page.evaluate(() => document.fonts.ready);
+  // Скрол през цялата страница, за да се задействат reveal-ите (IntersectionObserver),
+  // после обратно горе; sticky хедърът става статичен, за да не се наслагва в кадъра.
+  await page.evaluate(async () => {
+    const step = window.innerHeight / 2;
+    for (let y = 0; y < document.body.scrollHeight; y += step) {
+      window.scrollTo(0, y);
+      await new Promise((r) => setTimeout(r, 60));
+    }
+    window.scrollTo(0, 0);
+    await new Promise((r) => setTimeout(r, 700));
+  });
+  await page.addStyleTag({ content: '.site-header{position:static!important}' });
   const h = await page.evaluate(() => document.documentElement.scrollHeight);
   const path = `${outDir}/${slug}-${name}.png`;
   await page.screenshot({ path, fullPage: true });

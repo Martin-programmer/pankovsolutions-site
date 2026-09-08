@@ -18,6 +18,11 @@ if ((await el.count()) === 0) {
   await browser.close();
   process.exit(1);
 }
+// Sticky хедърът не се наслагва; reveal-ите вътре в елемента да са приключили.
+await page.addStyleTag({ content: '.site-header{position:static!important}' });
+await el.scrollIntoViewIfNeeded();
+await page.evaluate(() => document.querySelectorAll('.reveal').forEach((r) => r.classList.add('is-in')));
+await page.waitForTimeout(700);
 await el.screenshot({ path: outFile });
 console.log(`${selector} -> ${outFile}`);
 await browser.close();
