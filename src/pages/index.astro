@@ -63,7 +63,7 @@ const testimonials = (await getCollection('testimonials'))
 const heroImage = featured[0]?.data.images[0];
 // Mono readout над h1: градът + стекът от лентата на доверие (авторският `code` ред в home.md).
 const stackLine = trust.match(/<code>(.*?)<\/code>/)?.[1] ?? '';
-const readout = [company.city, stackLine].filter(Boolean).join(' · ');
+const readout = [company.city, stackLine && `<code>${stackLine}</code>`].filter(Boolean).join(' · ');
 const portrait = '/img/marti.jpg';
 
 const site = Astro.site?.href ?? 'https://pankovsolutions.com/';
