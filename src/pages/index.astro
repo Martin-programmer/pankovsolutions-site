@@ -64,6 +64,19 @@ const heroImage = featured[0]?.data.images[0];
 // Mono readout над h1: градът + стекът от лентата на доверие (авторският `code` ред в home.md).
 const stackLine = trust.match(/<code>(.*?)<\/code>/)?.[1] ?? '';
 const readout = [company.city, stackLine && `<code>${stackLine}</code>`].filter(Boolean).join(' · ');
+
+// Лента с числа: сметнати от колекцията, не написани. Числото продукти е от result на кейса.
+const allProjects = await getCollection('projects', (p) => p.id.startsWith('bg/'));
+const migrated = allProjects
+  .map((p) => p.data.result.match(/(\d[\d\s]*\d)\s+продукта/)?.[1])
+  .find(Boolean);
+// Уникални технологии по първата дума („Odoo 17 Community“ и „Odoo Community“ са една).
+const technologies = new Set(allProjects.flatMap((p) => p.data.stack.map((s) => s.split(' ')[0].toLowerCase())));
+const stats = [
+  { value: String(allProjects.length), label: t('stats.projects') },
+  ...(migrated ? [{ value: migrated, label: t('stats.products') }] : []),
+  { value: String(technologies.size), label: t('stats.technologies') },
+];
 const portrait = '/img/marti.jpg';
 
 const site = Astro.site?.href ?? 'https://pankovsolutions.com/';
@@ -110,7 +123,7 @@ const jsonLd = {
   <!-- HERO (DESIGN.md §Ревизия) — светла петролна лента, 7/12 текст с mono readout, 5/12 реален
        скрийншот в продуктова рамка или системната схема, докато няма кадър -->
   <section class="hero-band">
-    <div class="hero wrap grid12">
+    <div class="hero wrap">
       <div class="hero-text">
         <p class="readout" set:html={readout} />
         <h1 set:html={hero.title} />
@@ -133,6 +146,20 @@ const jsonLd = {
         }
       </div>
     </div>
+  </section>
+
+  <!-- ЧИСЛА — от колекцията projects, в едър лек сериф -->
+  <section class="stats band-surface">
+    <ul class="wrap stats-list">
+      {
+        stats.map((s) => (
+          <li>
+            <span class="value">{s.value}</span>
+            <span class="label">{s.label}</span>
+          </li>
+        ))
+      }
+    </ul>
   </section>
 
   <!-- ЛЕНТА ДОВЕРИЕ — един ред mono + до 6 лога в естествен цвят -->
@@ -340,15 +367,17 @@ const jsonLd = {
     background: var(--color-accent-tint);
   }
 
+  /* Hero в духа на продуктов лендинг: центриран, едро заглавие, кратък ред, после визуалът
+     на цялата ширина. */
   .hero {
     padding-block: var(--spacing-12) var(--spacing-16);
-    align-items: center;
+    text-align: center;
     animation: hero-reveal 400ms ease-out both;
   }
 
-  .hero-text,
-  .hero-media {
-    grid-column: 1 / -1;
+  .hero-text {
+    max-width: var(--measure);
+    margin-inline: auto;
   }
 
   /* Градът е на български (body), стекът е латиница (mono). */
@@ -362,22 +391,63 @@ const jsonLd = {
     font-family: var(--font-mono);
   }
 
+  /* 36 px на мобилно: „документиран“ на 48 px е с 4 px по-широка от колоната на 390 px. */
   .hero h1 {
     font-size: var(--text-xl);
     line-height: 1.05;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
     margin: 0 0 var(--spacing-6);
   }
 
   .lede :global(p) {
     font-size: var(--text-base);
-    line-height: 1.6;
-    max-width: var(--measure);
+    line-height: 1.5;
     margin: 0 0 var(--spacing-6);
+    color: var(--color-muted);
+  }
+
+  .hero-cta {
+    justify-content: center;
+  }
+
+  .hero-media {
+    margin: var(--spacing-16) auto 0;
   }
 
   .media {
     display: block;
+  }
+
+  /* Числа: лек сериф в едър размер, етикет под тях. */
+  .stats {
+    border-block: 1px solid var(--color-line);
+  }
+
+  .stats-list {
+    display: grid;
+    gap: var(--spacing-6);
+    margin: 0;
+    padding-block: var(--spacing-8);
+    list-style: none;
+  }
+
+  .stats-list li {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+  }
+
+  .value {
+    font-family: var(--font-display);
+    font-weight: 300;
+    font-size: var(--text-2xl);
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+
+  .label {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
   }
 
   .hero-cta {
@@ -594,17 +664,38 @@ const jsonLd = {
       padding-block: var(--spacing-24) var(--spacing-24);
     }
 
-    /* 48 в 7/12: 64 чупи изречението на 5 реда; мащабът идва от ink лентата и схемата. */
     .hero h1 {
-      font-size: var(--text-2xl);
+      font-size: var(--text-4xl);
     }
 
     .hero-text {
-      grid-column: 1 / span 7;
+      /* Заглавието на 80 px иска ~1000 px, за да е на 2–3 реда, не на 5. */
+      max-width: calc(var(--container) - 2 * var(--spacing-24));
+    }
+
+    .lede :global(p) {
+      font-size: var(--text-md);
+      max-width: var(--measure);
+      margin-inline: auto;
     }
 
     .hero-media {
-      grid-column: 8 / span 5;
+      margin-top: var(--spacing-24);
+      max-width: calc(var(--container) - 2 * var(--spacing-24));
+    }
+
+    .stats-list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      padding-block: var(--spacing-12);
+    }
+
+    .value {
+      font-size: var(--text-3xl);
+    }
+
+    .section h2 {
+      font-size: var(--text-2xl);
+      margin-bottom: var(--spacing-12);
     }
 
     .project .media {

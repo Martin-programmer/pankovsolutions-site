@@ -95,6 +95,10 @@ const bg = {
   'notfound.write': 'ми пишете',
   'llms.pages': 'Страници',
   'llms.projects': 'Проекти (кейс стъдита)',
+  // Лента с числа на началната — стойностите се смятат от колекцията projects.
+  'stats.projects': 'изпълнени проекта',
+  'stats.products': 'продукта, мигрирани със скрипт',
+  'stats.technologies': 'технологии в стека на проектите',
 } as const;
 
 export type UiKey = keyof typeof bg;
@@ -176,6 +180,9 @@ const en: Record<UiKey, string> = {
   'notfound.write': 'write to me',
   'llms.pages': 'Pages',
   'llms.projects': 'Projects (case studies)',
+  'stats.projects': 'projects delivered',
+  'stats.products': 'products migrated by script',
+  'stats.technologies': 'technologies across the project stacks',
 };
 
 export const ui: Record<Locale, Record<UiKey, string>> = { bg, en };

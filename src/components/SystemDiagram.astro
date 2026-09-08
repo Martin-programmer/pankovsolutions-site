@@ -1,51 +1,76 @@
 ---
-// Системна схема за hero-то (DESIGN.md §Ревизия): реалният стек от кейсовете —
-// WooCommerce ↔ Odoo ↔ Metabase / Moodle / Telegram — върху Hetzner VPS. Inline SVG,
-// mono етикети, 1px линии; охра само за потока на данните (едно от трите движения;
-// спира при prefers-reduced-motion през глобалното правило в tokens.css).
+// Системна схема — големият „продуктов“ визуал на hero-то (DESIGN.md §Ревизия): реалният
+// стек от кейсовете — WooCommerce ↔ Odoo ↔ Metabase / Moodle / Telegram — върху Hetzner VPS.
+// Inline SVG с токените; в възлите има wireframe линии (без текст/числа — нищо измислено);
+// по линиите се движат пакети данни в охра (SMIL animateMotion; скрити при reduced-motion).
 interface Props {
   class?: string;
 }
 const { class: cls } = Astro.props;
 
-const nodes = [
-  { id: 'shop', x: 40, y: 60, w: 168, h: 56, title: 'WooCommerce', sub: 'магазин' },
-  { id: 'odoo', x: 232, y: 176, w: 176, h: 72, title: 'Odoo', sub: 'CRM · ERP · WMS', main: true },
-  { id: 'bi', x: 440, y: 60, w: 168, h: 56, title: 'Metabase', sub: 'BI табла' },
-  { id: 'lms', x: 440, y: 300, w: 168, h: 56, title: 'Moodle', sub: 'обучение' },
-  { id: 'tg', x: 40, y: 300, w: 168, h: 56, title: 'Telegram', sub: 'известия' },
+type Node = { id: string; x: number; y: number; w: number; h: number; title: string; sub: string; main?: boolean };
+const nodes: Node[] = [
+  { id: 'shop', x: 48, y: 72, w: 216, h: 96, title: 'WooCommerce', sub: 'онлайн магазин' },
+  { id: 'odoo', x: 372, y: 148, w: 216, h: 144, title: 'Odoo', sub: 'CRM · ERP · склад', main: true },
+  { id: 'bi', x: 696, y: 72, w: 216, h: 96, title: 'Metabase', sub: 'BI табла' },
+  { id: 'lms', x: 696, y: 272, w: 216, h: 96, title: 'Moodle', sub: 'обучение на екипа' },
+  { id: 'tg', x: 48, y: 272, w: 216, h: 96, title: 'Telegram', sub: 'известия' },
 ];
-const center = { x: 232 + 88, y: 176 + 36 };
+const center = { x: 372 + 108, y: 148 + 72 };
 const edges = nodes
   .filter((n) => !n.main)
-  .map((n) => ({ from: center, to: { x: n.x + n.w / 2, y: n.y + n.h / 2 } }));
+  .map((n, i) => {
+    const from = { x: n.x + n.w / 2, y: n.y + n.h / 2 };
+    const reverse = i % 2 === 1;
+    return {
+      id: `edge-${n.id}`,
+      d: `M ${from.x} ${from.y} L ${center.x} ${center.y}`,
+      begin: `${i * 0.9}s`,
+      reverse,
+      // Начална позиция на пакета преди анимацията — иначе стои в (0,0) в ъгъла.
+      start: reverse ? center : from,
+    };
+  });
 ---
 
 <svg
   class:list={['diagram', cls]}
-  viewBox="0 0 648 420"
+  viewBox="0 0 960 440"
   role="img"
   aria-labelledby="diagram-title"
   xmlns="http://www.w3.org/2000/svg"
 >
   <title id="diagram-title">Схема на типична система: WooCommerce, Odoo, Metabase, Moodle и Telegram на Hetzner VPS</title>
 
-  <rect class="host" x="8" y="8" width="632" height="404" />
-  <text class="host-label" x="24" y="404">Hetzner VPS · собствен сървър на клиента след приемане</text>
+  <rect class="host" x="16" y="16" width="928" height="408" />
+  <text class="host-label" x="32" y="412">Hetzner VPS · собствен сървър на клиента след приемане</text>
 
-  {edges.map((e) => <line class="edge" x1={e.from.x} y1={e.from.y} x2={e.to.x} y2={e.to.y} />)}
-  {edges.map((e) => <line class="flow" x1={e.from.x} y1={e.from.y} x2={e.to.x} y2={e.to.y} />)}
+  {edges.map((e) => <path id={e.id} class="edge" d={e.d} />)}
+
+  {
+    edges.map((e) => (
+      <circle class="packet" r="5" cx={e.start.x} cy={e.start.y}>
+        <animateMotion dur="3.6s" repeatCount="indefinite" begin={e.begin} keyPoints={e.reverse ? '1;0' : '0;1'} keyTimes="0;1" calcMode="linear">
+          <mpath href={`#${e.id}`} />
+        </animateMotion>
+      </circle>
+    ))
+  }
 
   {
     nodes.map((n) => (
       <g class:list={['node', n.main && 'main']}>
         <rect x={n.x} y={n.y} width={n.w} height={n.h} />
-        <text class="title" x={n.x + 16} y={n.y + (n.main ? 32 : 24)}>
+        <text class="title" x={n.x + 20} y={n.y + 32}>
           {n.title}
         </text>
-        <text class="sub" x={n.x + 16} y={n.y + (n.main ? 54 : 44)}>
+        <text class="sub" x={n.x + 20} y={n.y + 52}>
           {n.sub}
         </text>
+        {/* wireframe редове — интерфейс без съдържание */}
+        <rect class="wire" x={n.x + 20} y={n.y + (n.main ? 76 : 68)} width={n.w * 0.62} height="6" />
+        <rect class="wire" x={n.x + 20} y={n.y + (n.main ? 92 : 80)} width={n.w * 0.38} height="6" />
+        {n.main && <rect class="wire" x={n.x + 20} y={n.y + 108} width={n.w * 0.5} height="6" />}
       </g>
     ))
   }
@@ -72,25 +97,22 @@ const edges = nodes
   }
 
   .edge {
+    fill: none;
     stroke: var(--color-muted);
     stroke-width: 1;
   }
 
-  /* Потокът: охра, движещи се тирета по линиите. */
-  .flow {
-    stroke: var(--color-accent);
-    stroke-width: 2;
-    stroke-dasharray: 6 18;
-    animation: flow 20s linear infinite;
+  .packet {
+    fill: var(--color-accent);
   }
 
-  @keyframes flow {
-    to {
-      stroke-dashoffset: -480;
+  /* Едно от движенията в бюджета; при reduced-motion пакетите не се показват. */
+  @media (prefers-reduced-motion: reduce) {
+    .packet {
+      display: none;
     }
   }
 
-  /* Светла палитра: бели възли с линия, петролен централен възел с paper текст. */
   .node rect {
     fill: var(--color-surface);
     stroke: var(--color-line);
@@ -104,7 +126,7 @@ const edges = nodes
 
   .node .title {
     fill: var(--color-ink);
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 700;
   }
 
@@ -114,12 +136,21 @@ const edges = nodes
     font-size: 13px;
   }
 
+  .node .wire {
+    fill: var(--color-line);
+    stroke: none;
+  }
+
   .node.main .title {
     fill: var(--color-paper);
-    font-size: 20px;
+    font-size: 24px;
   }
 
   .node.main .sub {
     fill: var(--color-accent-soft);
+  }
+
+  .node.main .wire {
+    fill: var(--color-primary-strong);
   }
 </style>

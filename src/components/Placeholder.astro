@@ -1,7 +1,7 @@
 ---
 // Заместител за изображение, което още не е качено (DESIGN.md §Ревизия, §Изображения).
-// „screenshot“: продуктова рамка с mono адресен ред (реалният домейн/системата от `bar`)
-// и празен панел с етикет — не гол сив правоъгълник, но и без измислени екрани.
+// „screenshot“: продуктова рамка с адресен ред (mono само за латиница) и wireframe панел —
+// странична лента и редове без текст, за да изглежда като софтуер, без измислени данни.
 // „photo“: плосък блок в accent-soft с mono „снимка“.
 interface Props {
   label: string;
@@ -15,8 +15,8 @@ interface Props {
 const { label, caption, bar, variant = 'screenshot', ratio = '16 / 10', class: cls } = Astro.props;
 const name = caption ? `${label}: ${caption}` : label;
 const barText = bar ?? caption ?? label;
-// Адресният ред е mono само за латиница (домейн/система) — mono-то няма български форми.
 const barMono = /^[\x00-\x7F]*$/.test(barText);
+const rows = [0.9, 0.55, 0.75, 0.4, 0.65];
 ---
 
 {
@@ -24,8 +24,24 @@ const barMono = /^[\x00-\x7F]*$/.test(barText);
     <div class:list={['frame ph-frame', cls]} role="img" aria-label={name}>
       <div class:list={['frame-bar', barMono && 'mono']}>{barText}</div>
       <div class="panel" style={`aspect-ratio: ${ratio}`}>
-        <span class="mono">{label}</span>
-        {caption && bar && <span class="cap">{caption}</span>}
+        <div class="wire" aria-hidden="true">
+          <div class="side">
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+          <div class="main">
+            <div class="topbar" />
+            {rows.map((w) => (
+              <div class="row" style={`width: ${Math.round(w * 100)}%`} />
+            ))}
+          </div>
+        </div>
+        <div class="note">
+          <span class="mono">{label}</span>
+          {caption && bar && <span class="cap">{caption}</span>}
+        </div>
       </div>
     </div>
   ) : (
@@ -38,13 +54,66 @@ const barMono = /^[\x00-\x7F]*$/.test(barText);
 
 <style>
   .panel {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    gap: var(--spacing-1);
-    padding: var(--spacing-4);
+    position: relative;
+    overflow: hidden;
     background: var(--color-paper);
     color: var(--color-muted);
+  }
+
+  /* Wireframe: 22 % странична лента + редове с различна дължина. */
+  .wire {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: 22% 1fr;
+  }
+
+  .side {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+    padding: var(--spacing-4);
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-line);
+  }
+
+  .side span {
+    display: block;
+    height: var(--spacing-2);
+    background: var(--color-line);
+  }
+
+  .side span:first-child {
+    width: 70%;
+    background: var(--color-primary-soft);
+  }
+
+  .main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+    padding: var(--spacing-4);
+  }
+
+  .topbar {
+    height: var(--spacing-3);
+    width: 40%;
+    background: var(--color-line);
+    margin-bottom: var(--spacing-2);
+  }
+
+  .row {
+    height: var(--spacing-2);
+    background: var(--color-line);
+  }
+
+  .note {
+    position: absolute;
+    left: var(--spacing-4);
+    bottom: var(--spacing-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
   }
 
   .ph {

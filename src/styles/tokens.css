@@ -82,6 +82,7 @@
   --text-xl: 2.25rem;    /* 36 */
   --text-2xl: 3rem;      /* 48 */
   --text-3xl: 4rem;      /* 64 */
+  --text-4xl: 5rem;      /* 80 — само hero h1 на десктоп (DESIGN.md §Ревизия) */
 
   /* Спейсинг */
   --spacing-1: 4px;  --spacing-2: 8px;  --spacing-3: 12px; --spacing-4: 16px;
