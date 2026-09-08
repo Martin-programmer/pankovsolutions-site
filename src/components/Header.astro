@@ -49,7 +49,7 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
         <li class="nav-cta">
           <a class="btn" href={localeUrl(locale, '/contact')}>{t('cta.inquiry')}</a>
         </li>
-        <li class="nav-lang mono">
+        <li class="nav-lang">
           {
             locales.map((code, i) => (
               <>
@@ -99,6 +99,27 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
       btn.focus();
     }
   });
+
+  // Reveal на плочките при скрол (DESIGN.md §Ревизия) — веднъж, без библиотеки. Живее тук,
+  // а не в Base, за да е един скрипт-файл на страница (една заявка по-малко преди FCP).
+  if ('IntersectionObserver' in window) {
+    const tiles = document.querySelectorAll('.reveal');
+    if (tiles.length) {
+      document.documentElement.classList.add('js');
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) {
+              e.target.classList.add('is-in');
+              io.unobserve(e.target);
+            }
+          }
+        },
+        { rootMargin: '0px 0px -10% 0px' },
+      );
+      tiles.forEach((el) => io.observe(el));
+    }
+  }
 </script>
 
 <style>
@@ -197,6 +218,12 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
   }
 
   /* .btn и .mono са глобални (components.css) — една дефиниция, един размер на бутона. */
+  /* Body, не mono: mono шрифтът да не е в критичния път на всяка страница (FCP). */
+  .nav-lang {
+    font-size: var(--text-xs);
+    font-weight: 600;
+  }
+
   /* Подчертан: линк в текстов блок („BG · EN“) не бива да се различава само по цвят (WCAG 1.4.1). */
   .nav-lang a {
     color: var(--color-primary);

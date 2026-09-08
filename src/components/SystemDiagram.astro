@@ -22,13 +22,17 @@ const edges = nodes
   .map((n, i) => {
     const from = { x: n.x + n.w / 2, y: n.y + n.h / 2 };
     const reverse = i % 2 === 1;
+    const start = reverse ? center : from;
+    const end = reverse ? from : center;
     return {
       id: `edge-${n.id}`,
       d: `M ${from.x} ${from.y} L ${center.x} ${center.y}`,
-      begin: `${i * 0.9}s`,
-      reverse,
-      // Начална позиция на пакета преди анимацията — иначе стои в (0,0) в ъгъла.
-      start: reverse ? center : from,
+      start,
+      // Линиите са прави: translate между двете точки е същият път като animateMotion,
+      // но е CSS transform (само repaint), не SMIL (style + layout на всеки кадър).
+      dx: end.x - start.x,
+      dy: end.y - start.y,
+      delay: `${1.2 + i * 0.9}s`,
     };
   });
 ---
@@ -48,11 +52,13 @@ const edges = nodes
 
   {
     edges.map((e) => (
-      <circle class="packet" r="5" cx={e.start.x} cy={e.start.y}>
-        <animateMotion dur="3.6s" repeatCount="indefinite" begin={e.begin} keyPoints={e.reverse ? '1;0' : '0;1'} keyTimes="0;1" calcMode="linear">
-          <mpath href={`#${e.id}`} />
-        </animateMotion>
-      </circle>
+      <circle
+        class="packet"
+        r="5"
+        cx={e.start.x}
+        cy={e.start.y}
+        style={`--dx: ${e.dx}px; --dy: ${e.dy}px; animation-delay: ${e.delay}`}
+      />
     ))
   }
 
@@ -94,11 +100,32 @@ const edges = nodes
     stroke-width: 1;
   }
 
+  /* Пакетите тръгват 1,2 s след зареждане (стъпаловидно), за да не се конкурират с
+     първия рендер; движението е transform → само repaint. Едно от движенията в бюджета. */
   .packet {
     fill: var(--color-accent);
+    opacity: 0;
+    animation: packet 3.6s linear infinite;
   }
 
-  /* Едно от движенията в бюджета; при reduced-motion пакетите не се показват. */
+  @keyframes packet {
+    0% {
+      opacity: 0;
+      transform: translate(0, 0);
+    }
+    8% {
+      opacity: 1;
+    }
+    92% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--dx), var(--dy));
+    }
+  }
+
+  /* При reduced-motion глобалното правило спира анимацията; пакетите остават скрити. */
   @media (prefers-reduced-motion: reduce) {
     .packet {
       display: none;

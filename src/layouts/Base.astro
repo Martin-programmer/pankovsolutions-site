@@ -106,28 +106,6 @@ const ogImage = new URL(Astro.props.ogImage ?? `/og/${ogSlugs.has(ogSlug) ? ogSl
   </body>
 </html>
 
-<script>
-  // Reveal на плочките при скрол (DESIGN.md §Ревизия) — веднъж, без библиотеки.
-  if ('IntersectionObserver' in window) {
-    const tiles = document.querySelectorAll('.reveal');
-    if (tiles.length) {
-      document.documentElement.classList.add('js');
-      const io = new IntersectionObserver(
-        (entries) => {
-          for (const e of entries) {
-            if (e.isIntersecting) {
-              e.target.classList.add('is-in');
-              io.unobserve(e.target);
-            }
-          }
-        },
-        { rootMargin: '0px 0px -10% 0px' },
-      );
-      tiles.forEach((el) => io.observe(el));
-    }
-  }
-</script>
-
 <style>
   /* Скрит, докато не получи фокус от клавиатурата. */
   .skip-link {
