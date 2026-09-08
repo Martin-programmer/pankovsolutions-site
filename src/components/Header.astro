@@ -192,8 +192,12 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
   }
 
   /* .btn и .mono са глобални (components.css) — една дефиниция, един размер на бутона. */
+  /* Подчертан: линк в текстов блок („BG · EN“) не бива да се различава само по цвят (WCAG 1.4.1). */
   .nav-lang a {
     color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: var(--spacing-1);
+    text-decoration-thickness: 1px;
   }
 
   .nav-lang [aria-current] {

@@ -22,6 +22,9 @@ export default defineConfig({
         !/\/(styleguide|contact\/sent|contact\/error|404)(\/|$)/.test(page) && !page.includes('/og/'),
     }),
   ],
+  // Целият CSS inline в HTML-а: една заявка по-малко преди първия рендер на бавна мрежа
+  // (Lighthouse mobile FCP/LCP); style-src в CSP и без това е с 'unsafe-inline'.
+  build: { inlineStylesheets: 'always' },
   vite: {
     plugins: [tailwindcss()],
     // Скриптовете винаги като външни файлове — CSP script-src без 'unsafe-inline' (public/_headers).

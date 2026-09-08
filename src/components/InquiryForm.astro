@@ -295,6 +295,14 @@ const types = ['eu', 'shop', 'app', 'other'] as const;
     margin-block: calc(-1 * var(--spacing-2));
   }
 
+  /* Линк в текстов блок — подчертан, не само по цвят (WCAG 1.4.1). */
+  .check label a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: var(--spacing-1);
+    text-decoration-thickness: 1px;
+  }
+
   .check label a {
     color: var(--color-primary);
   }

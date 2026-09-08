@@ -1,5 +1,5 @@
 ---
-import { getCollection } from 'astro:content';
+import { getCollection, getEntry } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import Placeholder from '../../components/Placeholder.astro';
 import { company } from '../../data/company';
@@ -19,12 +19,13 @@ const hrefOf = (id: string) => localeUrl(locale, `/projects/${slugOf(id)}`);
 const featured = all.filter((p) => p.data.featured).sort((a, b) => a.data.order - b.data.order);
 const rows = [...all].sort((a, b) => b.data.year - a.data.year || a.data.order - b.data.order);
 
-// TODO: Марти да даде: content/bg/projects.md с title и description за листинга.
-// Дотогава заглавието е етикетът от навигацията, а meta description липсва.
-const title = `${t('nav.projects')} – ${company.brand}`;
+// title/description от content/bg/projects.md (тялото му не се рендерира — листингът е от
+// колекцията); ако файлът липсва — етикетът от навигацията и без description.
+const page = await getEntry('pages', 'bg/projects');
+const title = page?.data.title ?? `${t('nav.projects')} – ${company.brand}`;
 ---
 
-<Base title={title} locale={locale}>
+<Base title={title} description={page?.data.description} locale={locale}>
   <section class="wrap listing">
     <h1>{t('nav.projects')}</h1>
 

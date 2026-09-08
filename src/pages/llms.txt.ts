@@ -18,6 +18,7 @@ export const GET: APIRoute = async ({ site }) => {
   );
 
   const routes: Record<string, string> = {
+    'bg/projects': '/projects',
     'bg/about': '/about',
     'bg/services': '/services',
     'bg/for-beneficiaries': '/for-beneficiaries',
@@ -37,7 +38,6 @@ export const GET: APIRoute = async ({ site }) => {
     `## ${t['llms.pages']}`,
     '',
     `- [${home?.data.title ?? company.brand}](${url('/')})`,
-    `- [${t['nav.projects']}](${url('/projects')})`,
     ...pages
       .filter((p) => routes[p.id])
       .map((p) => `- [${p.data.title}](${url(routes[p.id])}): ${p.data.description}`),

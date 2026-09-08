@@ -3,6 +3,7 @@ dist/
 .astro/
 .wrangler/
 .shots/
+.lighthouseci/
 .env
 .env.*
 !.env.example

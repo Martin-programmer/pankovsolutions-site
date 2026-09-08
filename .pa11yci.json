@@ -1,0 +1,20 @@
+{
+  "defaults": {
+    "standard": "WCAG2AA",
+    "runners": ["axe", "htmlcs"],
+    "timeout": 60000,
+    "wait": 500,
+    "chromeLaunchConfig": {
+      "executablePath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      "args": ["--no-sandbox"]
+    }
+  },
+  "urls": [
+    "http://localhost:4321/",
+    "http://localhost:4321/projects",
+    "http://localhost:4321/projects/domoupravitel-bulgaria",
+    "http://localhost:4321/services",
+    "http://localhost:4321/about",
+    "http://localhost:4321/contact"
+  ]
+}

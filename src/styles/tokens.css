@@ -4,8 +4,10 @@
 /* Шрифтовете са self-hosted в public/fonts/ (без Google Fonts CDN — CLAUDE.md §Стек).
    Източници: adobe-fonts/source-serif 4.005R, adobe-fonts/source-sans 3.052R,
    JetBrains/JetBrainsMono v2.304 — статични TTF от официалните GitHub release-и,
-   subset-нати с pyftsubset --layout-features='*' (задължително, за да оцелее locl),
-   до latin + latin-ext + cyrillic + cyrillic-ext, flavor woff2.
+   subset-нати с pyftsubset до latin + latin-ext + cyrillic + cyrillic-ext, flavor woff2,
+   --layout-features=locl,ccmp,kern,mark,mkmk,liga,calt,case,tnum,lnum,onum,pnum,frac,
+   sups,subs,zero,ordn,dnom,numr (locl е задължителен — българските форми; smcp/ss/cv
+   отпадат: −22 % байтове, проверено с fontTools, че cyrl/BGR остава).
    Един файл на тегло покрива и латиница, и кирилица: всяка страница смесва български
    текст с технически термини (Odoo, WooCommerce), тоест разделени файлове биха се
    свалили и двата. unicode-range по-долу е обединението на четирите блока. */

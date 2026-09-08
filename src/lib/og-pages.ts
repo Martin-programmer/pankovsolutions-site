@@ -15,7 +15,10 @@ export async function ogPages(): Promise<OgPage[]> {
       slug: p.id === 'bg/home' ? 'index' : p.id.replace(/^bg\//, ''),
       title: p.data.title,
     })),
-    { slug: 'projects', title: `${ui.bg['nav.projects']} – ${company.brand}` },
+    // Листингът има OG само ако няма content/bg/projects.md (иначе идва от pages по-горе).
+    ...(pages.some((p) => p.id === 'bg/projects')
+      ? []
+      : [{ slug: 'projects', title: `${ui.bg['nav.projects']} – ${company.brand}` }]),
     ...projects.map((p) => ({ slug: p.id.replace(/^bg\//, ''), title: cleanText(p.data.title) })),
   ];
 }
