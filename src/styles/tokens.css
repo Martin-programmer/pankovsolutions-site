@@ -61,6 +61,8 @@
   --color-primary-strong: #093642;
   --color-accent: #C9702A;
   --color-accent-soft: #F3E4D3;
+  /* Светъл петролен тон за цветни ленти (hero, footer) — DESIGN.md §Ревизия. Ink върху него 14,7:1, muted 5,1:1. */
+  --color-primary-soft: #E3ECEE;
   --color-ok: #2E6B3F;
   --color-error: #A83A2B;
 

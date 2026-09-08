@@ -67,7 +67,7 @@ const edges = nodes
   }
 
   .host-label {
-    fill: var(--color-line);
+    fill: var(--color-muted);
     font-size: 12px;
   }
 
@@ -90,34 +90,36 @@ const edges = nodes
     }
   }
 
+  /* Светла палитра: бели възли с линия, петролен централен възел с paper текст. */
   .node rect {
-    fill: var(--color-ink);
+    fill: var(--color-surface);
     stroke: var(--color-line);
     stroke-width: 1;
   }
 
   .node.main rect {
-    fill: var(--color-paper);
+    fill: var(--color-primary);
+    stroke: var(--color-primary);
   }
 
   .node .title {
-    fill: var(--color-paper);
+    fill: var(--color-ink);
     font-size: 16px;
     font-weight: 700;
   }
 
   .node .sub {
-    fill: var(--color-line);
+    fill: var(--color-muted);
     font-family: var(--font-body);
     font-size: 13px;
   }
 
   .node.main .title {
-    fill: var(--color-ink);
+    fill: var(--color-paper);
     font-size: 20px;
   }
 
   .node.main .sub {
-    fill: var(--color-muted);
+    fill: var(--color-accent-soft);
   }
 </style>

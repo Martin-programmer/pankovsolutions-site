@@ -107,8 +107,8 @@ const jsonLd = {
 <Base title={page.data.title} description={page.data.description} locale={locale}>
   <script is:inline type="application/ld+json" slot="head" set:html={toJsonLd(jsonLd)} />
 
-  <!-- HERO (DESIGN.md §Ревизия) — ink фон, 7/12 текст с mono readout, 5/12 реален скрийншот
-       в продуктова рамка или системната схема, докато няма кадър -->
+  <!-- HERO (DESIGN.md §Ревизия) — светла петролна лента, 7/12 текст с mono readout, 5/12 реален
+       скрийншот в продуктова рамка или системната схема, докато няма кадър -->
   <section class="hero-band">
     <div class="hero wrap grid12">
       <div class="hero-text">
@@ -116,8 +116,8 @@ const jsonLd = {
         <h1 set:html={hero.title} />
         <div class="lede" set:html={hero.lede} />
         <p class="hero-cta">
-          {hero.links[0] && <a class="btn btn-inverse" href={hero.links[0].href}>{hero.links[0].text}</a>}
-          {hero.links[1] && <a class="arrow-link on-ink" href={hero.links[1].href}>{hero.links[1].text}</a>}
+          {hero.links[0] && <a class="btn" href={hero.links[0].href}>{hero.links[0].text}</a>}
+          {hero.links[1] && <a class="arrow-link" href={hero.links[1].href}>{hero.links[1].text}</a>}
         </p>
       </div>
       <div class="hero-media">
@@ -161,7 +161,8 @@ const jsonLd = {
   </section>
 
   <!-- УСЛУГИ — номериран вертикален списък, без икони -->
-  <section class="section section-services wrap">
+  <section class="section section-services">
+    <div class="wrap">
     <h2 set:html={services.heading} />
     <ol class="services">
       {
@@ -181,10 +182,12 @@ const jsonLd = {
         ))
       }
     </ol>
+    </div>
   </section>
 
   <!-- ИЗБРАНИ ПРОЕКТИ — редуващ се двуколонен layout, заглавие = резултатът -->
-  <section class="section section-projects wrap">
+  <section class="section section-projects band-surface">
+    <div class="wrap">
     <h2 set:html={projectsSection.heading} />
     <div class="projects">
       {
@@ -217,18 +220,22 @@ const jsonLd = {
         })
       }
     </div>
+    </div>
   </section>
 
   <!-- ПРОЦЕС — 5 стъпки в един ред на десктоп, вертикално на мобилно -->
-  <section class="section section-process wrap">
-    <h2 set:html={steps.heading} />
-    <Process items={steps.items} />
+  <section class="section section-process band-soft">
+    <div class="wrap">
+      <h2 set:html={steps.heading} />
+      <Process items={steps.items} />
+    </div>
   </section>
 
   <!-- ОТЗИВИ — пълен текст, име, длъжност, фирма; без снимки; максимум 3 -->
   {
     testimonials.length > 0 && (
-      <section class="section wrap">
+      <section class="section">
+        <div class="wrap">
         <h2 set:html={testimonialsSection.heading} />
         <div class="quotes">
           {testimonials.map((x) => (
@@ -246,12 +253,14 @@ const jsonLd = {
             </figure>
           ))}
         </div>
+        </div>
       </section>
     )
   }
 
   <!-- ЗА МЕН — портрет 4/12, текст 8/12 -->
-  <section class="section wrap grid12 about">
+  <section class="section band-surface">
+    <div class="wrap grid12 about">
     <div class="portrait">
       {
         publicFileExists(portrait) ? (
@@ -266,15 +275,18 @@ const jsonLd = {
       <div class="prose" set:html={about.body} />
       {about.links[0] && <a class="arrow-link" href={about.links[0].href}>{about.links[0].text}</a>}
     </div>
+    </div>
   </section>
 
   <!-- CTA + МИНИ-ФОРМА -->
-  <section class="section wrap cta">
-    <h2 set:html={cta.heading} />
-    <div class="prose" set:html={ctaLede} />
-    <InquiryForm locale={locale} variant="short">
-      {ctaAfter && <div slot="after" class="cta-after" set:html={ctaAfter} />}
-    </InquiryForm>
+  <section class="section cta band-soft">
+    <div class="wrap">
+      <h2 set:html={cta.heading} />
+      <div class="prose" set:html={ctaLede} />
+      <InquiryForm locale={locale} variant="short">
+        {ctaAfter && <div slot="after" class="cta-after" set:html={ctaAfter} />}
+      </InquiryForm>
+    </div>
   </section>
 </Base>
 
@@ -315,10 +327,17 @@ const jsonLd = {
     }
   }
 
-  /* Ink фон на цялата лента; текст paper, второстепенен line (DESIGN.md §Ревизия). */
+  /* Цветни ленти (DESIGN.md §Ревизия): светъл петрол за hero, бяло и топло за секциите. */
   .hero-band {
-    background: var(--color-ink);
-    color: var(--color-paper);
+    background: var(--color-primary-soft);
+  }
+
+  .band-surface {
+    background: var(--color-surface);
+  }
+
+  .band-soft {
+    background: var(--color-accent-soft);
   }
 
   .hero {
@@ -336,7 +355,7 @@ const jsonLd = {
   .readout {
     margin: 0 0 var(--spacing-4);
     font-size: var(--text-xs);
-    color: var(--color-line);
+    color: var(--color-muted);
   }
 
   .readout :global(code) {
@@ -355,15 +374,6 @@ const jsonLd = {
     line-height: 1.6;
     max-width: var(--measure);
     margin: 0 0 var(--spacing-6);
-    color: var(--color-line);
-  }
-
-  .on-ink {
-    color: var(--color-paper);
-  }
-
-  .on-ink::after {
-    background: var(--color-paper);
   }
 
   .media {
@@ -385,8 +395,9 @@ const jsonLd = {
     border: 1px solid var(--color-line);
   }
 
-  /* Лента доверие */
+  /* Лента доверие — бяла, между двата тона */
   .trust {
+    background: var(--color-surface);
     border-block: 1px solid var(--color-line);
   }
 
