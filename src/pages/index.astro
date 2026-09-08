@@ -4,6 +4,7 @@ import Base from '../layouts/Base.astro';
 import InquiryForm from '../components/InquiryForm.astro';
 import Placeholder from '../components/Placeholder.astro';
 import Process from '../components/Process.astro';
+import SystemDiagram from '../components/SystemDiagram.astro';
 import { company } from '../data/company';
 import { useTranslations, type Locale } from '../i18n/utils';
 import { publicFileExists } from '../lib/assets';
@@ -60,6 +61,9 @@ const testimonials = (await getCollection('testimonials'))
 
 // Hero визуалът е първият скрийншот на първия избран проект (Odoo CRM), както е в коментара.
 const heroImage = featured[0]?.data.images[0];
+// Mono readout над h1: градът + стекът от лентата на доверие (авторският `code` ред в home.md).
+const stackLine = trust.match(/<code>(.*?)<\/code>/)?.[1] ?? '';
+const readout = [company.city, stackLine].filter(Boolean).join(' · ');
 const portrait = '/img/marti.jpg';
 
 const site = Astro.site?.href ?? 'https://pankovsolutions.com/';
@@ -103,24 +107,31 @@ const jsonLd = {
 <Base title={page.data.title} description={page.data.description} locale={locale}>
   <script is:inline type="application/ld+json" slot="head" set:html={toJsonLd(jsonLd)} />
 
-  <!-- HERO — 7/12 текст, 5/12 реален скрийншот в плоска рамка -->
-  <section class="hero wrap grid12">
-    <div class="hero-text">
-      <h1 set:html={hero.title} />
-      <div class="lede" set:html={hero.lede} />
-      <p class="hero-cta">
-        {hero.links[0] && <a class="btn" href={hero.links[0].href}>{hero.links[0].text}</a>}
-        {hero.links[1] && <a class="arrow-link" href={hero.links[1].href}>{hero.links[1].text}</a>}
-      </p>
-    </div>
-    <div class="hero-media">
-      {
-        heroImage && publicFileExists(heroImage.src) ? (
-          <img class="shot" src={heroImage.src} alt={heroImage.alt} width="1200" height="750" fetchpriority="high" />
-        ) : (
-          <Placeholder label={t('placeholder.screenshot')} caption={heroImage?.alt} ratio="16 / 10" />
-        )
-      }
+  <!-- HERO (DESIGN.md §Ревизия) — ink фон, 7/12 текст с mono readout, 5/12 реален скрийншот
+       в продуктова рамка или системната схема, докато няма кадър -->
+  <section class="hero-band">
+    <div class="hero wrap grid12">
+      <div class="hero-text">
+        <p class="readout" set:html={readout} />
+        <h1 set:html={hero.title} />
+        <div class="lede" set:html={hero.lede} />
+        <p class="hero-cta">
+          {hero.links[0] && <a class="btn btn-inverse" href={hero.links[0].href}>{hero.links[0].text}</a>}
+          {hero.links[1] && <a class="arrow-link on-ink" href={hero.links[1].href}>{hero.links[1].text}</a>}
+        </p>
+      </div>
+      <div class="hero-media">
+        {
+          heroImage && publicFileExists(heroImage.src) ? (
+            <div class="frame">
+              <div class="frame-bar">{heroImage.alt}</div>
+              <img class="frame-body" src={heroImage.src} alt={heroImage.alt} width="1200" height="750" fetchpriority="high" />
+            </div>
+          ) : (
+            <SystemDiagram />
+          )
+        }
+      </div>
     </div>
   </section>
 
@@ -182,13 +193,16 @@ const jsonLd = {
           const href = `/projects/${slugOf(p.id)}`;
           return (
             <article class="project grid12">
-              <div class="media">
+              <a class="media frame-link" href={href} tabindex="-1" aria-hidden="true">
                 {img && publicFileExists(img.src) ? (
-                  <img class="shot" src={img.src} alt={img.alt} width="1200" height="750" loading="lazy" />
+                  <div class="frame">
+                    <div class:list={['frame-bar', /^[\x00-\x7F]*$/.test(p.data.client) && 'mono']}>{p.data.client}</div>
+                    <img class="frame-body" src={img.src} alt="" width="1200" height="750" loading="lazy" />
+                  </div>
                 ) : (
-                  <Placeholder label={t('placeholder.screenshot')} caption={img?.alt} ratio="16 / 10" />
+                  <Placeholder label={t('placeholder.screenshot')} caption={img?.alt} bar={p.data.client} ratio="16 / 10" />
                 )}
-              </div>
+              </a>
               <div class="text">
                 <p class="meta">
                   <span class="mono">{p.data.year}</span> · {p.data.client}
@@ -301,6 +315,12 @@ const jsonLd = {
     }
   }
 
+  /* Ink фон на цялата лента; текст paper, второстепенен line (DESIGN.md §Ревизия). */
+  .hero-band {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+
   .hero {
     padding-block: var(--spacing-12) var(--spacing-16);
     align-items: center;
@@ -312,9 +332,20 @@ const jsonLd = {
     grid-column: 1 / -1;
   }
 
+  /* Градът е на български (body), стекът е латиница (mono). */
+  .readout {
+    margin: 0 0 var(--spacing-4);
+    font-size: var(--text-xs);
+    color: var(--color-line);
+  }
+
+  .readout :global(code) {
+    font-family: var(--font-mono);
+  }
+
   .hero h1 {
     font-size: var(--text-xl);
-    line-height: 1.1;
+    line-height: 1.05;
     letter-spacing: -0.01em;
     margin: 0 0 var(--spacing-6);
   }
@@ -324,6 +355,19 @@ const jsonLd = {
     line-height: 1.6;
     max-width: var(--measure);
     margin: 0 0 var(--spacing-6);
+    color: var(--color-line);
+  }
+
+  .on-ink {
+    color: var(--color-paper);
+  }
+
+  .on-ink::after {
+    background: var(--color-paper);
+  }
+
+  .media {
+    display: block;
   }
 
   .hero-cta {
@@ -536,10 +580,10 @@ const jsonLd = {
     }
 
     .hero {
-      padding-block: var(--spacing-16) var(--spacing-24);
+      padding-block: var(--spacing-24) var(--spacing-24);
     }
 
-    /* 48, не 64: в 7/12 колона 64 px чупи изречението на 5 реда. */
+    /* 48 в 7/12: 64 чупи изречението на 5 реда; мащабът идва от ink лентата и схемата. */
     .hero h1 {
       font-size: var(--text-2xl);
     }

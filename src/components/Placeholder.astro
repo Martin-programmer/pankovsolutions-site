@@ -1,29 +1,52 @@
 ---
-// Заместител за изображение, което още не е качено (DESIGN.md §За мен / §Изображения).
-// Не е илюстрация и не е stock: плосък блок с 1px рамка, mono етикет и текстът, който
-// описва какво ще стои тук — така при преглед се вижда и липсата, и намерението.
+// Заместител за изображение, което още не е качено (DESIGN.md §Ревизия, §Изображения).
+// „screenshot“: продуктова рамка с mono адресен ред (реалният домейн/системата от `bar`)
+// и празен панел с етикет — не гол сив правоъгълник, но и без измислени екрани.
+// „photo“: плосък блок в accent-soft с mono „снимка“.
 interface Props {
   label: string;
   caption?: string;
+  bar?: string;
   variant?: 'screenshot' | 'photo';
   ratio?: string;
   class?: string;
 }
 
-const { label, caption, variant = 'screenshot', ratio = '16 / 10', class: cls } = Astro.props;
+const { label, caption, bar, variant = 'screenshot', ratio = '16 / 10', class: cls } = Astro.props;
+const name = caption ? `${label}: ${caption}` : label;
+const barText = bar ?? caption ?? label;
+// Адресният ред е mono само за латиница (домейн/система) — mono-то няма български форми.
+const barMono = /^[\x00-\x7F]*$/.test(barText);
 ---
 
-<div
-  class:list={['ph', `ph-${variant}`, cls]}
-  style={`aspect-ratio: ${ratio}`}
-  role="img"
-  aria-label={caption ? `${label}: ${caption}` : label}
->
-  <span class="mono">{label}</span>
-  {caption && <span class="cap">{caption}</span>}
-</div>
+{
+  variant === 'screenshot' ? (
+    <div class:list={['frame ph-frame', cls]} role="img" aria-label={name}>
+      <div class:list={['frame-bar', barMono && 'mono']}>{barText}</div>
+      <div class="panel" style={`aspect-ratio: ${ratio}`}>
+        <span class="mono">{label}</span>
+        {caption && bar && <span class="cap">{caption}</span>}
+      </div>
+    </div>
+  ) : (
+    <div class:list={['ph', 'ph-photo', cls]} style={`aspect-ratio: ${ratio}`} role="img" aria-label={name}>
+      <span class="mono">{label}</span>
+      {caption && <span class="cap">{caption}</span>}
+    </div>
+  )
+}
 
 <style>
+  .panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: var(--spacing-1);
+    padding: var(--spacing-4);
+    background: var(--color-paper);
+    color: var(--color-muted);
+  }
+
   .ph {
     display: flex;
     flex-direction: column;
@@ -32,10 +55,6 @@ const { label, caption, variant = 'screenshot', ratio = '16 / 10', class: cls } 
     padding: var(--spacing-4);
     border: 1px solid var(--color-line);
     color: var(--color-ink);
-  }
-
-  .ph-screenshot {
-    background: var(--color-line);
   }
 
   .ph-photo {

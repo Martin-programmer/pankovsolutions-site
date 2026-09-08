@@ -1,0 +1,123 @@
+---
+// Системна схема за hero-то (DESIGN.md §Ревизия): реалният стек от кейсовете —
+// WooCommerce ↔ Odoo ↔ Metabase / Moodle / Telegram — върху Hetzner VPS. Inline SVG,
+// mono етикети, 1px линии; охра само за потока на данните (едно от трите движения;
+// спира при prefers-reduced-motion през глобалното правило в tokens.css).
+interface Props {
+  class?: string;
+}
+const { class: cls } = Astro.props;
+
+const nodes = [
+  { id: 'shop', x: 40, y: 60, w: 168, h: 56, title: 'WooCommerce', sub: 'магазин' },
+  { id: 'odoo', x: 232, y: 176, w: 176, h: 72, title: 'Odoo', sub: 'CRM · ERP · WMS', main: true },
+  { id: 'bi', x: 440, y: 60, w: 168, h: 56, title: 'Metabase', sub: 'BI табла' },
+  { id: 'lms', x: 440, y: 300, w: 168, h: 56, title: 'Moodle', sub: 'обучение' },
+  { id: 'tg', x: 40, y: 300, w: 168, h: 56, title: 'Telegram', sub: 'известия' },
+];
+const center = { x: 232 + 88, y: 176 + 36 };
+const edges = nodes
+  .filter((n) => !n.main)
+  .map((n) => ({ from: center, to: { x: n.x + n.w / 2, y: n.y + n.h / 2 } }));
+---
+
+<svg
+  class:list={['diagram', cls]}
+  viewBox="0 0 648 420"
+  role="img"
+  aria-labelledby="diagram-title"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <title id="diagram-title">Схема на типична система: WooCommerce, Odoo, Metabase, Moodle и Telegram на Hetzner VPS</title>
+
+  <rect class="host" x="8" y="8" width="632" height="404" />
+  <text class="host-label" x="24" y="404">Hetzner VPS · собствен сървър на клиента след приемане</text>
+
+  {edges.map((e) => <line class="edge" x1={e.from.x} y1={e.from.y} x2={e.to.x} y2={e.to.y} />)}
+  {edges.map((e) => <line class="flow" x1={e.from.x} y1={e.from.y} x2={e.to.x} y2={e.to.y} />)}
+
+  {
+    nodes.map((n) => (
+      <g class:list={['node', n.main && 'main']}>
+        <rect x={n.x} y={n.y} width={n.w} height={n.h} />
+        <text class="title" x={n.x + 16} y={n.y + (n.main ? 32 : 24)}>
+          {n.title}
+        </text>
+        <text class="sub" x={n.x + 16} y={n.y + (n.main ? 54 : 44)}>
+          {n.sub}
+        </text>
+      </g>
+    ))
+  }
+</svg>
+
+<style>
+  .diagram {
+    display: block;
+    width: 100%;
+    height: auto;
+    font-family: var(--font-mono);
+  }
+
+  .host {
+    fill: none;
+    stroke: var(--color-muted);
+    stroke-width: 1;
+    stroke-dasharray: 4 6;
+  }
+
+  .host-label {
+    fill: var(--color-line);
+    font-size: 12px;
+  }
+
+  .edge {
+    stroke: var(--color-muted);
+    stroke-width: 1;
+  }
+
+  /* Потокът: охра, движещи се тирета по линиите. */
+  .flow {
+    stroke: var(--color-accent);
+    stroke-width: 2;
+    stroke-dasharray: 6 18;
+    animation: flow 20s linear infinite;
+  }
+
+  @keyframes flow {
+    to {
+      stroke-dashoffset: -480;
+    }
+  }
+
+  .node rect {
+    fill: var(--color-ink);
+    stroke: var(--color-line);
+    stroke-width: 1;
+  }
+
+  .node.main rect {
+    fill: var(--color-paper);
+  }
+
+  .node .title {
+    fill: var(--color-paper);
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .node .sub {
+    fill: var(--color-line);
+    font-family: var(--font-body);
+    font-size: 13px;
+  }
+
+  .node.main .title {
+    fill: var(--color-ink);
+    font-size: 20px;
+  }
+
+  .node.main .sub {
+    fill: var(--color-muted);
+  }
+</style>
