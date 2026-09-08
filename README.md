@@ -14,7 +14,17 @@ npm run shot -- <url> <папка>   # скрийншоти 1440/390 (Playwright
 npm run crop -- <url> "<селектор>" <файл>
 npm run overflow -- <url> [ширина]
 npm run test:form -- http://127.0.0.1:8788 .shots   # формата: грешки по поле, успех (срещу dev:functions)
+npm run serve:dist                                   # dist/ с компресия на 127.0.0.1:4177 — за одитите по-долу
+npm run audit:lh                                     # Lighthouse CI, mobile, 6 URL, праг 95 (lighthouserc.cjs)
+npm run audit:a11y                                   # pa11y-ci, axe + htmlcs, WCAG 2.2 AA (.pa11yci.json)
+npm run audit:js                                     # JS на страница, бюджет 60 KB gzip
 ```
+
+Одитите са на порт 4177 и през `127.0.0.1` нарочно: забравен `astro dev` слуша на `[::1]:4321`
+и `localhost:4321` отива при него — тогава Lighthouse мери dev toolbar-а (perf ~56).
+В `.pa11yci.json` `hideElements: "svg.diagram"` — axe не чете `fill`/фон на SVG текст и
+докладва фалшив контраст за етикетите на схемата (реално 5,9–14:1); схемата е `role="img"`
+с `<title>`.
 
 ## Форма – настройка
 

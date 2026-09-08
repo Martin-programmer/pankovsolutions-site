@@ -46,7 +46,9 @@ const edges = nodes
 >
   <title id="diagram-title">Схема на типична система: WooCommerce, Odoo, Metabase, Moodle и Telegram на Hetzner VPS</title>
 
-  <text class="host-label" x="48" y="418">Hetzner VPS · собствен сървър на клиента след приемане</text>
+  <!-- Текстовете са aria-hidden: достъпното име е <title>; axe няма как да сметне фон
+       за SVG текст и иначе докладва фалшив контраст. -->
+  <text class="host-label" x="48" y="418" aria-hidden="true">Hetzner VPS · собствен сървър на клиента след приемане</text>
 
   {edges.map((e) => <path id={e.id} class="edge" d={e.d} />)}
 
@@ -64,7 +66,7 @@ const edges = nodes
 
   {
     nodes.map((n) => (
-      <g class:list={['node', n.main && 'main']}>
+      <g class:list={['node', n.main && 'main']} aria-hidden="true">
         <rect x={n.x} y={n.y} width={n.w} height={n.h} rx="14" />
         <text class="title" x={n.x + 20} y={n.y + 32}>
           {n.title}

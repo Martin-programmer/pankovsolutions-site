@@ -1,6 +1,8 @@
-// Lighthouse CI срещу `npm run preview` (localhost:4321), mobile емулация (по подразбиране).
+// Lighthouse CI срещу `npm run serve:dist` (127.0.0.1:4177, serve с компресия), mobile
+// емулация. Порт 4177 и 127.0.0.1 нарочно: `localhost:4321` може да отиде при забравен
+// `astro dev` на [::1] и одитът да мери dev toolbar-а.
 // Пускане: npm run audit:lh   (отчетите са в .lighthouseci/, gitignore-нати)
-const base = process.env.LHCI_BASE ?? 'http://localhost:4321';
+const base = process.env.LHCI_BASE ?? 'http://127.0.0.1:4177';
 
 module.exports = {
   ci: {
