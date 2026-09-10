@@ -98,6 +98,14 @@ async function sendTelegram(token: string, chatId: string, text: string) {
   if (!res.ok) throw new Error(`Telegram ${res.status}: ${await res.text()}`);
 }
 
+// Telegram няма DPA и не е в ЕС (docs/09) - там отива само „има запитване“, без имейл/телефон/текст/IP.
+function telegramText(locale: Locale, d: Inquiry): string {
+  const typeLabel = t(locale, `form.type.${d.type}` as keyof (typeof ui)['bg']);
+  return [`Ново запитване: ${d.name}`, d.company ? `Фирма: ${d.company}` : null, `Вид: ${typeLabel}`, 'Подробностите са в пощата.']
+    .filter((line) => line !== null)
+    .join(String.fromCharCode(10));
+}
+
 function notificationText(locale: Locale, d: Inquiry, ip: string): string {
   const typeLabel = t(locale, `form.type.${d.type}` as keyof (typeof ui)['bg']);
   return [
@@ -226,7 +234,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   // Telegram е известие, не условие: ако падне, запитването вече е в пощата.
   if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) {
     try {
-      await sendTelegram(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, notify);
+      await sendTelegram(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, telegramText(locale, data));
     } catch (err) {
       console.error('[inquiry] telegram failed', err);
     }
