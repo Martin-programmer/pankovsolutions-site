@@ -132,8 +132,9 @@ const year = new Date().getFullYear();
 
   /* = --breakpoint-md в tokens.css */
   @media (min-width: 48rem) {
+    /* Колоните са 2 или 3 (езиците се показват само при ≥ 2 езика) — решетката следва броя. */
     .cols {
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
       gap: var(--spacing-12);
     }
   }
