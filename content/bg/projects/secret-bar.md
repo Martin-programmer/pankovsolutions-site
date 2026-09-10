@@ -7,8 +7,8 @@ services: ["Приложение по поръчка"]
 stack: ["Next.js 15", "Supabase", "PWA"]
 year: 2025          # TODO
 duration: "<!-- TODO -->"
-featured: false
-order: 4
+featured: true
+order: 2
 images:
   - src: /img/projects/secret-bar/loyalty.png      # TODO: скрийншот от app.secretpleven.com
     alt: "Екран с точки и награди в приложението на Secret Bar"

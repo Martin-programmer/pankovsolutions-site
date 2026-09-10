@@ -106,7 +106,7 @@
      затова компонентите пишат `@media (min-width: 48rem)` с коментар към този токен. */
   --breakpoint-md: 48rem;
   /* Лога на клиенти: DESIGN.md §Изображения — 28 px, естествен цвят, по baseline. */
-  --logo-height: 28px;
+  --logo-height: 36px;
 }
 
 :root {

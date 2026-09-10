@@ -34,7 +34,6 @@ description: "Одобрен проект за дигитализация, а т
 ## Изпълнени проекти по програми
 
 - [Домоуправител България – Odoo CRM + Moodle LMS →](/projects/domoupravitel-bulgaria)
-- [КИВИ-ТВ – Odoo CRM + Metabase BI →](/projects/kivi-tv)
 - [Досев Импекс – онлайн магазин с конфигуратор (в изпълнение) →](/projects/dosev-impex)
 
 ## За консултанти

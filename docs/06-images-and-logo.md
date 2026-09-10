@@ -17,17 +17,15 @@
 |---|------|------------------------|
 | 1 | `img/projects/domoupravitel/odoo-crm.png` | Odoo CRM – табло с възможности по етапи (kanban). **Това е и hero кадърът на началната.** |
 | 2 | `img/projects/domoupravitel/moodle-course.png` | Moodle – курс за служители с тест |
-| 3 | `img/projects/kivi-tv/metabase-dashboard.png` | Metabase – табло с продажби по клиент и период |
 | 4 | `img/projects/stegi-store/home.png` | stegi.store – начална страница |
 | 5 | `img/projects/stegi-store/product.png` | Продуктова страница на акумулатор с характеристики |
 | 6 | `img/projects/dosev-impex/configurator.png` | Конфигуратор за параван – стъпка с избор на размери и стъкло (когато е готов) |
 | 7 | `img/projects/secret-bar/loyalty.png` | app.secretpleven.com – екран с точки и награди |
 | 8 | `img/projects/secret-bar/venue.jpg` | Реална снимка от заведението (JPG, 16:10, 2400 × 1500, ≤ 350 KB) |
-| 9 | `img/projects/ksg-brand/hero.png` | YOUR.BRAND.READY. – начален екран на продажбената страница |
 | 10 | `img/projects/infralink/home.png` | infralink-de.com – начална страница |
 | 11 | `img/projects/her-harmony-glow/home.png` | herharmonyglow.com – начална страница след миграцията |
 
-Приоритет: 1, 3, 4 (те са на началната като избрани проекти), после останалите.
+Приоритет: 1, 4, 7 – Odoo CRM, stegi.store, Secret Bar (те са на началната като избрани проекти), после останалите.
 
 ## 2. Портрет
 
@@ -44,11 +42,9 @@
 | Файл | Клиент |
 |------|--------|
 | `img/clients/domoupravitel.svg` | Домоуправител България ООД |
-| `img/clients/kivi-tv.svg` | КИВИ-ТВ ООД |
 | `img/clients/dosev-impex.svg` | Досев Импекс ЕООД |
 | `img/clients/stegi-store.svg` | stegi.store |
 | `img/clients/secret-bar.svg` | Secret Bar |
-| `img/clients/ksg-brand.svg` | KSG Brand |
 | `img/clients/infralink.svg` | INFRALINK UG |
 | `img/clients/eco-globe.svg` | Еко Глоуб ООД (партньор – блокът „Партньор“ на /about и /for-beneficiaries) |
 
