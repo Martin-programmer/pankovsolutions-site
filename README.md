@@ -52,7 +52,8 @@ Cloudflare вече не предлага Pages за нови акаунти - �
 4. **Build-time** променливи (четат се при `npm run build`): Worker → Settings → **Build** →
    Variables and secrets: `TURNSTILE_SITE_KEY`, `UMAMI_URL`, `UMAMI_WEBSITE_ID`.
    **Runtime** секрети (четат се от формата): Worker → Settings → **Variables and Secrets**:
-   `TURNSTILE_SECRET`, `RESEND_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (тип Secret).
+   `TURNSTILE_SECRET`, `RESEND_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (тип Secret);
+   по избор `NOTIFY_TO` (Text) - имейл, на който идват запитванията, ако не е `hello@`.
 5. Preview: всеки push към клон различен от `main` се build-ва с `X-Robots-Tag: noindex`
    (`scripts/headers.mjs`, `WORKERS_CI_BRANCH`).
 
@@ -117,8 +118,7 @@ curl -s -X POST http://localhost:8788/api/inquiry -H "accept: application/json" 
    → `TELEGRAM_CHAT_ID`.
 4. Проверка: `https://api.telegram.org/bot<TOKEN>/sendMessage?chat_id=<ID>&text=test`.
 
-Telegram получава само „ново запитване: име, фирма, вид“ (docs/09 - без DPA); пълният текст е в
-пощата. Ако падне, функцията пак връща успех.
+Telegram получава цялото запитване (решение на Марти). Ако падне, функцията пак връща успех.
 
 ### 5. KV namespace за rate limit
 
@@ -149,6 +149,7 @@ Telegram получава само „ново запитване: име, фи�
 | `TURNSTILE_SECRET` | Worker → Variables and Secrets / `.dev.vars` | siteverify |
 | `RESEND_API_KEY` | Worker → Variables and Secrets / `.dev.vars` | изпращане на имейли |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Worker → Variables and Secrets / `.dev.vars` | известие |
+| `NOTIFY_TO` | Worker → Variables and Secrets | къде идват запитванията (по подразбиране hello@) |
 | `INQUIRY_RL` | `wrangler.toml` → kv_namespaces (id от Dashboard → KV) | rate limit |
 | `INQUIRY_MOCK` | само `.dev.vars` | `1` = не праща, логва |
 | `UMAMI_URL`, `UMAMI_WEBSITE_ID` | Worker → Build → Variables / `.env` | аналитика; без тях няма скрипт |

@@ -13,6 +13,8 @@ interface Env {
   TURNSTILE_SECRET?: string;
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHAT_ID?: string;
+  // Къде отива известието за запитване; по подразбиране company.email (hello@).
+  NOTIFY_TO?: string;
   INQUIRY_RL?: KVNamespace;
   INQUIRY_MOCK?: string;
 }
@@ -96,14 +98,6 @@ async function sendTelegram(token: string, chatId: string, text: string) {
     body: JSON.stringify({ chat_id: chatId, text }),
   });
   if (!res.ok) throw new Error(`Telegram ${res.status}: ${await res.text()}`);
-}
-
-// Telegram няма DPA и не е в ЕС (docs/09) - там отива само „има запитване“, без имейл/телефон/текст/IP.
-function telegramText(locale: Locale, d: Inquiry): string {
-  const typeLabel = t(locale, `form.type.${d.type}` as keyof (typeof ui)['bg']);
-  return [`Ново запитване: ${d.name}`, d.company ? `Фирма: ${d.company}` : null, `Вид: ${typeLabel}`, 'Подробностите са в пощата.']
-    .filter((line) => line !== null)
-    .join(String.fromCharCode(10));
 }
 
 function notificationText(locale: Locale, d: Inquiry, ip: string): string {
@@ -217,7 +211,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   }
   try {
     await sendResend(env.RESEND_API_KEY, {
-      to: company.email,
+      to: env.NOTIFY_TO?.trim() || company.email,
       subject: t('bg', 'mail.notify.subject', { name: data.name }),
       text: notify,
       replyTo: data.email,
@@ -231,10 +225,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     console.error('[inquiry] resend failed', err);
     return fail(502, 'error.generic');
   }
-  // Telegram е известие, не условие: ако падне, запитването вече е в пощата.
+  // Telegram получава цялото запитване (решение на Марти, 10.09.2026; описано в privacy.md).
+  // Известие, не условие: ако падне, запитването вече е в пощата.
   if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) {
     try {
-      await sendTelegram(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, telegramText(locale, data));
+      await sendTelegram(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, notify);
     } catch (err) {
       console.error('[inquiry] telegram failed', err);
     }
