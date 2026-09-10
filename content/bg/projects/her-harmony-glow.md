@@ -1,6 +1,6 @@
 ---
 title: "Миграция на herharmonyglow.com от CloudCart към WooCommerce"
-result: "Магазин, преместен от затворена платформа на собствен WordPress/WooCommerce без загуба на продукти"
+result: "Магазин, преместен от затворена платформа на собствен WordPress + WooCommerce без загуба на продукти"
 client: "Her Harmony Glow"
 industry: "Козметика / онлайн търговия"
 services: ["Онлайн магазин", "Миграция на данни"]

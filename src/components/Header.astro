@@ -1,4 +1,5 @@
 ---
+import { getCollection } from 'astro:content';
 import { company } from '../data/company';
 import { languages, locales } from '../i18n/ui';
 import { alternateUrl, localeUrl, useTranslations, type Locale } from '../i18n/utils';
@@ -21,6 +22,11 @@ const nav = [
 const pathname = Astro.url.pathname;
 const alt = alternateUrl(locale, pathname);
 const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+
+// Превключвателят показва EN само когато има EN съдържание в content/ - иначе линкът води
+// към 404 (Base.astro прави същото за hreflang).
+const hasEn = (await getCollection('pages', (e) => e.id.startsWith('en/'))).length > 0;
+const shownLocales = locales.filter((code) => code === locale || hasEn);
 ---
 
 <header class="site-header">
@@ -54,7 +60,7 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
         </li>
         <li class="nav-lang">
           {
-            locales.map((code, i) => (
+            shownLocales.map((code, i) => (
               <>
                 {i > 0 && <span aria-hidden="true"> · </span>}
                 {code === locale ? (
