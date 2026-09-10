@@ -16,7 +16,8 @@ interface Props {
 const { locale, variant = 'short', successText } = Astro.props;
 const t = useTranslations(locale);
 const id = (name: string) => `inquiry-${variant}-${name}`;
-const siteKey = import.meta.env.TURNSTILE_SITE_KEY as string | undefined;
+// process.env първо: в Workers Builds променливите са в process.env, не в .env файл.
+const siteKey = (process.env.TURNSTILE_SITE_KEY ?? import.meta.env.TURNSTILE_SITE_KEY ?? '') as string;
 const success = successText ?? t('form.success');
 
 const types = ['erp', 'eu', 'shop', 'app', 'other'] as const;
@@ -169,21 +170,26 @@ const types = ['erp', 'eu', 'shop', 'app', 'other'] as const;
     };
 
     const showErrors = (reply: Reply) => {
+      // Грешка за поле, което го няма в тази форма (напр. turnstile без виджет), отива в
+      // общото съобщение - иначе потребителят не вижда нищо.
+      const orphan: string[] = [];
       for (const [name, text] of Object.entries(reply.errors ?? {})) {
         const p = form.querySelector<HTMLElement>(`.error[id$="-${name}-error"]`);
         const input = form.querySelector<HTMLElement>(`[name="${name}"]`);
         if (p) {
           p.textContent = text;
           p.hidden = false;
+        } else {
+          orphan.push(text);
         }
         input?.setAttribute('aria-invalid', 'true');
       }
       // Фокус на първото невалидно поле по реда в DOM, не по реда на сървъра.
       const first = form.querySelector<HTMLElement>('[aria-invalid="true"]');
-      // Общото съобщение само когато няма грешки по поле (мрежа, Turnstile, лимит).
-      const hasFieldErrors = Object.keys(reply.errors ?? {}).length > 0;
-      if (status && !hasFieldErrors) {
-        status.textContent = reply.message ?? form.dataset.errorNetwork ?? '';
+      // Общото съобщение: когато няма грешки по поле (мрежа, лимит) или грешката е без поле.
+      const shown = Object.keys(reply.errors ?? {}).length - orphan.length;
+      if (status && (shown === 0 || orphan.length)) {
+        status.textContent = orphan[0] ?? reply.message ?? form.dataset.errorNetwork ?? '';
         status.hidden = false;
       }
       (first ?? status)?.focus?.();

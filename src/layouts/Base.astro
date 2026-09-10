@@ -46,8 +46,8 @@ const hasEn = enIds.has(contentKey) || (contentKey === 'projects' && [...enIds].
 
 // Umami (без бисквитки, docs/09): скриптът влиза само когато при build има UMAMI_URL и
 // UMAMI_WEBSITE_ID (Pages → Environment variables). CSP-то го допуска през scripts/headers.mjs.
-const umamiUrl = (import.meta.env.UMAMI_URL ?? '').replace(/\/+$/, '');
-const umamiId = import.meta.env.UMAMI_WEBSITE_ID ?? '';
+const umamiUrl = (process.env.UMAMI_URL ?? import.meta.env.UMAMI_URL ?? '').replace(/\/+$/, '');
+const umamiId = process.env.UMAMI_WEBSITE_ID ?? import.meta.env.UMAMI_WEBSITE_ID ?? '';
 const umami = umamiUrl && umamiId ? { src: `${umamiUrl}/script.js`, id: umamiId } : null;
 
 const ogSlugs = new Set((await ogPages()).map((p) => p.slug));
