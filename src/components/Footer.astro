@@ -61,6 +61,7 @@ const year = new Date().getFullYear();
         </ul>
       </nav>
 
+      {shownLocales.length > 1 && (
       <section aria-labelledby="footer-languages">
         <h2 id="footer-languages" class="col-title">{t('footer.languages')}</h2>
         <ul>
@@ -95,6 +96,7 @@ const year = new Date().getFullYear();
         }
         <!-- TODO: Марти да даде: LinkedIn, GitHub и Google Business Profile URL в src/data/company.ts — дотогава блокът е празен. -->
       </section>
+      )}
     </div>
 
     <!-- Mono само за „© година ФИРМА“ (главни букви и цифри — без разлика в кирилските форми);

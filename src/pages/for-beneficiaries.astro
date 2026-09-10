@@ -254,8 +254,9 @@ for (const [i, s] of raw.entries()) {
     inset: 0;
   }
 
+  /* Плочката е бяла — hover в surface би бил невидим; paper е следващият тон от палитрата. */
   .programs tbody tr:hover {
-    background: var(--color-surface);
+    background: var(--color-paper);
   }
 
   .programs tbody tr:hover .client a {
@@ -321,8 +322,10 @@ for (const [i, s] of raw.entries()) {
       grid-row: 1;
     }
 
+    /* 48 px, не 64: заглавието е цяло изречение в 8/12 колони — на 64 px става 5 реда и
+       е по-високо от целия увод. Същият размер като h1 на кейсовете. */
     h1 {
-      font-size: var(--text-3xl);
+      font-size: var(--text-2xl);
     }
 
     section {

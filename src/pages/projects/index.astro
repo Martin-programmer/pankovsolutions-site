@@ -30,6 +30,8 @@ const featuredSizes = await Promise.all(
 // колекцията); ако файлът липсва — етикетът от навигацията и без description.
 const page = await getEntry('pages', 'bg/projects');
 const title = page?.data.title ?? `${t('nav.projects')} - ${company.brand}`;
+// Mono в адресния ред само за латиница (mono шрифтът няма български форми).
+const isLatin = (text: string) => /^[\x00-\x7F]*$/.test(text);
 ---
 
 <Base title={title} description={page?.data.description} locale={locale}>
@@ -44,17 +46,21 @@ const title = page?.data.title ?? `${t('nav.projects')} - ${company.brand}`;
           const href = hrefOf(p.id);
           return (
             <article class="card tile tile-surface reveal">
-              <a class="media figure" href={href} tabindex="-1" aria-hidden="true">
+              <a class="media frame-link" href={href} tabindex="-1" aria-hidden="true">
                 {img && size ? (
-                  <img
-                    class="shot"
-                    src={img.src}
-                    alt=""
-                    width={size.width}
-                    height={size.height}
-                    loading={i === 0 ? 'eager' : 'lazy'}
-                    fetchpriority={i === 0 ? 'high' : undefined}
-                  />
+                  <div class="frame">
+                    <!-- Същата продуктова рамка като на началната: адресен ред = името на екрана. -->
+                    <div class:list={['frame-bar', isLatin(img.alt) && 'mono']}>{img.alt}</div>
+                    <img
+                      class="frame-body"
+                      src={img.src}
+                      alt=""
+                      width={size.width}
+                      height={size.height}
+                      loading={i === 0 ? 'eager' : 'lazy'}
+                      fetchpriority={i === 0 ? 'high' : undefined}
+                    />
+                  </div>
                 ) : (
                   <Placeholder label={t('placeholder.screenshot')} caption={img?.alt} ratio="16 / 10" />
                 )}
@@ -235,8 +241,9 @@ const title = page?.data.title ?? `${t('nav.projects')} - ${company.brand}`;
     inset: 0;
   }
 
+  /* Плочката е бяла — hover в surface би бил невидим; paper е следващият тон от палитрата. */
   .archive tbody tr:hover {
-    background: var(--color-surface);
+    background: var(--color-paper);
   }
 
   .archive tbody tr:hover .client a {

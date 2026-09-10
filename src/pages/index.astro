@@ -244,7 +244,8 @@ const jsonLd = {
                 <a class="media frame-link" href={href} tabindex="-1" aria-hidden="true">
                   {img && size ? (
                     <div class="frame">
-                      <div class:list={['frame-bar', isLatin(p.data.client) && 'mono']}>{p.data.client}</div>
+                      <!-- Адресният ред е името на екрана/системата (alt); клиентът е в .meta до заглавието. -->
+                      <div class:list={['frame-bar', isLatin(img.alt) && 'mono']}>{img.alt}</div>
                       <img class="frame-body" src={img.src} alt="" width={size.width} height={size.height} loading="lazy" />
                     </div>
                   ) : (
@@ -483,8 +484,11 @@ const jsonLd = {
     list-style: none;
   }
 
+  /* align-content: start — иначе в двете половинки редовете се разтягат по височината на
+     по-високата плочка и заглавието на по-късата пада с ~60 px под съседното. */
   .services li {
     display: grid;
+    align-content: start;
     gap: var(--spacing-4);
   }
 
@@ -672,7 +676,9 @@ const jsonLd = {
       font-size: var(--text-2xl);
     }
 
-    .services li:first-child h3 {
+    /* Двете широки плочки са на едно ниво: еднакъв номер, еднакво заглавие. */
+    .services li:first-child h3,
+    .services li:nth-child(4) h3 {
       font-size: var(--text-xl);
     }
 

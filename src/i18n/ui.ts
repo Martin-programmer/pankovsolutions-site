@@ -13,6 +13,7 @@ export const languages: Record<Locale, { label: string; name: string }> = {
 const bg = {
   'skip': 'Към съдържанието',
   'menu': 'Меню',
+  'menu.close': 'Затвори',
   'nav.label': 'Основна навигация',
   'nav.projects': 'Портфолио',
   'nav.services': 'Услуги',
@@ -106,6 +107,7 @@ export type UiKey = keyof typeof bg;
 const en: Record<UiKey, string> = {
   'skip': 'Skip to content',
   'menu': 'Menu',
+  'menu.close': 'Close',
   'nav.label': 'Main navigation',
   'nav.projects': 'Portfolio',
   'nav.services': 'Services',

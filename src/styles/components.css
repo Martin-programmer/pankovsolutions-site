@@ -284,16 +284,9 @@ a:hover > .frame,
   font-size: var(--text-xs);
 }
 
-/* Изображение в плоска рамка с надпис (alt) под него. */
+/* Фигура: продуктова рамка (.frame) с надпис (alt) под нея. */
 .figure {
   margin: 0;
-}
-
-.figure .shot {
-  display: block;
-  width: 100%;
-  height: auto;
-  border: 1px solid var(--color-line);
 }
 
 .figure figcaption {

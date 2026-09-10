@@ -37,7 +37,14 @@ const shownLocales = locales.filter((code) => code === locale || hasEn);
       <img src="/img/logo.webp" alt={company.brand} width="284" height="96" />
     </a>
 
-    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-nav-list">
+    <button
+      class="menu-btn"
+      type="button"
+      aria-expanded="false"
+      aria-controls="site-nav-list"
+      data-label-open={t('menu')}
+      data-label-close={t('menu.close')}
+    >
       {t('menu')}
     </button>
 
@@ -58,6 +65,8 @@ const shownLocales = locales.filter((code) => code === locale || hasEn);
         <li class="nav-cta">
           <a class="btn" href={localeUrl(locale, '/contact')}>{t('cta.inquiry')}</a>
         </li>
+        <!-- Превключвателят има смисъл само при два езика; сам „BG“ е мъртъв елемент. -->
+        {shownLocales.length > 1 && (
         <li class="nav-lang">
           {
             shownLocales.map((code, i) => (
@@ -76,6 +85,7 @@ const shownLocales = locales.filter((code) => code === locale || hasEn);
             ))
           }
         </li>
+        )}
       </ul>
     </nav>
   </div>
@@ -96,7 +106,9 @@ const shownLocales = locales.filter((code) => code === locale || hasEn);
   const list = document.getElementById('site-nav-list');
 
   function setOpen(open: boolean) {
-    btn?.setAttribute('aria-expanded', String(open));
+    if (!btn) return;
+    btn.setAttribute('aria-expanded', String(open));
+    btn.textContent = (open ? btn.dataset.labelClose : btn.dataset.labelOpen) ?? btn.textContent;
     list?.toggleAttribute('data-open', open);
   }
 
@@ -154,9 +166,13 @@ const shownLocales = locales.filter((code) => code === locale || hasEn);
   }
 
   /* 40 px на мобилно, 48 px на десктоп; ширината следва от пропорцията на файла (284:96). */
+  /* Вертикален padding + отрицателен margin: зона за докосване 48 px (логото е 40 px на
+     мобилно), без да мести реда. */
   .brand {
     display: block;
     line-height: 0;
+    padding-block: var(--spacing-1);
+    margin-block: calc(-1 * var(--spacing-1));
   }
 
   .brand img {
