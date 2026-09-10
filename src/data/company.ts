@@ -12,7 +12,7 @@ export const company = {
   phone: '+359 877 944 224',
   phoneHref: 'tel:+359877944224',
   email: 'hello@pankovsolutions.com',
-  vat: null as string | null, // TODO: Марти да даде: ДДС №, ако има регистрация
+  vat: 'BG208242979',
   linkedin: null as string | null, // TODO: Марти да даде: LinkedIn URL
   github: null as string | null, // TODO: Марти да даде: GitHub URL
   google: null as string | null, // TODO: Марти да даде: Google Business Profile URL (CHECKLIST §C)
