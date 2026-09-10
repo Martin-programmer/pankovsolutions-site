@@ -10,7 +10,7 @@
     "dev": "astro dev",
     "build": "astro build && node scripts/headers.mjs",
     "preview": "astro preview",
-    "dev:functions": "wrangler pages dev dist --kv INQUIRY_RL --port 8788",
+    "dev:functions": "wrangler dev --port 8788",
     "check": "astro check",
     "shot": "node scripts/screenshot.mjs",
     "overflow": "node scripts/overflow.mjs",

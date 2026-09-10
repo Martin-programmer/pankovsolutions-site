@@ -14,7 +14,7 @@
 - i18n: вграденият Astro i18n routing. `bg` е default без префикс (`/проекти` → използвай
   латински slug-ове: `/projects`, `/services` — еднакви за двата езика), `en` под `/en/`.
   hreflang + `x-default` на всяка страница, самореферентни.
-- Хостинг: Cloudflare Pages. Формата: `functions/api/inquiry.ts` (Pages Function).
+- Хостинг: Cloudflare Workers със статични файлове (`wrangler.toml`, `worker/index.ts`). Формата: `functions/api/inquiry.ts`, извикван от Worker-а на POST /api/inquiry.
 - Форма pipeline: honeypot → timing (< 3 s = spam) → rate limit (KV, 5/час/IP) →
   Cloudflare Turnstile `siteverify` → Zod → Resend (from `hello@pankovsolutions.com`,
   reply-to подателя) → email до `hello@` + Telegram бот → автоотговор до подателя.

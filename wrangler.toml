@@ -1,5 +1,22 @@
-# Cloudflare Pages. Секретите и KV binding-ът INQUIRY_RL се задават в Dashboard →
-# Pages → Settings (виж README.md §Форма - настройка); локално — .dev.vars и --kv.
+# Cloudflare Worker със статични файлове (Workers Builds: build `npm run build`, deploy
+# `npx wrangler deploy`). Секретите (TURNSTILE_SECRET, RESEND_API_KEY, TELEGRAM_*) се задават
+# в Dashboard → Worker → Settings → Variables and Secrets, НЕ тук. Build-time променливите
+# (TURNSTILE_SITE_KEY, UMAMI_URL, UMAMI_WEBSITE_ID) — в Settings → Build → Variables.
+# Локално: .dev.vars (виж README.md §Форма - настройка).
 name = "pankovsolutions-site"
+main = "worker/index.ts"
 compatibility_date = "2026-09-03"
-pages_build_output_dir = "dist"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "404-page"
+
+# Rate limit на формата (5/час на IP). Създай KV namespace „inquiry-rate-limit“ в
+# Dashboard → Storage & Databases → KV и сложи id-то тук (README §5).
+[[kv_namespaces]]
+binding = "INQUIRY_RL"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+[observability]
+enabled = true

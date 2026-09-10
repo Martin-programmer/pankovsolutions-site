@@ -5,10 +5,10 @@
 в `CHECKLIST.md`. Съдържанието е в `content/bg/` (източник на истината) и `content/en/`.
 
 ```
-npm run dev            # Astro dev сървър (без формата — тя е Pages Function)
+npm run dev            # Astro dev сървър (без формата — тя е в Worker-а)
 npm run build          # production build в dist/
 npm run preview        # сервира dist/
-npm run dev:functions  # wrangler pages dev: dist/ + functions/ на http://localhost:8788
+npm run dev:functions  # wrangler dev: dist/ + worker/ (формата) на http://localhost:8788
 npm run check          # astro check
 npm run shot -- <url> <папка>   # скрийншоти 1440/390 (Playwright през Edge)
 npm run crop -- <url> "<селектор>" <файл>
@@ -29,23 +29,42 @@ npm run audit:js                                     # JS на страница,
 ## Форма - настройка
 
 Формата за запитване (`src/components/InquiryForm.astro`) праща POST към `/api/inquiry` —
-Cloudflare Pages Function в `functions/api/inquiry.ts`. Ред на обработка: honeypot → timing
+обработва се в `functions/api/inquiry.ts`, извикван от Worker-а `worker/index.ts` (сайтът е
+Cloudflare Worker със статични файлове от `dist/`; `wrangler.toml`). Ред на обработка: honeypot → timing
 (под 3 s) → rate limit (KV, 5 на час на IP) → Turnstile → Zod → Resend (известие до
 `hello@` + автоотговор) → Telegram → отговор. Работи и без JavaScript (303 към
 `/contact/sent` или `/contact/error`).
 
-Секретите живеят **само** в Cloudflare (Pages → Settings → Environment variables) и локално в
+Секретите живеят **само** в Cloudflare (Worker → Settings → Variables and Secrets) и локално в
 `.dev.vars` (в `.gitignore`). Никога в repo-то.
+
+### 0. Cloudflare Worker от GitHub (Workers Builds)
+
+Cloudflare вече не предлага Pages за нови акаунти - сайтът е **Worker със статични файлове**
+(`wrangler.toml`: `main = worker/index.ts`, `assets.directory = ./dist`).
+
+1. Dashboard → Compute (Workers & Pages) → **Create application** → **Import a repository**
+   (Connect to Git) → GitHub → `Martin-programmer/pankovsolutions-site`.
+2. Build settings: Build command `npm run build`, Deploy command `npx wrangler deploy`
+   (по подразбиране), Root directory `/`. Save and Deploy.
+3. Custom domain: Worker → Settings → Domains & Routes → **Add** → `pankovsolutions.com`
+   (и `www`). Домейнът трябва да е в Cloudflare DNS.
+4. **Build-time** променливи (четат се при `npm run build`): Worker → Settings → **Build** →
+   Variables and secrets: `TURNSTILE_SITE_KEY`, `UMAMI_URL`, `UMAMI_WEBSITE_ID`.
+   **Runtime** секрети (четат се от формата): Worker → Settings → **Variables and Secrets**:
+   `TURNSTILE_SECRET`, `RESEND_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (тип Secret).
+5. Preview: всеки push към клон различен от `main` се build-ва с `X-Robots-Tag: noindex`
+   (`scripts/headers.mjs`, `WORKERS_CI_BRANCH`).
 
 ### 1. Локално, без ключове (mock)
 
 ```
 npm run build
 copy .dev.vars.example .dev.vars      # съдържа INQUIRY_MOCK=1
-npm run dev:functions                 # http://localhost:8788/contact
+npm run dev:functions                 # wrangler dev → http://localhost:8788/contact
 ```
 
-С `INQUIRY_MOCK=1` функцията валидира всичко, но не праща нищо — payload-ът се появява в
+С `INQUIRY_MOCK=1` функцията валидира всичко, но не праща нищо - payload-ът се появява в
 конзолата на wrangler. Turnstile се прескача, а виджетът не се рендерира, защото при build
 няма `TURNSTILE_SITE_KEY`.
 
@@ -59,16 +78,15 @@ curl -s -X POST http://localhost:8788/api/inquiry -H "accept: application/json" 
 
 ### 2. Cloudflare Turnstile
 
-1. Cloudflare Dashboard → Turnstile → **Add site**: домейн `pankovsolutions.com` (за preview
-   деплойте добави и `*.pages.dev`), widget mode **Managed**.
+1. Dashboard → Turnstile → **Add widget**: домейн `pankovsolutions.com` (добави и
+   `*.workers.dev` за preview), widget mode **Managed**.
 2. Копирай **Site key** и **Secret key**.
-3. Pages → проекта → Settings → Environment variables:
-   - `TURNSTILE_SITE_KEY` = site key (Production и Preview) — чете се при build и влиза в HTML-а;
-   - `TURNSTILE_SECRET` = secret key (**Encrypt**).
+3. `TURNSTILE_SITE_KEY` → Worker → Settings → Build → Variables (влиза в HTML-а при build);
+   `TURNSTILE_SECRET` → Worker → Settings → Variables and Secrets (Secret).
 4. Локално: `TURNSTILE_SITE_KEY` в `.env` (за `npm run build`), `TURNSTILE_SECRET` в `.dev.vars`.
 
 Виджетът (`<div class="cf-turnstile">` + `challenges.cloudflare.com/turnstile/v0/api.js`) е
-единственият external скрипт на сайта и се зарежда само на страници с форма.
+единственият external скрипт освен Umami и се зарежда само на страници с форма.
 
 ### 3. Resend + верификация на домейна (SPF/DKIM/DMARC)
 
@@ -82,31 +100,32 @@ curl -s -X POST http://localhost:8788/api/inquiry -H "accept: application/json" 
    - **DMARC**: `TXT` `_dmarc` → `v=DMARC1; p=quarantine; rua=mailto:hello@pankovsolutions.com; adkim=s; aspf=s`
      (започни с `p=none` за 1-2 седмици, после `quarantine`).
 3. Изчакай **Verified** в Resend, после **API Keys → Create**: permission *Sending access*,
-   domain `pankovsolutions.com`. Ключът → `RESEND_API_KEY` (Encrypt) в Pages и в `.dev.vars`.
-4. Тест на репутацията: прати през формата до адрес от mail-tester.com — цел ≥ 9/10
-   (CHECKLIST §D).
+   domain `pankovsolutions.com`. Ключът → `RESEND_API_KEY` (Secret) в Worker-а и в `.dev.vars`.
+4. Пощенската кутия `hello@pankovsolutions.com` трябва да съществува (получава запитванията):
+   най-лесно Cloudflare → Email → **Email Routing** → препращане към личен имейл.
+5. Тест на репутацията: прати през формата до адрес от mail-tester.com - цел над 9/10.
 
 Известията идват от `Pankov Solutions <hello@pankovsolutions.com>` с `reply-to` подателя;
-автоотговорът е с текста от COPY.md §Микрокопи (`src/i18n/ui.ts`, `mail.autoreply.*`).
+автоотговорът е с текста от `src/i18n/ui.ts` (`mail.autoreply.*`).
 
 ### 4. Telegram бот
 
 1. В Telegram → **@BotFather** → `/newbot` → име и username (напр. `pankov_inquiries_bot`).
-   BotFather връща **token** → `TELEGRAM_BOT_TOKEN` (Encrypt).
+   BotFather връща **token** → `TELEGRAM_BOT_TOKEN` (Secret).
 2. Отвори чат с бота и му прати каквото и да е (иначе не може да ти пише).
 3. Вземи **chat id**: `https://api.telegram.org/bot<TOKEN>/getUpdates` → `message.chat.id`
    → `TELEGRAM_CHAT_ID`.
 4. Проверка: `https://api.telegram.org/bot<TOKEN>/sendMessage?chat_id=<ID>&text=test`.
 
-Telegram е известие, не условие: ако падне, запитването вече е в пощата и функцията връща успех.
+Telegram получава само „ново запитване: име, фирма, вид“ (docs/09 - без DPA); пълният текст е в
+пощата. Ако падне, функцията пак връща успех.
 
-### 5. KV binding за rate limit
+### 5. KV namespace за rate limit
 
-1. Cloudflare → Workers & Pages → **KV** → Create namespace: `inquiry-rate-limit`.
-2. Pages → проекта → Settings → **Bindings → KV namespace**: variable name **`INQUIRY_RL`**,
-   namespace `inquiry-rate-limit` (за Production и Preview).
-3. Локално `npm run dev:functions` подава `--kv INQUIRY_RL` (локален in-memory namespace).
-   Без binding функцията прескача rate limit-а и го логва.
+1. Dashboard → Storage & Databases → **KV** → Create namespace: `inquiry-rate-limit`.
+2. Копирай **ID**-то и го сложи в `wrangler.toml` → `[[kv_namespaces]]` → `id` (вместо
+   `REPLACE_WITH_KV_NAMESPACE_ID`), комит и push - деплоят го закача автоматично.
+3. Локално `npm run dev:functions` ползва локален in-memory namespace.
 
 Лимит: 5 запитвания на час на IP (`functions/api/inquiry.ts`, `RATE_LIMIT`).
 
@@ -117,9 +136,8 @@ Telegram е известие, не условие: ако падне, запит
    Software, Inc. като обработващ в `content/bg/privacy.md`).
 2. **Add website** → `pankovsolutions.com` → копирай **Website ID** и адреса на скрипта
    (Cloud: `https://cloud.umami.is`; self-hosted: твоят домейн).
-3. Pages → Settings → Environment variables (Production **и** Preview, четат се при build):
-   `UMAMI_URL` = адресът без `/script.js`, `UMAMI_WEBSITE_ID` = ID-то. Без тях скриптът не се
-   вгражда, а CSP-то не го допуска.
+3. Worker → Settings → **Build** → Variables (четат се при build): `UMAMI_URL` = адресът без
+   `/script.js`, `UMAMI_WEBSITE_ID` = ID-то. Без тях скриптът не се вгражда, а CSP-то не го допуска.
 4. Проверка след деплой: в Umami → Realtime се вижда посещението; в DevTools → Network
    има заявка към `.../api/send` със статус 200.
 
@@ -127,10 +145,10 @@ Telegram е известие, не условие: ако падне, запит
 
 | Име | Къде | Какво |
 |---|---|---|
-| `TURNSTILE_SITE_KEY` | Pages env (build) / `.env` | публичен ключ на виджета |
-| `TURNSTILE_SECRET` | Pages env (Encrypt) / `.dev.vars` | siteverify |
-| `RESEND_API_KEY` | Pages env (Encrypt) / `.dev.vars` | изпращане на имейли |
-| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Pages env (Encrypt) / `.dev.vars` | известие |
-| `INQUIRY_RL` | Pages → Bindings → KV | rate limit |
+| `TURNSTILE_SITE_KEY` | Worker → Build → Variables / `.env` | публичен ключ на виджета |
+| `TURNSTILE_SECRET` | Worker → Variables and Secrets / `.dev.vars` | siteverify |
+| `RESEND_API_KEY` | Worker → Variables and Secrets / `.dev.vars` | изпращане на имейли |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Worker → Variables and Secrets / `.dev.vars` | известие |
+| `INQUIRY_RL` | `wrangler.toml` → kv_namespaces (id от Dashboard → KV) | rate limit |
 | `INQUIRY_MOCK` | само `.dev.vars` | `1` = не праща, логва |
-| `UMAMI_URL`, `UMAMI_WEBSITE_ID` | Pages env (build) / `.env` | аналитика; без тях няма скрипт |
+| `UMAMI_URL`, `UMAMI_WEBSITE_ID` | Worker → Build → Variables / `.env` | аналитика; без тях няма скрипт |

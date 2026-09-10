@@ -1,4 +1,4 @@
-# Копирай като .dev.vars (в .gitignore) за `npm run dev:functions` (wrangler pages dev).
+# Копирай като .dev.vars (в .gitignore) за `npm run dev:functions` (wrangler dev).
 # Без ключове: INQUIRY_MOCK=1 — функцията минава honeypot/timing/rate limit/Zod, пропуска
 # Turnstile и логва payload-а в конзолата вместо да праща имейли и Telegram.
 INQUIRY_MOCK=1
