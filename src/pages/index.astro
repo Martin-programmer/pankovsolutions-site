@@ -87,7 +87,7 @@ const stats = [
   ...(migrated ? [{ value: migrated, label: t('stats.products') }] : []),
   { value: String(technologies.size), label: t('stats.technologies') },
 ];
-const portrait = { src: '/img/marti.jpg', alt: company.founder };
+const portrait = { src: '/img/marti.webp', alt: company.founder };
 const isLatin = (text: string) => /^[\x00-\x7F]*$/.test(text);
 
 const site = Astro.site?.href ?? 'https://pankovsolutions.com/';

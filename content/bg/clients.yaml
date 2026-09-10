@@ -22,6 +22,11 @@
   logo: /img/clients/secret-bar.webp
   placeholder: false
   consent: null   # TODO: Марти да даде: дата на писменото съгласие
+- slug: her-harmony-glow
+  name: "Her Harmony Glow"
+  logo: /img/clients/her-harmony-glow.webp
+  placeholder: false
+  consent: null   # TODO: Марти да даде: дата на писменото съгласие
 - slug: infralink
   name: "INFRALINK UG"
   logo: /img/clients/infralink.webp

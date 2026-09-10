@@ -18,8 +18,6 @@
 | 1 | `img/projects/domoupravitel/odoo-crm.webp` | ✅ качено – Odoo CRM – табло с възможности по етапи (kanban). **Това е и hero кадърът на началната.** |
 | 2 | `img/projects/domoupravitel/moodle-course.webp` | ✅ качено – Moodle – курс за служители с тест |
 | 4 | `img/projects/stegi-store/home.webp` | ✅ качено – stegi.store – начална страница |
-| 5 | `img/projects/stegi-store/product.webp` | Продуктова страница на акумулатор с характеристики |
-| 6 | `img/projects/dosev-impex/configurator.webp` | Конфигуратор за параван – стъпка с избор на размери и стъкло (когато е готов) |
 | 7 | `img/projects/secret-bar/loyalty.webp` | ✅ качено – app.secretpleven.com – екран с точки и награди |
 | 8 | `img/projects/secret-bar/venue.webp` | ✅ качено – Реална снимка от заведението (JPG, 16:10, 2400 × 1500, ≤ 350 KB) |
 | 10 | `img/projects/infralink/home.webp` | ✅ качено – infralink-de.com – начална страница |
@@ -31,7 +29,7 @@
 
 | Файл | Спецификация |
 |------|--------------|
-| `img/marti.jpg` | JPG, **4:5, 1600 × 2000 px**, ≤ 300 KB. Естествена светлина, неутрален фон (стена, офис), лице и рамене, гледаш в обектива, без силни филтри. Показва се на началната („Кой стои зад…“) и на /about. |
+| `img/marti.webp` | ✅ качено (4:5, 1200 × 1500, WebP). Естествена светлина, неутрален фон (стена, офис), лице и рамене, гледаш в обектива, без силни филтри. Показва се на началната („Кой стои зад…“) и на /about. |
 
 ## 3. Лога на клиенти (лента доверие + архив)
 
@@ -45,6 +43,7 @@
 | `img/clients/dosev-impex.webp` | ✅ качено – Досев Импекс ЕООД |
 | `img/clients/stegi-store.webp` | ✅ качено – stegi.store |
 | `img/clients/secret-bar.webp` | ✅ качено – Secret Bar |
+| `img/clients/her-harmony-glow.webp` | ✅ качено – Her Harmony Glow |
 | `img/clients/infralink.webp` | ✅ качено – INFRALINK UG |
 | `img/clients/eco-globe.webp` | ✅ качено – Еко Глоуб ООД (партньор – блокът „Партньор“ на /about и /for-beneficiaries) |
 

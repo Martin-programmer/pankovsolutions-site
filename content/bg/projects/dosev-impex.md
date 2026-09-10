@@ -11,9 +11,7 @@ program: "BG16RFPR001-1.012 „Дигитализация на предприя�
 featured: false
 status: in-progress
 order: 5
-images:
-  - src: /img/projects/dosev-impex/configurator.webp   # TODO: когато е готов
-    alt: "Конфигуратор за параван – стъпка с избор на размери и стъкло"
+images: []
 ---
 
 ## Накратко

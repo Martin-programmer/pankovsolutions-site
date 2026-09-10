@@ -21,7 +21,7 @@ import {
 import { cleanHtml, cleanText, stripComments, warnTodos } from '../lib/todos';
 
 // Само от content/bg/about.md. Секциите се разпознават по форма: списък с „- **Роля** – …“
-// е опитът, три абзаца с удебелено начало са правилата, абзацът с името на партньора от
+// е опитът (с уводен абзац по избор), три абзаца с удебелено начало са правилата, абзацът с името на партньора от
 // clients.yaml минава през Partner.astro, останалото е проза.
 const locale: Locale = 'bg';
 
@@ -36,7 +36,7 @@ const { preface, sections: raw } = splitH2(page.body ?? '');
 const { heading: h1, rest: ledeMd } = takeHeading(preface, 1);
 const lede = cleanHtml(await md(ledeMd));
 
-const portrait = { src: '/img/marti.jpg', alt: company.founder };
+const portrait = { src: '/img/marti.webp', alt: company.founder };
 
 type Experience = { role: string; meta: string; text: string };
 type Rule = { title: string; html: string };
@@ -75,6 +75,9 @@ for (const [i, s] of raw.entries()) {
   const blocks: Block[] = [];
 
   if (/^-\s*\*\*/m.test(body)) {
+    // Уводен абзац преди списъка (напр. „Основател“) остава като проза.
+    const intro = paras.filter((p) => !/^-\s*\*\*/.test(p));
+    if (intro.length) blocks.push({ kind: 'prose', html: cleanHtml(await md(intro.join('\n\n'))) });
     blocks.push({ kind: 'experience', items: await parseExperience(body) });
   } else if (paras.length >= 3 && paras.every((p) => /^\*\*.+?\*\*/.test(p)) && !body.includes(partnerKey)) {
     const items: Rule[] = [];
