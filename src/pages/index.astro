@@ -6,6 +6,7 @@ import Placeholder from '../components/Placeholder.astro';
 import Portrait from '../components/Portrait.astro';
 import Process from '../components/Process.astro';
 import SystemDiagram from '../components/SystemDiagram.astro';
+import HeroCollage from '../components/HeroCollage.astro';
 import { company } from '../data/company';
 import { useTranslations, type Locale } from '../i18n/utils';
 import { publicFileExists, publicImageSize } from '../lib/assets';
@@ -68,6 +69,20 @@ const logoFor = (slug?: string) => (slug ? clientBySlug.get(slug) : undefined);
 // Hero визуалът е първият скрийншот на първия избран проект (Odoo CRM), както е в коментара.
 const heroImage = featured[0]?.data.images[0];
 const heroSize = heroImage && publicFileExists(heroImage.src) ? await publicImageSize(heroImage.src) : null;
+// Колаж „работеща система“ (HeroCollage): таблото на Odoo + телефонът със Secret Bar + магазинът
+// stegi.store. Пътищата са в коментара HERO на home.md; ако някой файл липсва — само таблото.
+const collageSrc = {
+  phone: '/img/projects/secret-bar/loyalty-phone.webp',
+  shop: '/img/projects/stegi-store/home-card.webp',
+};
+const collage =
+  heroImage && heroSize && publicFileExists(collageSrc.phone) && publicFileExists(collageSrc.shop)
+    ? {
+        back: { src: heroImage.src, ...heroSize, bar: heroImage.alt },
+        phone: { src: collageSrc.phone, ...(await publicImageSize(collageSrc.phone)) },
+        shop: { src: collageSrc.shop, ...(await publicImageSize(collageSrc.shop)), bar: 'stegi.store' },
+      }
+    : null;
 // Реалните размери на първия кадър на всеки избран проект (за width/height на <img>).
 const featuredSizes = await Promise.all(
   featured.map((p) => {
@@ -135,7 +150,9 @@ const jsonLd = {
       </div>
       <div class="hero-media tile tile-surface">
         {
-          heroImage && heroSize ? (
+          collage ? (
+            <HeroCollage back={collage.back} phone={collage.phone} shop={collage.shop} locale={locale} />
+          ) : heroImage && heroSize ? (
             <div class="frame">
               <div class="frame-bar">{heroImage.alt}</div>
               <img

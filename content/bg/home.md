@@ -3,7 +3,9 @@ title: "Pankov Solutions – софтуер по поръчка, дигитал�
 description: "Pankov Solutions разработва софтуер от нулата за всякакъв бизнес: системи за управление, интеграции, дигитализация, онлайн магазини и приложения – по европейски проект или с директно финансиране."
 ---
 
-<!-- HERO — центриран текст + реален скрийншот в плочка (public/img/projects/domoupravitel/odoo-crm.webp) -->
+<!-- HERO — центриран текст + колаж „работеща система“ в плочка (HeroCollage.astro):
+     public/img/projects/domoupravitel/odoo-crm.webp (отзад) · secret-bar/loyalty-phone.webp (телефон) ·
+     stegi-store/home-card.webp (магазин). Ако някой липсва — само таблото на Odoo. -->
 
 # Софтуер за Вашия бизнес – от идеята до работеща система.
 

@@ -1,0 +1,241 @@
+---
+import { useTranslations, type Locale } from '../i18n/utils';
+
+// Hero визуал „работеща система“ (DESIGN.md §Ревизия): три реални кадъра от проектите с
+// дълбочина — таблото на Odoo отзад, телефонът със Secret Bar отпред вляво, магазинът
+// stegi.store отпред вдясно — и две тънки линии с движещи се точки между тях (данните минават
+// между системите). Лек „float“ на панелите и паралакс при скрол (само десктоп; reduced-motion
+// изключва всичко през tokens.css). Кадрите са същите файлове като в кейсовете.
+interface Img {
+  src: string;
+  width: number;
+  height: number;
+}
+interface Props {
+  back: Img & { bar: string };
+  phone: Img;
+  shop: Img & { bar: string };
+  locale: Locale;
+}
+
+const { back, phone, shop, locale } = Astro.props;
+const t = useTranslations(locale);
+const isLatin = (text: string) => /^[\x00-\x7F]*$/.test(text);
+---
+
+<div class="collage" role="img" aria-label={t('hero.collage')}>
+  <svg class="links" viewBox="0 0 1200 690" aria-hidden="true" focusable="false">
+    <path class="line" d="M 400 331 C 400 372, 210 350, 210 389" />
+    <path class="line" d="M 800 331 C 800 375, 950 360, 950 401" />
+    <circle class="dot dot-a" r="5" />
+    <circle class="dot dot-b" r="5" />
+    <circle class="dot dot-c" r="4" />
+  </svg>
+
+  <div class="layer back" data-depth="0.18">
+    <div class="float frame">
+      <div class:list={['frame-bar', isLatin(back.bar) && 'mono']}>{back.bar}</div>
+      <img class="frame-body" src={back.src} alt="" width={back.width} height={back.height} loading="lazy" decoding="async" />
+    </div>
+  </div>
+
+  <div class="layer phone" data-depth="0.55">
+    <div class="float float-b phone-frame">
+      <img src={phone.src} alt="" width={phone.width} height={phone.height} loading="lazy" decoding="async" />
+    </div>
+  </div>
+
+  <div class="layer shop" data-depth="0.4">
+    <div class="float float-c frame">
+      <div class:list={['frame-bar', isLatin(shop.bar) && 'mono']}>{shop.bar}</div>
+      <img class="frame-body" src={shop.src} alt="" width={shop.width} height={shop.height} loading="lazy" decoding="async" />
+    </div>
+  </div>
+</div>
+
+<script>
+  // Паралакс: слоевете се движат с различна скорост при скрол (по-предните — по-бързо).
+  // Само десктоп и само без reduced-motion; ±24 px максимум, за да остават в плочката.
+  const layers = document.querySelectorAll<HTMLElement>('.collage .layer[data-depth]');
+  const ok =
+    layers.length > 0 &&
+    window.matchMedia('(min-width: 48rem)').matches &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (ok) {
+    let ticking = false;
+    const update = () => {
+      const y = window.scrollY;
+      for (const el of layers) {
+        const depth = Number(el.dataset.depth ?? 0);
+        const shift = Math.max(-24, Math.min(24, -y * depth * 0.08));
+        el.style.transform = `translate3d(0, ${shift}px, 0)`;
+      }
+      ticking = false;
+    };
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(update);
+        }
+      },
+      { passive: true },
+    );
+    update();
+  }
+</script>
+
+<style>
+  /* Мобилно: по-висок кадър (1 : 1.1), без линии; десктоп: 1200 × 690. */
+  .collage {
+    position: relative;
+    aspect-ratio: 1 / 1.1;
+    width: 100%;
+  }
+
+  .layer {
+    position: absolute;
+    will-change: transform;
+  }
+
+  .back {
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1;
+  }
+
+  .phone {
+    bottom: 0;
+    left: 0;
+    width: 36%;
+    z-index: 3;
+  }
+
+  .shop {
+    bottom: 0;
+    right: 0;
+    width: 60%;
+    z-index: 2;
+  }
+
+  .links {
+    display: none;
+  }
+
+  /* Панелите отпред носят по-широка сянка — дълбочина без градиенти. */
+  .float {
+    box-shadow: var(--shadow-float);
+  }
+
+  .phone-frame {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--color-surface);
+  }
+
+  .phone-frame img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* Лек float, различни фази — панелите не „дишат“ в такт. */
+  @keyframes float {
+    50% {
+      transform: translateY(calc(-1 * var(--spacing-2)));
+    }
+  }
+
+  .float {
+    animation: float 7s ease-in-out infinite;
+  }
+
+  .float-b {
+    animation-duration: 8.5s;
+    animation-delay: -3s;
+  }
+
+  .float-c {
+    animation-duration: 9.5s;
+    animation-delay: -6s;
+  }
+
+  /* = --breakpoint-md в tokens.css */
+  @media (min-width: 48rem) {
+    .collage {
+      aspect-ratio: 1200 / 690;
+    }
+
+    .back {
+      left: 18%;
+      width: 64%;
+    }
+
+    .phone {
+      left: 4%;
+      width: 17%;
+    }
+
+    .shop {
+      right: 2%;
+      width: 42%;
+    }
+
+    .links {
+      display: block;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      overflow: visible;
+    }
+
+    .line {
+      fill: none;
+      stroke: var(--color-line);
+      stroke-width: 2;
+    }
+
+    /* Точките пътуват по линиите (offset-path; без поддръжка — просто не се виждат). */
+    .dot {
+      fill: var(--color-primary);
+      offset-rotate: 0deg;
+      animation: travel 3.6s linear infinite;
+    }
+
+    .dot-a {
+      offset-path: path('M 400 331 C 400 372, 210 350, 210 389');
+    }
+
+    .dot-b {
+      offset-path: path('M 800 331 C 800 375, 950 360, 950 401');
+      animation-delay: -1.2s;
+    }
+
+    .dot-c {
+      fill: var(--color-accent);
+      offset-path: path('M 950 401 C 950 360, 800 375, 800 331');
+      animation-delay: -2.4s;
+      animation-duration: 4.2s;
+    }
+
+    @keyframes travel {
+      from {
+        offset-distance: 0%;
+        opacity: 0;
+      }
+      10%,
+      90% {
+        opacity: 1;
+      }
+      to {
+        offset-distance: 100%;
+        opacity: 0;
+      }
+    }
+  }
+</style>

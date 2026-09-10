@@ -72,6 +72,8 @@ const bg = {
   'placeholder.photo': 'снимка',
   'placeholder.sample': 'примерен – ще бъде заменен',
   'trust.clients': 'Клиенти, с които сме работили',
+  // Hero колаж (HeroCollage.astro) — accessible name на цялата композиция
+  'hero.collage': 'Три системи от проектите ни: Odoo CRM табло, приложението на Secret Bar и магазинът stegi.store, свързани помежду си',
   // Проекти: листинг и кейс
   'projects.archive': 'Архив',
   'projects.inProgress': 'в изпълнение',
@@ -155,6 +157,7 @@ const en: Record<UiKey, string> = {
   'placeholder.photo': 'photo',
   'placeholder.sample': 'sample – to be replaced',
   'trust.clients': 'Clients we have worked with',
+  'hero.collage': 'Three systems from our projects: an Odoo CRM board, the Secret Bar app and the stegi.store shop, connected to each other',
   'projects.archive': 'Archive',
   'projects.inProgress': 'in progress',
   'projects.next': 'Next project →',
