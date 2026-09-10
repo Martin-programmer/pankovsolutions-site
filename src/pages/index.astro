@@ -311,11 +311,15 @@ const jsonLd = {
   <section class="section section-cta">
     <div class="wrap">
       <div class="tile tile-tint reveal cta">
-        <h2 set:html={cta.heading} />
-        <div class="prose" set:html={ctaLede} />
-        <InquiryForm locale={locale} variant="short">
-          {ctaAfter && <div slot="after" class="cta-after" set:html={ctaAfter} />}
-        </InquiryForm>
+        <div class="cta-text">
+          <h2 set:html={cta.heading} />
+          <div class="prose" set:html={ctaLede} />
+        </div>
+        <div class="cta-form">
+          <InquiryForm locale={locale} variant="short">
+            {ctaAfter && <div slot="after" class="cta-after" set:html={ctaAfter} />}
+          </InquiryForm>
+        </div>
       </div>
     </div>
   </section>
@@ -599,7 +603,20 @@ const jsonLd = {
     margin-top: 0;
   }
 
-  /* CTA + форма */
+  /* CTA + форма: текст вляво, форма вдясно на десктоп; едно под друго на мобилно. */
+  /* На мобилно без column-gap: 11 × 32 px биха надхвърлили ширината на плочката. */
+  .cta {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: 0;
+    row-gap: var(--spacing-8);
+  }
+
+  .cta-text,
+  .cta-form {
+    grid-column: 1 / -1;
+  }
+
   .cta h2 {
     max-width: var(--measure);
   }
@@ -720,6 +737,18 @@ const jsonLd = {
 
     .cta h2 {
       font-size: var(--text-2xl);
+    }
+
+    .cta {
+      column-gap: var(--spacing-8);
+    }
+
+    .cta-text {
+      grid-column: 1 / span 5;
+    }
+
+    .cta-form {
+      grid-column: 7 / span 6;
     }
 
     .section-cta {
