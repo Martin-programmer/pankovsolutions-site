@@ -10,9 +10,9 @@ duration: "<!-- TODO -->"
 featured: true
 order: 3
 images:
-  - src: /img/projects/stegi-store/home.png       # TODO
+  - src: /img/projects/stegi-store/home.webp
     alt: "stegi.store – начална страница"
-  - src: /img/projects/stegi-store/product.png
+  - src: /img/projects/stegi-store/product.webp
     alt: "Продуктова страница с характеристики на акумулатор"
 ---
 

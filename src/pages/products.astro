@@ -4,6 +4,7 @@ import Base from '../layouts/Base.astro';
 import Placeholder from '../components/Placeholder.astro';
 import { useTranslations, type Locale } from '../i18n/utils';
 import { md, mdInline, splitH2, takeHeading } from '../lib/markdown';
+import { publicFileExists, publicImageSize } from '../lib/assets';
 import { cleanHtml, warnTodos } from '../lib/todos';
 
 // Само от content/bg/products.md. „Една карта, етикет „в разработка“, без линк, описание,
@@ -14,6 +15,10 @@ const t = useTranslations(locale);
 const page = await getEntry('pages', 'bg/products');
 if (!page) throw new Error('content/bg/products.md липсва');
 warnTodos(page.filePath ?? page.id, page.body);
+
+// Кадърът от frontmatter-а (image); ако файлът липсва — wireframe placeholder.
+const image = page.data.image && publicFileExists(page.data.image.src) ? page.data.image : null;
+const imageSize = image ? await publicImageSize(image.src) : null;
 
 const { preface, sections } = splitH2(page.body ?? '');
 const { heading: h1, rest: ledeMd } = takeHeading(preface, 1);
@@ -42,7 +47,21 @@ for (const s of sections) {
       products.map((p) => (
         <article class="product tile tile-surface reveal">
           <div class="media">
-            <Placeholder label={t('placeholder.screenshot')} ratio="4 / 5" />
+            {image && imageSize ? (
+              <div class="frame">
+                <div class="frame-bar">{image.alt}</div>
+                <img
+                  class="frame-body"
+                  src={image.src}
+                  alt={image.alt}
+                  width={imageSize.width}
+                  height={imageSize.height}
+                  loading="lazy"
+                />
+              </div>
+            ) : (
+              <Placeholder label={t('placeholder.screenshot')} ratio="4 / 5" />
+            )}
           </div>
           <div class="text">
             <!-- Етикетът е извън <h2>, за да не влиза в името на продукта за четци и outline. -->
@@ -126,12 +145,13 @@ for (const s of sections) {
       padding-block: var(--spacing-8) var(--spacing-32);
     }
 
+    /* Кадърът е широк (сайт), затова 6/12 + 6/12, не 4/12 като при портретен placeholder. */
     .media {
-      grid-column: 1 / span 4;
+      grid-column: 1 / span 6;
     }
 
     .text {
-      grid-column: 5 / span 8;
+      grid-column: 7 / span 6;
       align-self: center;
     }
   }

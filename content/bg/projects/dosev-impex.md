@@ -12,7 +12,7 @@ featured: false
 status: in-progress
 order: 5
 images:
-  - src: /img/projects/dosev-impex/configurator.png   # TODO: когато е готов
+  - src: /img/projects/dosev-impex/configurator.webp   # TODO: когато е готов
     alt: "Конфигуратор за параван – стъпка с избор на размери и стъкло"
 ---
 

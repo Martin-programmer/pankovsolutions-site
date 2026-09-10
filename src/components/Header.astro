@@ -25,10 +25,10 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
 
 <header class="site-header">
   <div class="bar">
-    <!-- Логото е PNG @3x (public/img/logo.png; източник design/logo/): знакът има преливане
+    <!-- Логото е WebP @2x (public/img/logo.webp; източник design/logo/): знакът има преливане
          петрол→охра, което SVG в два цвята губи. Знакът сам е SVG (favicon, logo-mark). -->
     <a class="brand" href={localeUrl(locale, '/')}>
-      <img src="/img/logo.png" alt={company.brand} width="425" height="144" fetchpriority="high" />
+      <img src="/img/logo.webp" alt={company.brand} width="284" height="96" />
     </a>
 
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-nav-list">
@@ -147,7 +147,7 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
     gap: var(--spacing-4) var(--spacing-8);
   }
 
-  /* 40 px на мобилно, 48 px на десктоп; ширината следва от пропорцията на файла (425:144). */
+  /* 40 px на мобилно, 48 px на десктоп; ширината следва от пропорцията на файла (284:96). */
   .brand {
     display: block;
     line-height: 0;

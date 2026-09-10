@@ -5,7 +5,7 @@ import Base from '../../layouts/Base.astro';
 import Placeholder from '../../components/Placeholder.astro';
 import { company } from '../../data/company';
 import { localeUrl, useTranslations, type Locale } from '../../i18n/utils';
-import { publicFileExists } from '../../lib/assets';
+import { publicFileExists, publicImageSize } from '../../lib/assets';
 import { toJsonLd } from '../../lib/jsonld';
 import { md, takeLastLinkLine } from '../../lib/markdown';
 import { cleanHtml, cleanText, warnTodos } from '../../lib/todos';
@@ -73,6 +73,11 @@ sections.forEach((section, i) => {
 // Останалите изображения — след текста.
 for (; imageIndex < d.images.length; imageIndex++) blocks.push({ image: d.images[imageIndex] });
 const firstImageBlock = blocks.findIndex((b) => 'image' in b);
+// Реалните размери на качените кадри (width/height на <img>); липсващите → placeholder.
+const imageSizes = new Map<string, { width: number; height: number }>();
+for (const img of d.images) {
+  if (publicFileExists(img.src)) imageSizes.set(img.src, await publicImageSize(img.src));
+}
 
 const result = cleanText(d.result);
 // [етикет, стойност, mono?] — mono само за латиница и числа (година, стек).
@@ -156,13 +161,13 @@ const jsonLd = {
             <div class="prose" set:html={b.html} />
           ) : (
             <figure class="figure">
-              {publicFileExists(b.image.src) ? (
+              {imageSizes.has(b.image.src) ? (
                 <img
                   class="shot"
                   src={b.image.src}
                   alt={b.image.alt}
-                  width="1200"
-                  height="750"
+                  width={imageSizes.get(b.image.src)!.width}
+                  height={imageSizes.get(b.image.src)!.height}
                   loading={i === firstImageBlock ? 'eager' : 'lazy'}
                   fetchpriority={i === firstImageBlock ? 'high' : undefined}
                 />

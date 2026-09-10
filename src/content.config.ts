@@ -12,6 +12,8 @@ const pages = defineCollection({
   schema: z.object({
     title: z.string(),
     description: z.string(),
+    // Кадър за страници с една карта (products.md → FudiAR).
+    image: z.object({ src: z.string(), alt: z.string() }).optional(),
   }),
 });
 

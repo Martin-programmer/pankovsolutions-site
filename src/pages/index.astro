@@ -8,7 +8,7 @@ import Process from '../components/Process.astro';
 import SystemDiagram from '../components/SystemDiagram.astro';
 import { company } from '../data/company';
 import { useTranslations, type Locale } from '../i18n/utils';
-import { publicFileExists } from '../lib/assets';
+import { publicFileExists, publicImageSize } from '../lib/assets';
 import { toJsonLd } from '../lib/jsonld';
 import {
   mdInline,
@@ -63,6 +63,14 @@ const testimonials = (await getCollection('testimonials'))
 
 // Hero визуалът е първият скрийншот на първия избран проект (Odoo CRM), както е в коментара.
 const heroImage = featured[0]?.data.images[0];
+const heroSize = heroImage && publicFileExists(heroImage.src) ? await publicImageSize(heroImage.src) : null;
+// Реалните размери на първия кадър на всеки избран проект (за width/height на <img>).
+const featuredSizes = await Promise.all(
+  featured.map((p) => {
+    const img = p.data.images[0];
+    return img && publicFileExists(img.src) ? publicImageSize(img.src) : Promise.resolve(null);
+  }),
+);
 // Mono readout над h1: градът + стекът от лентата на доверие (авторският `code` ред в home.md).
 const stackLine = trust.match(/<code>(.*?)<\/code>/)?.[1] ?? '';
 const readout = [company.city, stackLine && `<code>${stackLine}</code>`].filter(Boolean).join(' · ');
@@ -137,10 +145,16 @@ const jsonLd = {
       </div>
       <div class="hero-media tile tile-surface">
         {
-          heroImage && publicFileExists(heroImage.src) ? (
+          heroImage && heroSize ? (
             <div class="frame">
               <div class="frame-bar">{heroImage.alt}</div>
-              <img class="frame-body" src={heroImage.src} alt={heroImage.alt} width="1200" height="750" fetchpriority="high" />
+              <img
+                class="frame-body"
+                src={heroImage.src}
+                alt={heroImage.alt}
+                width={heroSize.width}
+                height={heroSize.height}
+              />
             </div>
           ) : (
             <SystemDiagram />
@@ -178,7 +192,7 @@ const jsonLd = {
                   </li>
                 ) : (
                   <li>
-                    <img class="logo" src={c.data.logo} alt={c.data.name} height="36" />
+                    <img class="logo" src={c.data.logo} alt={c.data.name} height="36" loading="lazy" />
                   </li>
                 ),
               )}
@@ -222,16 +236,17 @@ const jsonLd = {
       <h2 class="centered" set:html={projectsSection.heading} />
       <div class="projects">
         {
-          featured.map((p) => {
+          featured.map((p, i) => {
             const img = p.data.images[0];
+            const size = featuredSizes[i];
             const href = `/projects/${slugOf(p.id)}`;
             return (
               <article class="project tile tile-surface reveal">
                 <a class="media frame-link" href={href} tabindex="-1" aria-hidden="true">
-                  {img && publicFileExists(img.src) ? (
+                  {img && size ? (
                     <div class="frame">
                       <div class:list={['frame-bar', isLatin(p.data.client) && 'mono']}>{p.data.client}</div>
-                      <img class="frame-body" src={img.src} alt="" width="1200" height="750" loading="lazy" />
+                      <img class="frame-body" src={img.src} alt="" width={size.width} height={size.height} loading="lazy" />
                     </div>
                   ) : (
                     <Placeholder label={t('placeholder.screenshot')} caption={img?.alt} bar={p.data.client} ratio="16 / 10" />
@@ -347,18 +362,8 @@ const jsonLd = {
     margin: 0 0 var(--spacing-4);
   }
 
-  /* Hero: единственият page-load reveal. Reduced-motion го изключва глобално. */
-  @keyframes hero-reveal {
-    from {
-      opacity: 0;
-      transform: translateY(var(--spacing-2));
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-
+  /* Без page-load fade на hero-то: елемент, който тръгва от opacity 0, не е LCP кандидат
+     и Lighthouse взема логото за LCP (с „песимистичния“ граф от всички шрифтове → 3 s). */
   .hero-band {
     background: var(--color-primary-soft);
   }
@@ -366,7 +371,6 @@ const jsonLd = {
   .hero {
     padding-block: var(--spacing-12) var(--spacing-12);
     text-align: center;
-    animation: hero-reveal 400ms ease-out both;
   }
 
   .hero-text {

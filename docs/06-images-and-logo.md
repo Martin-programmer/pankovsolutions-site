@@ -8,22 +8,22 @@
 
 ## 1. Скрийншоти по проекти
 
-Формат: PNG, 16:10, **2400 × 1500 px** (показват се на 1200 × 750, х2 за retina), ≤ 400 KB
-(минаване през squoosh.app или tinypng). Без курсор, без отворени менюта, без лични данни
+Формат: какъвто и да е (PNG/JPG), пълен прозорец на браузъра; аз ги свалям до 1600 px
+ширина и ги обръщам в WebP (пропорцията се пази, не се реже до 16:10). Без курсор, без отворени менюта, без лични данни
 на клиенти — замъглени имена/суми, където има реални (DESIGN.md: „замъглен скрийншот“).
 Целият прозорец на браузъра без адресна лента — само страницата.
 
 | # | Файл | Какво да има в кадъра |
 |---|------|------------------------|
-| 1 | `img/projects/domoupravitel/odoo-crm.png` | Odoo CRM – табло с възможности по етапи (kanban). **Това е и hero кадърът на началната.** |
-| 2 | `img/projects/domoupravitel/moodle-course.png` | Moodle – курс за служители с тест |
-| 4 | `img/projects/stegi-store/home.png` | stegi.store – начална страница |
-| 5 | `img/projects/stegi-store/product.png` | Продуктова страница на акумулатор с характеристики |
-| 6 | `img/projects/dosev-impex/configurator.png` | Конфигуратор за параван – стъпка с избор на размери и стъкло (когато е готов) |
-| 7 | `img/projects/secret-bar/loyalty.png` | app.secretpleven.com – екран с точки и награди |
-| 8 | `img/projects/secret-bar/venue.jpg` | Реална снимка от заведението (JPG, 16:10, 2400 × 1500, ≤ 350 KB) |
-| 10 | `img/projects/infralink/home.png` | infralink-de.com – начална страница |
-| 11 | `img/projects/her-harmony-glow/home.png` | herharmonyglow.com – начална страница след миграцията |
+| 1 | `img/projects/domoupravitel/odoo-crm.webp` | ✅ качено – Odoo CRM – табло с възможности по етапи (kanban). **Това е и hero кадърът на началната.** |
+| 2 | `img/projects/domoupravitel/moodle-course.webp` | ✅ качено – Moodle – курс за служители с тест |
+| 4 | `img/projects/stegi-store/home.webp` | ✅ качено – stegi.store – начална страница |
+| 5 | `img/projects/stegi-store/product.webp` | Продуктова страница на акумулатор с характеристики |
+| 6 | `img/projects/dosev-impex/configurator.webp` | Конфигуратор за параван – стъпка с избор на размери и стъкло (когато е готов) |
+| 7 | `img/projects/secret-bar/loyalty.webp` | ✅ качено – app.secretpleven.com – екран с точки и награди |
+| 8 | `img/projects/secret-bar/venue.webp` | ✅ качено – Реална снимка от заведението (JPG, 16:10, 2400 × 1500, ≤ 350 KB) |
+| 10 | `img/projects/infralink/home.webp` | ✅ качено – infralink-de.com – начална страница |
+| 11 | `img/projects/her-harmony-glow/home.webp` | ✅ качено – herharmonyglow.com – начална страница след миграцията |
 
 Приоритет: 1, 4, 7 – Odoo CRM, stegi.store, Secret Bar (те са на началната като избрани проекти), после останалите.
 
@@ -35,18 +35,18 @@
 
 ## 3. Лога на клиенти (лента доверие + архив)
 
-Формат: **SVG** (ако имат само PNG – PNG с прозрачен фон, височина ≥ 200 px). Естествените
+Формат: SVG или PNG/JPG (белият фон се маха при обработката); на сайта са WebP q82, височина 80 px. Естествените
 цветове на клиента, не сиви. Хоризонтална версия, изрязана до ръба на знака (без празно
 поле около него), защото се показва с височина 28 px – трябва да е четливо толкова малко.
 
 | Файл | Клиент |
 |------|--------|
-| `img/clients/domoupravitel.svg` | Домоуправител България ООД |
-| `img/clients/dosev-impex.svg` | Досев Импекс ЕООД |
-| `img/clients/stegi-store.svg` | stegi.store |
-| `img/clients/secret-bar.svg` | Secret Bar |
-| `img/clients/infralink.svg` | INFRALINK UG |
-| `img/clients/eco-globe.svg` | Еко Глоуб ООД (партньор – блокът „Партньор“ на /about и /for-beneficiaries) |
+| `img/clients/domoupravitel.webp` | ✅ качено – Домоуправител България ООД |
+| `img/clients/dosev-impex.webp` | ✅ качено – Досев Импекс ЕООД |
+| `img/clients/stegi-store.webp` | ✅ качено – stegi.store |
+| `img/clients/secret-bar.webp` | ✅ качено – Secret Bar |
+| `img/clients/infralink.webp` | ✅ качено – INFRALINK UG |
+| `img/clients/eco-globe.webp` | ✅ качено – Еко Глоуб ООД (партньор – блокът „Партньор“ на /about и /for-beneficiaries) |
 
 След качване, за всеки клиент в `content/bg/clients.yaml`: `placeholder: false` и
 `consent: 2026-MM-DD` (дата на писменото съгласие за показване на логото). Докато е
@@ -56,7 +56,7 @@
 
 | Файл | Спецификация |
 |------|--------------|
-| `img/products/fudiar/ar-menu.png` | PNG, **4:5, 1200 × 1500 px**. Кадър от AR менюто на телефон (ястието в реален размер върху масата) или екранът на менюто. Кодът още не чете този път – когато го качиш, добавям `image:` в `content/bg/products.md` и го включвам (5 мин). |
+| `img/products/fudiar/home.webp` | **Качено** – началната страница на платформата; пътят е в frontmatter-а на `content/bg/products.md` (`image:`). |
 
 ## 5. Собствено лого — готово (10.09.2026)
 
@@ -65,7 +65,7 @@
 
 | Файл | За какво |
 |------|----------|
-| `public/img/logo.png` | Хоризонтално лого, PNG @3x (425 × 144) с прозрачен фон – хедърът. PNG, защото знакът има преливане петрол→охра, което двуцветният вектор губи. |
+| `public/img/logo.webp` | Хоризонтално лого, WebP @2x (284 × 96) с прозрачен фон – хедърът. Растер, защото знакът има преливане петрол→охра, което двуцветният вектор губи. |
 | `public/img/logo-mark.svg` | Само знакът, вектор в два цвята. |
 | `public/favicon.svg` | Същият знак. |
 | `public/apple-touch-icon.png` | 180 × 180, знакът върху хартия. |

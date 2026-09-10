@@ -10,7 +10,7 @@ duration: "<!-- TODO -->"
 featured: false
 order: 8
 images:
-  - src: /img/projects/her-harmony-glow/home.png   # TODO
+  - src: /img/projects/her-harmony-glow/home.webp
     alt: "herharmonyglow.com – начална страница след миграцията"
 ---
 

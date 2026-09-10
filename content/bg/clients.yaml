@@ -1,35 +1,35 @@
 # Лога за лентата „доверие“ и за листинга на проекти.
 # placeholder: true → в production се СКРИВА; в dev се показва с етикет „примерен“.
-# Марти качва SVG (или PNG с прозрачен фон, височина 128 px) в public/img/clients/<slug>.svg|png, сменя placeholder на false и добавя consent (дата на писменото съгласие).
+# Логата са WebP (q82, прозрачен фон), височина 80 px = 36 px × 2.2 (обработка: docs/06)., сменя placeholder на false и добавя consent (дата на писменото съгласие).
 
 - slug: domoupravitel-bulgaria
   name: "Домоуправител България ООД"
-  logo: /img/clients/domoupravitel.png
+  logo: /img/clients/domoupravitel.webp
   placeholder: false
   consent: null   # TODO: Марти да даде: дата на писменото съгласие
 - slug: dosev-impex
   name: "Досев Импекс ЕООД"
-  logo: /img/clients/dosev-impex.svg
-  placeholder: true
-  consent: null
+  logo: /img/clients/dosev-impex.webp
+  placeholder: false
+  consent: null   # TODO: Марти да даде: дата на писменото съгласие
 - slug: stegi-store
   name: "stegi.store"
-  logo: /img/clients/stegi-store.png
+  logo: /img/clients/stegi-store.webp
   placeholder: false
   consent: null   # TODO: Марти да даде: дата на писменото съгласие
 - slug: secret-legend
   name: "Сикрет Леджънд ЕООД (Secret Bar)"
-  logo: /img/clients/secret-bar.png
+  logo: /img/clients/secret-bar.webp
   placeholder: false
   consent: null   # TODO: Марти да даде: дата на писменото съгласие
 - slug: infralink
   name: "INFRALINK UG"
-  logo: /img/clients/infralink.svg
-  placeholder: true
-  consent: null
+  logo: /img/clients/infralink.webp
+  placeholder: false
+  consent: null   # TODO: Марти да даде: дата на писменото съгласие
 - slug: eco-globe
   name: "Еко Глоуб ООД"        # партньор, не клиент — показва се в блока „Партньор“
-  logo: /img/clients/eco-globe.svg
+  logo: /img/clients/eco-globe.webp
   partner: true
-  placeholder: true
-  consent: null
+  placeholder: false
+  consent: null   # TODO: Марти да даде: дата на писменото съгласие

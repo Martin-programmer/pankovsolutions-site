@@ -10,9 +10,9 @@ duration: "<!-- TODO -->"
 featured: true
 order: 2
 images:
-  - src: /img/projects/secret-bar/loyalty.png      # TODO: скрийншот от app.secretpleven.com
+  - src: /img/projects/secret-bar/loyalty.webp
     alt: "Екран с точки и награди в приложението на Secret Bar"
-  - src: /img/projects/secret-bar/venue.jpg        # TODO: реална снимка от заведението
+  - src: /img/projects/secret-bar/venue.webp
     alt: "Secret Bar, Плевен"
 ---
 

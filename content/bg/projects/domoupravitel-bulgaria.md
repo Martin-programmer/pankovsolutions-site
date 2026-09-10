@@ -11,9 +11,9 @@ program: "BG16RFPR001-1.012 „Дигитализация на предприя�
 featured: true
 order: 1
 images:
-  - src: /img/projects/domoupravitel/odoo-crm.png    # TODO: замъглен скрийншот
+  - src: /img/projects/domoupravitel/odoo-crm.webp
     alt: "Odoo CRM – табло с възможности по етапи"
-  - src: /img/projects/domoupravitel/moodle-course.png
+  - src: /img/projects/domoupravitel/moodle-course.webp
     alt: "Moodle – курс за служители с тест"
 ---
 

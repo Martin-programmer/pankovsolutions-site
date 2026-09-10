@@ -10,7 +10,7 @@ duration: "<!-- TODO -->"
 featured: false
 order: 7
 images:
-  - src: /img/projects/infralink/home.png   # TODO
+  - src: /img/projects/infralink/home.webp
     alt: "infralink-de.com – начална страница"
 ---
 
