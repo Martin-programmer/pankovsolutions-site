@@ -206,7 +206,7 @@ const jsonLd = {
   <section class="section">
     <div class="wrap">
       <h2 class="centered" set:html={services.heading} />
-      <ol class="services">
+      <ol class="services rail" id="services-rail">
         {
           services.items.map((item) => (
             <li class="tile tile-surface reveal">
@@ -226,6 +226,10 @@ const jsonLd = {
           ))
         }
       </ol>
+      <div class="rail-nav" data-rail-nav="services-rail">
+        <button type="button" class="rail-btn" data-dir="-1" aria-label={t('rail.prev')}>←</button>
+        <button type="button" class="rail-btn" data-dir="1" aria-label={t('rail.next')}>→</button>
+      </div>
     </div>
   </section>
 
@@ -283,7 +287,7 @@ const jsonLd = {
       <section class="section">
         <div class="wrap">
           <h2 class="centered" set:html={testimonialsSection.heading} />
-          <div class="quotes">
+          <div class="quotes rail" id="quotes-rail">
             {testimonials.map((x) => (
               <figure class="quote tile tile-surface reveal">
                 <blockquote>
@@ -303,6 +307,10 @@ const jsonLd = {
                 </figcaption>
               </figure>
             ))}
+          </div>
+          <div class="rail-nav" data-rail-nav="quotes-rail">
+            <button type="button" class="rail-btn" data-dir="-1" aria-label={t('rail.prev')}>←</button>
+            <button type="button" class="rail-btn" data-dir="1" aria-label={t('rail.next')}>→</button>
           </div>
         </div>
       </section>
@@ -342,6 +350,27 @@ const jsonLd = {
     </div>
   </section>
 </Base>
+
+<script>
+  // Лентите (услуги, отзиви) на мобилно: бутоните скролват с една плочка; в краищата се
+  // изключват. Без JS остава swipe-ът (overflow-x: auto).
+  for (const nav of document.querySelectorAll<HTMLElement>('[data-rail-nav]')) {
+    const rail = document.getElementById(nav.dataset.railNav ?? '');
+    if (!rail) continue;
+    const btns = nav.querySelectorAll<HTMLButtonElement>('button[data-dir]');
+    const step = () => (rail.firstElementChild as HTMLElement | null)?.offsetWidth ?? rail.clientWidth * 0.86;
+    const sync = () => {
+      const max = rail.scrollWidth - rail.clientWidth - 1;
+      for (const b of btns) b.disabled = b.dataset.dir === '-1' ? rail.scrollLeft <= 0 : rail.scrollLeft >= max;
+    };
+    for (const b of btns) {
+      b.addEventListener('click', () => rail.scrollBy({ left: Number(b.dataset.dir) * (step() + 16), behavior: 'smooth' }));
+    }
+    rail.addEventListener('scroll', sync, { passive: true });
+    window.addEventListener('resize', sync);
+    sync();
+  }
+</script>
 
 <style>
   .section {
@@ -477,11 +506,57 @@ const jsonLd = {
 
   /* Услуги: плочки; номерът в охра на 28 px (над прага 3:1 за едър текст) */
   .services {
-    display: grid;
-    gap: var(--spacing-4);
     margin: 0;
     padding: 0;
     list-style: none;
+  }
+
+  /* Мобилно: услугите и отзивите са хоризонтална лента (swipe + бутони), не колона.
+     Пълна ширина до ръба на екрана, плочките „надничат“; snap на всяка. Десктоп връща grid. */
+  .rail {
+    display: flex;
+    gap: var(--spacing-4);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    margin-inline: calc(-1 * var(--spacing-6));
+    padding-inline: var(--spacing-6);
+    padding-bottom: var(--spacing-1);
+    scroll-padding-inline: var(--spacing-6);
+    scrollbar-width: none;
+  }
+
+  .rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .rail > * {
+    flex: 0 0 min(86%, 22rem);
+    scroll-snap-align: start;
+  }
+
+  .rail-nav {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-2);
+    margin-top: var(--spacing-4);
+  }
+
+  .rail-btn {
+    min-width: 44px;
+    min-height: 44px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: var(--text-md);
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .rail-btn:disabled {
+    color: var(--color-line);
+    cursor: default;
   }
 
   /* align-content: start — иначе в двете половинки редовете се разтягат по височината на
@@ -562,11 +637,7 @@ const jsonLd = {
     margin-bottom: var(--spacing-8);
   }
 
-  /* Отзиви */
-  .quotes {
-    display: grid;
-    gap: var(--spacing-4);
-  }
+  /* Отзиви — на мобилно .rail, на десктоп grid (по-долу). */
 
   /* За мен */
   .about {
@@ -657,6 +728,24 @@ const jsonLd = {
 
     .section-clients {
       padding-block: var(--spacing-8) var(--spacing-2);
+    }
+
+    .rail {
+      display: grid;
+      gap: var(--spacing-4);
+      overflow: visible;
+      margin-inline: 0;
+      padding-inline: 0;
+      padding-bottom: 0;
+      scroll-snap-type: none;
+    }
+
+    .rail > * {
+      flex: initial;
+    }
+
+    .rail-nav {
+      display: none;
     }
 
     .services {

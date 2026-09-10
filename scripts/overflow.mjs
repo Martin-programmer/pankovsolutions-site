@@ -21,7 +21,16 @@ const result = await page.evaluate(() => {
     }
     return false;
   };
+  // Нарочно хоризонтално скролваща се лента (overflow-x: auto/scroll) не е преливане към страницата.
+  const inRail = (el) => {
+    for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+      const ox = getComputedStyle(p).overflowX;
+      if (ox === 'auto' || ox === 'scroll') return true;
+    }
+    return false;
+  };
   for (const el of document.querySelectorAll('body *')) {
+    if (inRail(el)) continue;
     const r = el.getBoundingClientRect();
     // Извън екрана, или съдържание, което прелива вътре в елемента (дълга дума/URL).
     const inner = el.scrollWidth > el.clientWidth + 1 && !clipped(el);
