@@ -110,7 +110,20 @@ Telegram е известие, не условие: ако падне, запит
 
 Лимит: 5 запитвания на час на IP (`functions/api/inquiry.ts`, `RATE_LIMIT`).
 
-### 6. Променливи - обобщение
+### 6. Umami (аналитика без бисквитки)
+
+1. Или **Umami Cloud** (cloud.umami.is, безплатен план) - или self-hosted (docker на Hetzner;
+   при self-hosted в ЕС политиката за поверителност не се променя, при Cloud - добави Umami
+   Software, Inc. като обработващ в `content/bg/privacy.md`).
+2. **Add website** → `pankovsolutions.com` → копирай **Website ID** и адреса на скрипта
+   (Cloud: `https://cloud.umami.is`; self-hosted: твоят домейн).
+3. Pages → Settings → Environment variables (Production **и** Preview, четат се при build):
+   `UMAMI_URL` = адресът без `/script.js`, `UMAMI_WEBSITE_ID` = ID-то. Без тях скриптът не се
+   вгражда, а CSP-то не го допуска.
+4. Проверка след деплой: в Umami → Realtime се вижда посещението; в DevTools → Network
+   има заявка към `.../api/send` със статус 200.
+
+### 7. Променливи - обобщение
 
 | Име | Къде | Какво |
 |---|---|---|
@@ -120,3 +133,4 @@ Telegram е известие, не условие: ако падне, запит
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Pages env (Encrypt) / `.dev.vars` | известие |
 | `INQUIRY_RL` | Pages → Bindings → KV | rate limit |
 | `INQUIRY_MOCK` | само `.dev.vars` | `1` = не праща, логва |
+| `UMAMI_URL`, `UMAMI_WEBSITE_ID` | Pages env (build) / `.env` | аналитика; без тях няма скрипт |
