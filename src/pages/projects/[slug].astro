@@ -87,8 +87,6 @@ const facts: Array<[string, string, boolean?]> = [
   [t('facts.industry'), cleanText(d.industry)],
   [t('facts.services'), d.services.join(' · ')],
   [t('facts.stack'), d.stack.join(' · '), true],
-  [t('facts.year'), String(d.year), true],
-  [t('facts.duration'), cleanText(d.duration)],
   [t('facts.program'), cleanText(d.program)],
 ];
 const shownFacts = facts.filter(([, value]) => value);
@@ -140,8 +138,7 @@ const jsonLd = {
   <article class="wrap case">
     <header class="head">
       <nav class="kicker" aria-label={t('breadcrumb.label')}>
-        <a href={localeUrl(locale, '/projects')}>{t('nav.projects')}</a>&nbsp;·
-        <span class="mono">{d.year}</span>
+        <a href={localeUrl(locale, '/projects')}>{t('nav.projects')}</a>
         {d.status === 'in-progress' && <span class="tag">{t('projects.inProgress')}</span>}
       </nav>
       <h1>{result}</h1>

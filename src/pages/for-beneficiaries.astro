@@ -90,7 +90,6 @@ for (const [i, s] of raw.entries()) {
               <table class="programs" role="table">
                 <thead role="rowgroup">
                   <tr role="row">
-                    <th role="columnheader" scope="col">{t('facts.year')}</th>
                     <th role="columnheader" scope="col">{t('facts.client')}</th>
                     <th role="columnheader" scope="col">{t('facts.program')}</th>
                     <th role="columnheader" scope="col">{t('facts.services')}</th>
@@ -99,7 +98,6 @@ for (const [i, s] of raw.entries()) {
                 <tbody role="rowgroup">
                   {s.rows.map((r) => (
                     <tr role="row">
-                      <td role="cell" class="mono year">{r.year}</td>
                       <td role="cell" class="client">
                         <a href={r.href}>{r.client}</a>
                         {projectBySlug.get(r.slug)?.data.status === 'in-progress' && (
@@ -221,8 +219,8 @@ for (const [i, s] of raw.entries()) {
 
   .programs tr {
     display: grid;
-    grid-template-columns: 5ch 1fr;
-    column-gap: var(--spacing-3);
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--spacing-1);
     padding-block: var(--spacing-3);
     border-top: 1px solid var(--color-line);
     position: relative;
@@ -239,7 +237,6 @@ for (const [i, s] of raw.entries()) {
 
   .programs .program,
   .programs .services {
-    grid-column: 2;
     color: var(--color-muted);
   }
 
@@ -384,8 +381,5 @@ for (const [i, s] of raw.entries()) {
       border-bottom: 0;
     }
 
-    .programs .year {
-      width: 5ch;
-    }
   }
 </style>

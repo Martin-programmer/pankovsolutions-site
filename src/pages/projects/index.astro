@@ -61,7 +61,7 @@ const title = page?.data.title ?? `${t('nav.projects')} - ${company.brand}`;
               </a>
               <div class="card-text">
                 <p class="tags">
-                  <span class="mono">{p.data.year}</span> · {p.data.client} · {p.data.services.join(' · ')}
+                  {p.data.client} · {p.data.services.join(' · ')}
                 </p>
                 <h2>
                   <a href={href} set:html={cleanText(p.data.result)} />
@@ -79,7 +79,6 @@ const title = page?.data.title ?? `${t('nav.projects')} - ${company.brand}`;
     <table class="archive" role="table">
       <thead role="rowgroup">
         <tr role="row">
-          <th role="columnheader" scope="col">{t('facts.year')}</th>
           <th role="columnheader" scope="col">{t('facts.client')}</th>
           <th role="columnheader" scope="col">{t('facts.services')}</th>
           <th role="columnheader" scope="col">{t('facts.stack')}</th>
@@ -89,7 +88,6 @@ const title = page?.data.title ?? `${t('nav.projects')} - ${company.brand}`;
         {
           rows.map((p) => (
             <tr role="row">
-              <td role="cell" class="mono year">{p.data.year}</td>
               <td role="cell" class="client">
                 <a href={hrefOf(p.id)}>{p.data.client}</a>
                 {p.data.status === 'in-progress' && <span class="tag">{t('projects.inProgress')}</span>}
@@ -201,8 +199,8 @@ const title = page?.data.title ?? `${t('nav.projects')} - ${company.brand}`;
 
   .archive tr {
     display: grid;
-    grid-template-columns: 5ch 1fr;
-    column-gap: var(--spacing-3);
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--spacing-1);
     padding-block: var(--spacing-3);
     border-top: 1px solid var(--color-line);
     position: relative;
@@ -215,11 +213,6 @@ const title = page?.data.title ?? `${t('nav.projects')} - ${company.brand}`;
   .archive td {
     display: block;
     line-height: 1.5;
-  }
-
-  .archive .services,
-  .archive .stack {
-    grid-column: 2;
   }
 
   .archive .stack {
@@ -327,10 +320,6 @@ const title = page?.data.title ?? `${t('nav.projects')} - ${company.brand}`;
 
     .archive tr:last-child {
       border-bottom: 0;
-    }
-
-    .archive .year {
-      width: 5ch;
     }
 
     .archive .services {
