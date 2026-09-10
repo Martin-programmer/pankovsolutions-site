@@ -87,7 +87,8 @@ const jsonLd = faq && {
 
   {
     services.map((s) => (
-      <section class="wrap service" id={`service-${s.number}`} aria-labelledby={`service-${s.number}-title`}>
+      <section class="wrap" id={`service-${s.number}`} aria-labelledby={`service-${s.number}-title`}>
+        <div class="service tile tile-surface reveal">
         <span class="num" aria-hidden="true">
           {s.number}
         </span>
@@ -106,6 +107,7 @@ const jsonLd = faq && {
             </ul>
           )}
         </div>
+        </div>
       </section>
     ))
   }
@@ -113,8 +115,10 @@ const jsonLd = faq && {
   {
     process && (
       <section class="wrap section" aria-labelledby="process-title">
-        <h2 id="process-title" set:html={process.heading} />
-        <Process items={process.items} />
+        <div class="tile tile-tint reveal">
+          <h2 id="process-title" class="centered" set:html={process.heading} />
+          <Process items={process.items} />
+        </div>
       </section>
     )
   }
@@ -122,6 +126,7 @@ const jsonLd = faq && {
   {
     faq && (
       <section class="wrap section faq" aria-labelledby="faq-title">
+        <div class="tile tile-surface reveal">
         <h2 id="faq-title" set:html={faq.heading} />
         <div class="faq-list">
           {faq.items.map((item) => (
@@ -138,6 +143,7 @@ const jsonLd = faq && {
             </a>
           </p>
         )}
+        </div>
       </section>
     )
   }
@@ -159,15 +165,13 @@ const jsonLd = faq && {
     font-size: var(--text-base);
   }
 
-  /* Услуга: mono номер в охра (28 px → над прага 3:1 за едър текст) вляво, съдържание вдясно. */
+  /* Услуга — бяла плочка: mono номер в охра (28 px → над прага 3:1) вляво, съдържание вдясно. */
+  /* На мобилно номерът е над съдържанието: „Дигитализация“ не се побира до него. */
   .service {
     display: grid;
-    grid-template-columns: var(--spacing-12) 1fr;
-    column-gap: var(--spacing-4);
-    /* Номерът и h2 на една базова линия. */
-    align-items: baseline;
-    padding-block: var(--spacing-12);
-    border-top: 1px solid var(--color-line);
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--spacing-3);
+    margin-bottom: var(--spacing-4);
   }
 
   .num {
@@ -227,14 +231,17 @@ const jsonLd = faq && {
   }
 
   .section {
-    padding-block: var(--spacing-16);
-    border-top: 1px solid var(--color-line);
+    padding-block: var(--spacing-4) var(--spacing-8);
   }
 
   .section h2 {
     font-size: var(--text-xl);
     line-height: 1.15;
     margin: 0 0 var(--spacing-8);
+  }
+
+  .section h2.centered {
+    text-align: center;
   }
 
   /* FAQ: <details>/<summary> без икона и без анимация. Състоянието се показва с текстов
@@ -307,8 +314,11 @@ const jsonLd = faq && {
     }
 
     .service {
-      grid-template-columns: var(--spacing-24) 1fr;
-      padding-block: var(--spacing-16);
+      grid-template-columns: var(--spacing-24) minmax(0, 1fr);
+      column-gap: var(--spacing-4);
+      row-gap: 0;
+      /* Номерът и h2 на една базова линия. */
+      align-items: baseline;
     }
 
     .num {
@@ -316,7 +326,11 @@ const jsonLd = faq && {
     }
 
     .section {
-      padding-block: var(--spacing-24);
+      padding-block: var(--spacing-8) var(--spacing-12);
+    }
+
+    .section h2 {
+      font-size: var(--text-2xl);
     }
   }
 </style>

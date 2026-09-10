@@ -141,7 +141,7 @@ const jsonLd = {
       <Portrait src={portrait.src} alt={portrait.alt} locale={locale} eager />
     </div>
 
-    <div class="content">
+    <div class="content tile tile-surface">
       {
         sections.map((s) => (
           <section id={s.id} class:list={[s.isShort && 'short']} aria-labelledby={`${s.id}-title`}>
@@ -220,6 +220,11 @@ const jsonLd = {
   section {
     padding-block: var(--spacing-8);
     border-top: 1px solid var(--color-line);
+  }
+
+  section:first-child {
+    border-top: 0;
+    padding-top: 0;
   }
 
   section h2 {
@@ -311,12 +316,12 @@ const jsonLd = {
       padding-block: var(--spacing-16) var(--spacing-32);
     }
 
-    /* Портретът е вляво в двата реда и върви със съдържанието (sticky в своята област). */
+    /* Портретът е вляво в двата реда и върви със съдържанието (sticky под хедъра). */
     .portrait-col {
       grid-column: 1 / span 4;
       grid-row: 1 / span 2;
       position: sticky;
-      top: var(--spacing-8);
+      top: calc(var(--spacing-24) + var(--spacing-4));
       align-self: start;
     }
 

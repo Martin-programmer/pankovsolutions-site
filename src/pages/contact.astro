@@ -37,11 +37,11 @@ for (const s of sections) {
     </header>
 
     <div class="cols">
-      <div class="form-col" id="inquiry">
+      <div class="form-col tile tile-surface" id="inquiry">
         <InquiryForm locale={locale} variant="full" />
       </div>
 
-      <aside class="direct">
+      <aside class="direct tile tile-cool">
         {
           aside.map((s) => (
             <section>
@@ -87,6 +87,15 @@ for (const s of sections) {
     grid-column: 1 / -1;
   }
 
+  /* Студената плочка е с височината на съдържанието си, не на формата. */
+  .direct {
+    align-self: start;
+  }
+
+  .direct section + section {
+    margin-top: var(--spacing-8);
+  }
+
   .direct h2 {
     font-size: var(--text-lg);
     line-height: 1.25;
@@ -108,15 +117,19 @@ for (const s of sections) {
   /* = --breakpoint-md в tokens.css */
   @media (min-width: 48rem) {
     .page {
-      padding-block: var(--spacing-16) var(--spacing-32);
+      padding-block: var(--spacing-16) var(--spacing-24);
     }
 
     h1 {
       font-size: var(--text-3xl);
     }
 
+    .cols {
+      column-gap: var(--spacing-4);
+    }
+
     .form-col {
-      grid-column: 1 / span 7;
+      grid-column: 1 / span 8;
     }
 
     .direct {

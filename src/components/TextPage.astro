@@ -21,8 +21,8 @@ const html = cleanHtml(await md(rest));
 ---
 
 <Base title={page.data.title} description={page.data.description} locale={locale}>
-  <article class="wrap">
-    <div class="doc">
+  <article class="wrap page">
+    <div class="doc tile tile-surface">
       <h1 set:html={await mdInline(heading)} />
       <div class="prose" set:html={html} />
     </div>
@@ -30,9 +30,13 @@ const html = cleanHtml(await md(rest));
 </Base>
 
 <style>
+  .page {
+    padding-block: var(--spacing-8) var(--spacing-16);
+  }
+
+  /* Текстът в бяла плочка (DESIGN.md §Ревизия); мярката е на прозата вътре. */
   .doc {
-    max-width: var(--measure);
-    padding-block: var(--spacing-12) var(--spacing-24);
+    max-width: calc(var(--measure) + 2 * var(--spacing-12));
   }
 
   /* 36 px на мобилно: „поверителност“ на 48 px е по-широка от колоната на 390 px. */
@@ -44,8 +48,8 @@ const html = cleanHtml(await md(rest));
 
   /* = --breakpoint-md в tokens.css */
   @media (min-width: 48rem) {
-    .doc {
-      padding-block: var(--spacing-16) var(--spacing-32);
+    .page {
+      padding-block: var(--spacing-12) var(--spacing-24);
     }
 
     h1 {

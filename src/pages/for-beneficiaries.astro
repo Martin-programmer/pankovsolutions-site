@@ -74,7 +74,7 @@ for (const [i, s] of raw.entries()) {
 
 <Base title={page.data.title} description={page.data.description} locale={locale}>
   <div class="wrap layout">
-    <div class="content">
+    <div class="content tile tile-surface">
       <header class="head">
         <h1 set:html={await mdInline(h1)} />
         <div class="prose lede" set:html={lede} />
@@ -131,7 +131,7 @@ for (const [i, s] of raw.entries()) {
     </div>
 
     <!-- След съдържанието в DOM (Tab и четци стигат първо до h1); визуално вляво през grid. -->
-    <nav class="toc" aria-label={t('toc.label')}>
+    <nav class="toc tile tile-cool" aria-label={t('toc.label')}>
       <p class="toc-title">{t('toc.label')}</p>
       <ol>
         {
@@ -151,7 +151,7 @@ for (const [i, s] of raw.entries()) {
     display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
     column-gap: var(--spacing-6);
-    padding-block: var(--spacing-12) var(--spacing-24);
+    padding-block: var(--spacing-8) var(--spacing-16);
   }
 
   /* Съдържанието на страницата е само за десктоп (DESIGN: „вляво sticky … само на десктоп“). */
@@ -271,17 +271,19 @@ for (const [i, s] of raw.entries()) {
   /* = --breakpoint-md в tokens.css */
   @media (min-width: 48rem) {
     .layout {
-      padding-block: var(--spacing-16) var(--spacing-32);
+      padding-block: var(--spacing-12) var(--spacing-24);
     }
 
+    /* Под sticky хедъра (~80 px): top = хедър + отстъп. */
     .toc {
       display: block;
       grid-column: 1 / span 3;
       grid-row: 1;
       position: sticky;
-      top: var(--spacing-8);
+      top: calc(var(--spacing-24) + var(--spacing-4));
       align-self: start;
       font-size: var(--text-sm);
+      padding: var(--spacing-6);
     }
 
     .toc-title {

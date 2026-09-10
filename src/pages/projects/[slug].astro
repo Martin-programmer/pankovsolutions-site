@@ -137,7 +137,7 @@ const jsonLd = {
       </nav>
       <h1>{result}</h1>
 
-      <dl class="facts">
+      <dl class="facts tile tile-cool">
         {
           shownFacts.map(([label, value, mono]) => (
             <div>
@@ -178,7 +178,7 @@ const jsonLd = {
 
     {
       testimonial && (
-        <figure class="quote">
+        <figure class="quote tile tile-surface reveal">
           <blockquote>
             <span class="open" aria-hidden="true">
               „
@@ -193,7 +193,7 @@ const jsonLd = {
       )
     }
 
-    <footer class="foot">
+    <footer class="foot tile tile-tint reveal">
       <a class="next" href={localeUrl(locale, `/projects/${slugOf(next.id)}`)}>
         <span class="next-label">{t('projects.next')}</span>
         <span class="next-title">{cleanText(next.data.result)}</span>
@@ -240,12 +240,12 @@ const jsonLd = {
 
   /* Лента с факти: две колони на десктоп, етикет + стойност. Body шрифт (българските
      етикети и стойности), mono само на година и стек (клас върху dd). */
+  /* Студена плочка (tile-cool); padding-ът идва от .tile. */
   .facts {
     display: grid;
-    gap: var(--spacing-2) var(--spacing-12);
+    gap: var(--spacing-3) var(--spacing-12);
     margin: 0;
-    padding-block: var(--spacing-4);
-    border-block: 1px solid var(--color-line);
+    padding: var(--spacing-6);
     font-size: var(--text-sm);
     line-height: 1.5;
   }
@@ -299,6 +299,7 @@ const jsonLd = {
 
   .figure :global(.shot),
   .figure :global(.ph),
+  .figure :global(.ph-frame),
   .figure figcaption {
     grid-column: 1 / -1;
   }
@@ -336,14 +337,12 @@ const jsonLd = {
   }
 
   .quote {
-    max-width: var(--measure);
+    max-width: calc(var(--measure) + 2 * var(--spacing-12));
     margin-top: var(--spacing-16);
   }
 
   .foot {
-    margin-top: var(--spacing-24);
-    padding-top: var(--spacing-8);
-    border-top: 1px solid var(--color-line);
+    margin-top: var(--spacing-16);
     display: grid;
     gap: var(--spacing-12);
   }
@@ -402,7 +401,8 @@ const jsonLd = {
     }
 
     .figure :global(.shot),
-    .figure :global(.ph) {
+    .figure :global(.ph),
+    .figure :global(.ph-frame) {
       grid-column: 1 / span 8;
     }
 

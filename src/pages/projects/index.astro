@@ -35,7 +35,7 @@ const title = page?.data.title ?? `${t('nav.projects')} – ${company.brand}`;
           const img = p.data.images[0];
           const href = hrefOf(p.id);
           return (
-            <article class="card">
+            <article class="card tile tile-surface reveal">
               <a class="media figure" href={href} tabindex="-1" aria-hidden="true">
                 {img && publicFileExists(img.src) ? (
                   <img
@@ -65,6 +65,7 @@ const title = page?.data.title ?? `${t('nav.projects')} – ${company.brand}`;
       }
     </div>
 
+    <div class="archive-tile tile tile-surface reveal">
     <h2 class="archive-title">{t('projects.archive')}</h2>
     <!-- role атрибутите пазят табличната семантика на мобилно, където display-ът е block/grid. -->
     <table class="archive" role="table">
@@ -92,6 +93,7 @@ const title = page?.data.title ?? `${t('nav.projects')} – ${company.brand}`;
         }
       </tbody>
     </table>
+    </div>
   </section>
 </Base>
 
@@ -111,8 +113,8 @@ const title = page?.data.title ?? `${t('nav.projects')} – ${company.brand}`;
   .featured {
     display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
-    column-gap: var(--spacing-6);
-    row-gap: var(--spacing-12);
+    column-gap: var(--spacing-4);
+    row-gap: var(--spacing-4);
   }
 
   .card {
@@ -158,10 +160,14 @@ const title = page?.data.title ?? `${t('nav.projects')} – ${company.brand}`;
 
   /* Архив: таблична решетка; на мобилно всеки ред е блок в две колони. Подзаглавие на
      листинга, затова е под h2 на голямата карта. */
+  .archive-tile {
+    margin-top: var(--spacing-4);
+  }
+
   .archive-title {
     font-size: var(--text-lg);
     line-height: 1.25;
-    margin: var(--spacing-24) 0 var(--spacing-6);
+    margin: 0 0 var(--spacing-6);
   }
 
   .archive {

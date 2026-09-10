@@ -40,7 +40,7 @@ for (const s of sections) {
   <section class="wrap">
     {
       products.map((p) => (
-        <article class="product">
+        <article class="product tile tile-surface reveal">
           <div class="media">
             <Placeholder label={t('placeholder.screenshot')} ratio="4 / 5" />
           </div>
@@ -78,14 +78,11 @@ for (const s of sections) {
     padding-block: var(--spacing-8) var(--spacing-24);
   }
 
-  /* Една карта: плоска, 1px рамка, без сянка и без линк. Кадър 4:5 вляво, текст вдясно. */
+  /* Една плочка (DESIGN.md §Ревизия), без линк. Кадър 4:5 вляво, текст вдясно. */
   .product {
     display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: var(--spacing-6);
-    padding: var(--spacing-6);
-    border: 1px solid var(--color-line);
-    background: var(--color-surface);
   }
 
   .media,
@@ -127,10 +124,6 @@ for (const s of sections) {
 
     section {
       padding-block: var(--spacing-8) var(--spacing-32);
-    }
-
-    .product {
-      padding: var(--spacing-8);
     }
 
     .media {

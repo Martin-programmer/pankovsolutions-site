@@ -13,8 +13,8 @@ const successText = page?.body?.match(/Успех:\s*„([^“]+)“/)?.[1] ?? t
 ---
 
 <Base title={`${t('form.sentTitle')} – ${company.brand}`} locale={locale} noindex>
-  <div class="wrap">
-    <div class="page">
+  <div class="wrap outer">
+    <div class="page tile tile-surface">
       <h1>{t('form.sentTitle')}</h1>
       <p class="form-success" role="status">{successText}</p>
       <p><a class="arrow-link" href={localeUrl(locale, '/projects')}>{t('projects.all')}</a></p>
@@ -23,9 +23,12 @@ const successText = page?.body?.match(/Успех:\s*„([^“]+)“/)?.[1] ?? t
 </Base>
 
 <style>
+  .outer {
+    padding-block: var(--spacing-12) var(--spacing-24);
+  }
+
   .page {
-    padding-block: var(--spacing-16) var(--spacing-32);
-    max-width: var(--measure);
+    max-width: calc(var(--measure) + 2 * var(--spacing-12));
   }
 
   h1 {
