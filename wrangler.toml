@@ -12,12 +12,11 @@ directory = "./dist"
 binding = "ASSETS"
 not_found_handling = "404-page"
 
-# Rate limit на формата (5/час на IP) — включва се, когато има KV namespace: създай го в
-# Dashboard → Storage & Databases → KV („inquiry-rate-limit“), сложи id-то тук и махни
-# коментарите (README §5). Без binding функцията прескача лимита и го логва.
-# [[kv_namespaces]]
-# binding = "INQUIRY_RL"
-# id = "<id от Dashboard → KV>"
+# Rate limit на формата (5/час на IP): KV namespace „inquiry-rate-limit“ (Dashboard →
+# Storage & Databases → KV). Ключовете rl:<ip> изтичат сами след 1 час.
+[[kv_namespaces]]
+binding = "INQUIRY_RL"
+id = "bc9f984e5d2f47498ca3dbaf57ce2c30"
 
 [observability]
 enabled = true
