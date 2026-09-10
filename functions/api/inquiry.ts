@@ -17,7 +17,7 @@ interface Env {
   INQUIRY_MOCK?: string;
 }
 
-const TYPES = ['eu', 'shop', 'app', 'other'] as const;
+const TYPES = ['erp', 'eu', 'shop', 'app', 'other'] as const;
 const RATE_LIMIT = 5; // на час, на IP
 const RATE_WINDOW = 60 * 60;
 const MIN_SECONDS = 3;

@@ -28,7 +28,13 @@ const showLogo = partner && (!partner.data.placeholder || !isProd);
             <span class="tag">{t('placeholder.sample')}</span>
           </>
         ) : (
-          <img src={partner.data.logo} alt={partner.data.name} height="28" />
+          partner.data.url ? (
+            <a href={partner.data.url} rel="noopener" target="_blank">
+              <img src={partner.data.logo} alt={`${partner.data.name} – ${t('partner.site')}`} height="28" />
+            </a>
+          ) : (
+            <img src={partner.data.logo} alt={partner.data.name} height="28" />
+          )
         )}
       </div>
     )

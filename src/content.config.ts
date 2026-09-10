@@ -54,6 +54,8 @@ const clients = defineCollection({
     logo: z.string(),
     // Партньор (Еко Глоуб), не клиент — показва се в отделен блок.
     partner: z.boolean().default(false),
+    // Сайт на партньора/клиента — логото става линк (проверимост).
+    url: z.string().url().optional(),
     placeholder: z.boolean().default(false),
     // Дата на писменото съгласие; YAML може да я даде като Date, ако не е в кавички.
     consent: z.union([z.string(), z.date()]).nullable().default(null),

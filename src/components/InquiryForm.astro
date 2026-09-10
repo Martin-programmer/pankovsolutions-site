@@ -19,7 +19,7 @@ const id = (name: string) => `inquiry-${variant}-${name}`;
 const siteKey = import.meta.env.TURNSTILE_SITE_KEY as string | undefined;
 const success = successText ?? t('form.success');
 
-const types = ['eu', 'shop', 'app', 'other'] as const;
+const types = ['erp', 'eu', 'shop', 'app', 'other'] as const;
 ---
 
 <form

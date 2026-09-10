@@ -35,6 +35,7 @@
 - slug: eco-globe
   name: "Еко Глоуб ООД"        # партньор, не клиент — показва се в блока „Партньор“
   logo: /img/clients/eco-globe.webp
+  url: https://ecoglobe-bg.com
   partner: true
   placeholder: false
   consent: null   # TODO: Марти да даде: дата на писменото съгласие
