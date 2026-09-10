@@ -25,8 +25,11 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
 
 <header class="site-header">
   <div class="bar">
-    <!-- TODO: Марти да даде: SVG лого; дотогава wordmark в Source Serif 700. -->
-    <a class="wordmark" href={localeUrl(locale, '/')}>{company.brand}</a>
+    <!-- Логото е PNG @3x (public/img/logo.png; източник design/logo/): знакът има преливане
+         петрол→охра, което SVG в два цвята губи. Знакът сам е SVG (favicon, logo-mark). -->
+    <a class="brand" href={localeUrl(locale, '/')}>
+      <img src="/img/logo.png" alt={company.brand} width="425" height="144" fetchpriority="high" />
+    </a>
 
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-nav-list">
       {t('menu')}
@@ -144,13 +147,16 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
     gap: var(--spacing-4) var(--spacing-8);
   }
 
-  .wordmark {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: var(--text-md);
-    letter-spacing: -0.01em;
-    color: var(--color-ink);
-    text-decoration: none;
+  /* 40 px на мобилно, 48 px на десктоп; ширината следва от пропорцията на файла (425:144). */
+  .brand {
+    display: block;
+    line-height: 0;
+  }
+
+  .brand img {
+    display: block;
+    height: 40px;
+    width: auto;
   }
 
   .menu-btn {
@@ -238,6 +244,10 @@ const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${
 
   /* = --breakpoint-md в tokens.css */
   @media (min-width: 48rem) {
+    .brand img {
+      height: 48px;
+    }
+
     .menu-btn {
       display: none;
     }
