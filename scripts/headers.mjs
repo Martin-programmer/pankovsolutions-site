@@ -6,6 +6,10 @@ const path = 'dist/_headers';
 let text = readFileSync(path, 'utf-8');
 
 const umami = (process.env.UMAMI_URL ?? '').trim().replace(/\/+$/, '');
+// Umami Cloud зарежда скрипта от cloud.umami.is, но праща данните към gateway.umami.is -
+// connect-src трябва да допуска и двата, иначе CSP блокира събитията.
+const umamiConnect = umami ? (umami.includes('umami.is') ? `${umami} https://gateway.umami.is` : umami) : '';
+text = text.replace(/connect-src([^;]*)\s\{\{UMAMI_URL\}\}/, (m, rest) => `connect-src${rest}${umamiConnect ? ` ${umamiConnect}` : ''}`);
 text = text.replace(/\s*\{\{UMAMI_URL\}\}/g, umami ? ` ${umami}` : '');
 
 const branch = process.env.WORKERS_CI_BRANCH ?? process.env.CF_PAGES_BRANCH;
