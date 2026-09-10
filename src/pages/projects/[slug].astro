@@ -34,6 +34,7 @@ const { entry, next } = Astro.props;
 const locale: Locale = 'bg';
 const t = useTranslations(locale);
 const isProd = import.meta.env.PROD;
+const showPlaceholders = !isProd || process.env.SHOW_PLACEHOLDERS === '1';
 const slug = slugOf(entry.id);
 const d = entry.data;
 
@@ -93,8 +94,11 @@ const facts: Array<[string, string, boolean?]> = [
 const shownFacts = facts.filter(([, value]) => value);
 
 const testimonial = (await getCollection('testimonials')).find(
-  (x) => x.data.project === slug && (!x.data.placeholder || !isProd),
+  (x) => x.data.project === slug && (!x.data.placeholder || showPlaceholders),
 );
+const testimonialClient = testimonial?.data.client
+  ? (await getCollection('clients')).find((c) => c.id === testimonial.data.client)
+  : undefined;
 
 const site = Astro.site?.href ?? 'https://pankovsolutions.com/';
 const url = new URL(Astro.url.pathname, site).href;
@@ -191,8 +195,14 @@ const jsonLd = {
             <p>{testimonial.data.quote}</p>
           </blockquote>
           <figcaption>
-            <span class="who">{testimonial.data.name}</span>, {testimonial.data.role}, {testimonial.data.company}
-            {testimonial.data.placeholder && <span class="tag">{t('placeholder.sample')}</span>}
+            {testimonialClient && !testimonialClient.data.placeholder && (
+              <img class="quote-logo" src={testimonialClient.data.logo} alt="" height="28" loading="lazy" />
+            )}
+            <span>
+              {testimonial.data.name && <><span class="who">{testimonial.data.name}</span>, </>}
+              {testimonial.data.role}, {testimonial.data.company}
+              {testimonial.data.placeholder && <span class="tag">{t('placeholder.sample')}</span>}
+            </span>
           </figcaption>
         </figure>
       )

@@ -67,9 +67,12 @@ const testimonials = defineCollection({
   }),
   schema: z.object({
     quote: z.string(),
-    name: z.string(),
+    // Празно, докато клиентът не потвърди кой се подписва.
+    name: z.string().default(''),
     role: z.string(),
     company: z.string(),
+    // slug от clients.yaml — логото до отзива.
+    client: z.string().optional(),
     // slug на проект от колекцията projects (без префикса на езика).
     project: z.string(),
     placeholder: z.boolean().default(false),

@@ -71,7 +71,7 @@ const bg = {
   'placeholder.screenshot': 'скрийншот',
   'placeholder.photo': 'снимка',
   'placeholder.sample': 'примерен – ще бъде заменен',
-  'trust.clients': 'Клиенти',
+  'trust.clients': 'Клиенти, с които сме работили',
   // Проекти: листинг и кейс
   'projects.archive': 'Архив',
   'projects.inProgress': 'в изпълнение',
@@ -95,10 +95,6 @@ const bg = {
   'notfound.write': 'ни пишете',
   'llms.pages': 'Страници',
   'llms.projects': 'Проекти (кейс стъдита)',
-  // Лента с числа на началната — стойностите се смятат от колекцията projects.
-  'stats.projects': 'изпълнени проекта',
-  'stats.products': 'продукта, мигрирани със скрипт',
-  'stats.technologies': 'технологии в стека на проектите',
 } as const;
 
 export type UiKey = keyof typeof bg;
@@ -158,7 +154,7 @@ const en: Record<UiKey, string> = {
   'placeholder.screenshot': 'screenshot',
   'placeholder.photo': 'photo',
   'placeholder.sample': 'sample – to be replaced',
-  'trust.clients': 'Clients',
+  'trust.clients': 'Clients we have worked with',
   'projects.archive': 'Archive',
   'projects.inProgress': 'in progress',
   'projects.next': 'Next project →',
@@ -180,9 +176,6 @@ const en: Record<UiKey, string> = {
   'notfound.write': 'write to us',
   'llms.pages': 'Pages',
   'llms.projects': 'Projects (case studies)',
-  'stats.projects': 'projects delivered',
-  'stats.products': 'products migrated by script',
-  'stats.technologies': 'technologies across the project stacks',
 };
 
 export const ui: Record<Locale, Record<UiKey, string>> = { bg, en };

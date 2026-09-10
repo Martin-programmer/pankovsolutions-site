@@ -188,10 +188,20 @@ a:hover > .frame,
   margin: 0 0 var(--spacing-3);
 }
 
-/* Авторът е извън <blockquote> (figcaption), иначе по спецификация е част от цитата. */
+/* Авторът е извън <blockquote> (figcaption), иначе по спецификация е част от цитата.
+   Логото на клиента (clients.yaml) стои преди името. */
 .quote figcaption {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
   font-size: var(--text-sm);
   color: var(--color-muted);
+}
+
+.quote .quote-logo {
+  flex: none;
+  height: 28px;
+  width: auto;
 }
 
 .quote blockquote {
