@@ -123,7 +123,6 @@ const jsonLd = {
   url,
   ...(jobTitle ? { jobTitle } : {}),
   worksFor: { '@type': 'Organization', '@id': `${site}#organization`, name: company.brand },
-  alumniOf: { '@type': 'CollegeOrUniversity', name: company.founderAlumniOf },
   ...(publicFileExists(portrait.src) ? { image: new URL(portrait.src, site).href } : {}),
   ...(sameAs.length ? { sameAs } : {}),
 };

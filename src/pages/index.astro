@@ -71,9 +71,7 @@ const featuredSizes = await Promise.all(
     return img && publicFileExists(img.src) ? publicImageSize(img.src) : Promise.resolve(null);
   }),
 );
-// Mono readout над h1: градът + стекът от лентата на доверие (авторският `code` ред в home.md).
-const stackLine = trust.match(/<code>(.*?)<\/code>/)?.[1] ?? '';
-const readout = [company.city, stackLine && `<code>${stackLine}</code>`].filter(Boolean).join(' · ');
+// Късият ред над h1 (readout) е секцията „ЛЕНТА ДОВЕРИЕ“ от home.md; над логата няма текст.
 
 // Лента с числа: сметнати от колекцията, не написани. Числото продукти е от result на кейса.
 const allProjects = await getCollection('projects', (p) => p.id.startsWith('bg/'));
@@ -135,7 +133,7 @@ const jsonLd = {
   <section class="hero-band">
     <div class="hero wrap">
       <div class="hero-text">
-        <p class="readout" set:html={readout} />
+        <p class="readout" set:html={trust} />
         <h1 set:html={hero.title} />
         <div class="lede" set:html={hero.lede} />
         <p class="hero-cta">
@@ -180,7 +178,6 @@ const jsonLd = {
 
       <!-- ЛЕНТА ДОВЕРИЕ — авторският ред + до 6 лога -->
       <div class="trust">
-        <p class="trust-line" set:html={trust} />
         {
           clients.length > 0 && (
             <ul class="logos" aria-label={t('trust.clients')}>
