@@ -100,7 +100,7 @@ export async function parseServices(source: string) {
 
 // Номериран списък със стъпки. Две форми от content/:
 //   „1. **Заглавие.** Едно изречение.“      (home.md)
-//   „1. Заглавие – едно изречение.“          (services.md)
+//   „1. Заглавие - едно изречение.“          (services.md)
 export async function parseStepLines(source: string) {
   const items = [];
   for (const line of source.split('\n')) {
@@ -109,7 +109,7 @@ export async function parseStepLines(source: string) {
     let title = m[2];
     let text = '';
     const bold = title.match(/^\*\*(.+?)\*\*\s*(.*)$/);
-    const dash = title.search(/\s[–—]\s/);
+    const dash = title.search(/\s[-–—]\s/);
     if (bold) {
       title = bold[1];
       text = bold[2];

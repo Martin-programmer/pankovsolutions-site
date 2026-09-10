@@ -245,7 +245,7 @@ const jsonLd = faq && {
   }
 
   /* FAQ: <details>/<summary> без икона и без анимация. Състоянието се показва с текстов
-     маркер в mono („+“ / „–“) вдясно; въпросът не имитира линк. */
+     маркер в mono („+“ / „-“) вдясно; въпросът не имитира линк. */
   .faq-list {
     max-width: var(--measure);
     border-top: 1px solid var(--color-line);
@@ -280,7 +280,7 @@ const jsonLd = faq && {
   }
 
   details[open] summary::after {
-    content: '–';
+    content: '-';
   }
 
   summary:hover {

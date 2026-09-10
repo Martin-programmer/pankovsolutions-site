@@ -3,7 +3,7 @@
 # Turnstile и логва payload-а в конзолата вместо да праща имейли и Telegram.
 INQUIRY_MOCK=1
 
-# С реални ключове (виж README.md §Форма – настройка) махни INQUIRY_MOCK и попълни:
+# С реални ключове (виж README.md §Форма - настройка) махни INQUIRY_MOCK и попълни:
 # TURNSTILE_SECRET=
 # RESEND_API_KEY=
 # TELEGRAM_BOT_TOKEN=

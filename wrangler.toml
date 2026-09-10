@@ -1,5 +1,5 @@
 # Cloudflare Pages. Секретите и KV binding-ът INQUIRY_RL се задават в Dashboard →
-# Pages → Settings (виж README.md §Форма – настройка); локално — .dev.vars и --kv.
+# Pages → Settings (виж README.md §Форма - настройка); локално — .dev.vars и --kv.
 name = "pankovsolutions-site"
 compatibility_date = "2026-09-03"
 pages_build_output_dir = "dist"

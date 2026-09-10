@@ -12,7 +12,7 @@ const page = await getEntry('pages', 'bg/contact');
 const successText = page?.body?.match(/Успех:\s*„([^“]+)“/)?.[1] ?? t('form.success').replace(' на {email}', '');
 ---
 
-<Base title={`${t('form.sentTitle')} – ${company.brand}`} locale={locale} noindex>
+<Base title={`${t('form.sentTitle')} - ${company.brand}`} locale={locale} noindex>
   <div class="wrap outer">
     <div class="page tile tile-surface">
       <h1>{t('form.sentTitle')}</h1>

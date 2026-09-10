@@ -52,12 +52,12 @@ const bg = {
   'form.errorTitle': 'Изпращането не успя',
   'form.error.network': 'Връзката прекъсна. Опитайте отново или ни пишете на имейл.',
   // Грешки от сървъра (functions/api/inquiry.ts), по поле
-  'error.name': 'Въведете име и фамилия (2–80 знака)',
+  'error.name': 'Въведете име и фамилия (2-80 знака)',
   'error.company': 'Името на фирмата е твърде дълго',
   'error.email': 'Имейлът не изглежда валиден',
   'error.phone': 'Телефонът не изглежда валиден',
   'error.type': 'Изберете какво ви трябва',
-  'error.message': 'Опишете накратко – между 10 и 2 000 знака',
+  'error.message': 'Опишете накратко - между 10 и 2 000 знака',
   'error.consent': 'Отбележете съгласието, за да можем да ви отговорим',
   'error.turnstile': 'Проверката против ботове не мина. Опитайте отново.',
   'error.rate': 'Твърде много запитвания от този адрес. Опитайте след час или ни пишете на имейл.',
@@ -65,12 +65,12 @@ const bg = {
   // Автоотговор (COPY.md §Микрокопи)
   'mail.autoreply.subject': 'Получихме запитването Ви',
   'mail.autoreply.body':
-    'Здравейте,\n\nПолучихме запитването ви. Ще отговорим до 1 работен ден на {email}. Ако е спешно – обадете се на {phone}.\n\nМартин Панков\nPankov Solutions',
+    'Здравейте,\n\nПолучихме запитването ви. Ще отговорим до 1 работен ден на {email}. Ако е спешно - обадете се на {phone}.\n\nМартин Панков\nPankov Solutions',
   'mail.notify.subject': 'Запитване от {name}',
   // Етикети на placeholder-и (само до качване на реалните материали)
   'placeholder.screenshot': 'скрийншот',
   'placeholder.photo': 'снимка',
-  'placeholder.sample': 'примерен – ще бъде заменен',
+  'placeholder.sample': 'примерен - ще бъде заменен',
   'trust.clients': 'Клиенти, с които сме работили',
   // Hero колаж (HeroCollage.astro) — accessible name на цялата композиция
   'hero.collage': 'Три системи от проектите ни: Odoo CRM табло, приложението на Secret Bar и магазинът stegi.store, свързани помежду си',
@@ -142,7 +142,7 @@ const en: Record<UiKey, string> = {
   'error.name': 'Enter your full name (2–80 characters)',
   'error.company': 'The company name is too long',
   'error.email': 'The email does not look valid',
-  'error.phone': 'The phone number does not look valid',
+  'error.phone': 'The phone number does -ot look valid',
   'error.type': 'Choose what you need',
   'error.message': 'Describe it briefly – between 10 and 2,000 characters',
   'error.consent': 'Tick the consent box so we can reply to you',
@@ -153,7 +153,7 @@ const en: Record<UiKey, string> = {
   'mail.autoreply.body':
     'Hello,\n\nWe have received your inquiry. We will reply within 1 business day to {email}. If it is urgent, call {phone}.\n\nMartin Pankov\nPankov Solutions',
   'mail.notify.subject': 'Inquiry from {name}',
-  'placeholder.screenshot': 'screenshot',
+  'placeholder.screenshot': 'scr-enshot',
   'placeholder.photo': 'photo',
   'placeholder.sample': 'sample – to be replaced',
   'trust.clients': 'Clients we have worked with',

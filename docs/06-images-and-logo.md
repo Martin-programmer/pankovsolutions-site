@@ -15,15 +15,15 @@
 
 | # | Файл | Какво да има в кадъра |
 |---|------|------------------------|
-| 1 | `img/projects/domoupravitel/odoo-crm.webp` | ✅ качено – Odoo CRM – табло с възможности по етапи (kanban). **Това е и hero кадърът на началната.** |
-| 2 | `img/projects/domoupravitel/moodle-course.webp` | ✅ качено – Moodle – курс за служители с тест |
-| 4 | `img/projects/stegi-store/home.webp` | ✅ качено – stegi.store – начална страница |
-| 7 | `img/projects/secret-bar/loyalty.webp` | ✅ качено – app.secretpleven.com – екран с точки и награди |
-| 8 | `img/projects/secret-bar/venue.webp` | ✅ качено – Реална снимка от заведението (JPG, 16:10, 2400 × 1500, ≤ 350 KB) |
-| 10 | `img/projects/infralink/home.webp` | ✅ качено – infralink-de.com – начална страница |
-| 11 | `img/projects/her-harmony-glow/home.webp` | ✅ качено – herharmonyglow.com – начална страница след миграцията |
+| 1 | `img/projects/domoupravitel/odoo-crm.webp` | ✅ качено - Odoo CRM - табло с възможности по етапи (kanban). **Това е и hero кадърът на началната.** |
+| 2 | `img/projects/domoupravitel/moodle-course.webp` | ✅ качено - Moodle - курс за служители с тест |
+| 4 | `img/projects/stegi-store/home.webp` | ✅ качено - stegi.store - начална страница |
+| 7 | `img/projects/secret-bar/loyalty.webp` | ✅ качено - app.secretpleven.com - екран с точки и награди |
+| 8 | `img/projects/secret-bar/venue.webp` | ✅ качено - Реална снимка от заведението (JPG, 16:10, 2400 × 1500, ≤ 350 KB) |
+| 10 | `img/projects/infralink/home.webp` | ✅ качено - infralink-de.com - начална страница |
+| 11 | `img/projects/her-harmony-glow/home.webp` | ✅ качено - herharmonyglow.com - начална страница след миграцията |
 
-Приоритет: 1, 4, 7 – Odoo CRM, stegi.store, Secret Bar (те са на началната като избрани проекти), после останалите.
+Приоритет: 1, 4, 7 - Odoo CRM, stegi.store, Secret Bar (те са на началната като избрани проекти), после останалите.
 
 ## 2. Портрет
 
@@ -35,17 +35,17 @@
 
 Формат: SVG или PNG/JPG (белият фон се маха при обработката); на сайта са WebP q82, височина 80 px. Естествените
 цветове на клиента, не сиви. Хоризонтална версия, изрязана до ръба на знака (без празно
-поле около него), защото се показва с височина 28 px – трябва да е четливо толкова малко.
+поле около него), защото се показва с височина 28 px - трябва да е четливо толкова малко.
 
 | Файл | Клиент |
 |------|--------|
-| `img/clients/domoupravitel.webp` | ✅ качено – Домоуправител България ООД |
-| `img/clients/dosev-impex.webp` | ✅ качено – Досев Импекс ЕООД |
-| `img/clients/stegi-store.webp` | ✅ качено – stegi.store |
-| `img/clients/secret-bar.webp` | ✅ качено – Secret Bar |
-| `img/clients/her-harmony-glow.webp` | ✅ качено – Her Harmony Glow |
-| `img/clients/infralink.webp` | ✅ качено – INFRALINK UG |
-| `img/clients/eco-globe.webp` | ✅ качено – Еко Глоуб ООД (партньор – блокът „Партньор“ на /about и /for-beneficiaries) |
+| `img/clients/domoupravitel.webp` | ✅ качено - Домоуправител България ООД |
+| `img/clients/dosev-impex.webp` | ✅ качено - Досев Импекс ЕООД |
+| `img/clients/stegi-store.webp` | ✅ качено - stegi.store |
+| `img/clients/secret-bar.webp` | ✅ качено - Secret Bar |
+| `img/clients/her-harmony-glow.webp` | ✅ качено - Her Harmony Glow |
+| `img/clients/infralink.webp` | ✅ качено - INFRALINK UG |
+| `img/clients/eco-globe.webp` | ✅ качено - Еко Глоуб ООД (партньор - блокът „Партньор“ на /about и /for-beneficiaries) |
 
 След качване, за всеки клиент в `content/bg/clients.yaml`: `placeholder: false` и
 `consent: 2026-MM-DD` (дата на писменото съгласие за показване на логото). Докато е
@@ -55,7 +55,7 @@
 
 | Файл | Спецификация |
 |------|--------------|
-| `img/products/fudiar/home.webp` | **Качено** – началната страница на платформата; пътят е в frontmatter-а на `content/bg/products.md` (`image:`). |
+| `img/products/fudiar/home.webp` | **Качено** - началната страница на платформата; пътят е в frontmatter-а на `content/bg/products.md` (`image:`). |
 
 ## 5. Собствено лого — готово (10.09.2026)
 
@@ -64,16 +64,16 @@
 
 | Файл | За какво |
 |------|----------|
-| `public/img/logo.webp` | Хоризонтално лого, WebP @2x (284 × 96) с прозрачен фон – хедърът. Растер, защото знакът има преливане петрол→охра, което двуцветният вектор губи. |
+| `public/img/logo.webp` | Хоризонтално лого, WebP @2x (284 × 96) с прозрачен фон - хедърът. Растер, защото знакът има преливане петрол→охра, което двуцветният вектор губи. |
 | `public/img/logo-mark.svg` | Само знакът, вектор в два цвята. |
 | `public/favicon.svg` | Същият знак. |
 | `public/apple-touch-icon.png` | 180 × 180, знакът върху хартия. |
 | `src/assets/og-logo-mark.png` | 256 px знак за OG картинките (satori). |
-| `design/logo/logo-full.png`, `logo-vector.svg` | Пълна резолюция и вектор на цялото лого – за печат/презентации. |
+| `design/logo/logo-full.png`, `logo-vector.svg` | Пълна резолюция и вектор на цялото лого - за печат/презентации. |
 
 ------|----------|
 | `favicon.svg` (в `public/`) | Квадратен знак. Сега е временен петролен квадрат с „P“. |
-| `img/logo.svg` | Хоризонтално лого (знак + надпис) за хедъра и OG картинките. Сега хедърът е текстов wordmark – включвам логото, когато го има. |
+| `img/logo.svg` | Хоризонтално лого (знак + надпис) за хедъра и OG картинките. Сега хедърът е текстов wordmark - включвам логото, когато го има. |
 | `img/logo-mark.svg` | Само знакът, за малки места. |
 
 ---
@@ -82,12 +82,12 @@
 
 **Идея: монограм-плочка.** Знакът е заоблен квадрат в петрол (същата геометрия като
 плочките на сайта и като иконка на приложение), с бяла серифна буква **P** и една малка
-охрена точка след нея – „P.“ Точката е и пунктуацията на „предаден, приет“, и единственият
+охрена точка след нея - „P.“ Точката е и пунктуацията на „предаден, приет“, и единственият
 акцент. Надписът „Pankov Solutions“ стои вдясно в петролен сериф. Без илюстрация, без
-схема – само типография и форма.
+схема - само типография и форма.
 
 **Цветове (само тези):** петрол `#0E4A5A`, хартия `#F5F3EE` (буквата), охра `#C9702A`
-(точката). Фон на файла – прозрачен.
+(точката). Фон на файла - прозрачен.
 
 **Един файл:** PNG, **2000 × 500 px**, прозрачен фон, хоризонтално: знак вляво (480 × 480),
 надпис вдясно. Favicon-а (512 × 512) изрязвам аз от знака.
@@ -113,5 +113,5 @@ centered with even margins, nothing else in the image — no mockup, no caption,
 background color.
 ```
 
-Ако Gemini не спази размера точно, го изрязвам и мащабирам аз – важното е фонът да е
+Ако Gemini не спази размера точно, го изрязвам и мащабирам аз - важното е фонът да е
 прозрачен и да няма нищо друго в кадъра.

@@ -20,7 +20,7 @@ import {
 } from '../lib/markdown';
 import { cleanHtml, cleanText, stripComments, warnTodos } from '../lib/todos';
 
-// Само от content/bg/about.md. Секциите се разпознават по форма: списък с „- **Роля** – …“
+// Само от content/bg/about.md. Секциите се разпознават по форма: списък с „- **Роля** - …“
 // е опитът (с уводен абзац по избор), три абзаца с удебелено начало са правилата, абзацът с името на партньора от
 // clients.yaml минава през Partner.astro, останалото е проза.
 const locale: Locale = 'bg';
@@ -46,12 +46,12 @@ type Block =
   | { kind: 'partner'; html: string }
   | { kind: 'prose'; html: string };
 
-// „- **Роля** – организация, период. Описание.“ (тирето и метаданните са по избор)
+// „- **Роля** - организация, период. Описание.“ (тирето и метаданните са по избор)
 async function parseExperience(body: string): Promise<Experience[]> {
   const items: Experience[] = [];
   for (const raw of body.split('\n')) {
     const line = stripComments(raw);
-    const m = line.match(/^-\s*\*\*(.+?)\*\*\s*(?:[–—]\s*([^.]*)\.)?\s*([\s\S]*)$/);
+    const m = line.match(/^-\s*\*\*(.+?)\*\*\s*(?:[-–—]\s*([^.]*)\.)?\s*([\s\S]*)$/);
     if (!m) continue;
     items.push({
       role: await mdInline(trimDot(m[1])),

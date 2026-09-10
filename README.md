@@ -23,10 +23,10 @@ npm run audit:js                                     # JS на страница,
 Одитите са на порт 4177 и през `127.0.0.1` нарочно: забравен `astro dev` слуша на `[::1]:4321`
 и `localhost:4321` отива при него — тогава Lighthouse мери dev toolbar-а (perf ~56).
 В `.pa11yci.json` `hideElements: "svg.diagram"` — axe не чете `fill`/фон на SVG текст и
-докладва фалшив контраст за етикетите на схемата (реално 5,9–14:1); схемата е `role="img"`
+докладва фалшив контраст за етикетите на схемата (реално 5,9-14:1); схемата е `role="img"`
 с `<title>`.
 
-## Форма – настройка
+## Форма - настройка
 
 Формата за запитване (`src/components/InquiryForm.astro`) праща POST към `/api/inquiry` —
 Cloudflare Pages Function в `functions/api/inquiry.ts`. Ред на обработка: honeypot → timing
@@ -80,7 +80,7 @@ curl -s -X POST http://localhost:8788/api/inquiry -H "accept: application/json" 
    - ако домейнът има и друга поща (Google Workspace / Email Routing), основният SPF на
      `@` остава един запис и включва и двете: `v=spf1 include:_spf.google.com include:amazonses.com ~all`;
    - **DMARC**: `TXT` `_dmarc` → `v=DMARC1; p=quarantine; rua=mailto:hello@pankovsolutions.com; adkim=s; aspf=s`
-     (започни с `p=none` за 1–2 седмици, после `quarantine`).
+     (започни с `p=none` за 1-2 седмици, после `quarantine`).
 3. Изчакай **Verified** в Resend, после **API Keys → Create**: permission *Sending access*,
    domain `pankovsolutions.com`. Ключът → `RESEND_API_KEY` (Encrypt) в Pages и в `.dev.vars`.
 4. Тест на репутацията: прати през формата до адрес от mail-tester.com — цел ≥ 9/10
@@ -110,7 +110,7 @@ Telegram е известие, не условие: ако падне, запит
 
 Лимит: 5 запитвания на час на IP (`functions/api/inquiry.ts`, `RATE_LIMIT`).
 
-### 6. Променливи – обобщение
+### 6. Променливи - обобщение
 
 | Име | Къде | Какво |
 |---|---|---|

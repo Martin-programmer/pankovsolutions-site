@@ -197,7 +197,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     await env.INQUIRY_RL.put(rlKey, String(count + 1), { expirationTtl: RATE_WINDOW });
   }
 
-  // 6–7. Resend (известие + автоотговор) и Telegram
+  // 6-7. Resend (известие + автоотговор) и Telegram
   const notify = notificationText(locale, data, ip);
   if (mock) {
     console.log('[inquiry] MOCK — would send:\n' + notify);

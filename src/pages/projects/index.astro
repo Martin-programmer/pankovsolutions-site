@@ -29,7 +29,7 @@ const featuredSizes = await Promise.all(
 // title/description от content/bg/projects.md (тялото му не се рендерира — листингът е от
 // колекцията); ако файлът липсва — етикетът от навигацията и без description.
 const page = await getEntry('pages', 'bg/projects');
-const title = page?.data.title ?? `${t('nav.projects')} – ${company.brand}`;
+const title = page?.data.title ?? `${t('nav.projects')} - ${company.brand}`;
 ---
 
 <Base title={title} description={page?.data.description} locale={locale}>
