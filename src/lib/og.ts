@@ -14,7 +14,7 @@ const color = (name: string) => tokens.match(new RegExp(`--color-${name}:\\s*(#[
 const serif = readFileSync(join(root, 'src/assets/og-fonts/SourceSerif4-Bold.ttf'));
 const mono = readFileSync(join(root, 'src/assets/og-fonts/JetBrainsMono-Regular.ttf'));
 // Знакът от логото (256 px PNG) — data URI, защото satori не чете от диска.
-const mark = `data:image/png;base64,${readFileSync(join(root, 'src/assets/og-logo-mark.png')).toString('base64')}`;
+const mark = `data:image/png;base64,${readFileSync(join(root, 'src/assets/og-logo-mark.png'), { encoding: 'base64' })}`;
 
 const WIDTH = 1200;
 const HEIGHT = 630;

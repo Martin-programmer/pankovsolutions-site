@@ -63,8 +63,30 @@ function respond(
       headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
     });
   }
-  return new Response(null, { status: 303, headers: { location: redirectTo } });
+  return new Response(null, { status: 303, headers: { location: redirectTo, 'cache-control': 'no-store' } });
 }
+
+// Максимален размер на тялото: полетата са ≤ 2 000 знака, Turnstile токенът ≤ 2 KB.
+const MAX_BODY = 32 * 1024;
+
+// Само нашият произход може да праща формата (защита от cross-site POST). Origin липсва при
+// някои не-браузърни клиенти - тогава се гледа Sec-Fetch-Site; без нито едно - пропуска се.
+function sameOrigin(request: Request): boolean {
+  const own = new URL(request.url).origin;
+  const origin = request.headers.get('origin');
+  if (origin) return origin === own;
+  const site = request.headers.get('sec-fetch-site');
+  return !site || site === 'same-origin' || site === 'none';
+}
+
+// Лог без лични данни и без секрети: само класът на грешката и статусът.
+function safeError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.replace(/bot\d+:[A-Za-z0-9_-]+/g, 'bot[token]').split('\n')[0].slice(0, 120);
+}
+
+// Един ред, без CR/LF - за теми на имейли и етикети.
+const oneLine = (s: string) => s.replace(/[\r\n\t]+/g, ' ').trim();
 
 async function verifyTurnstile(secret: string, token: string, ip: string): Promise<boolean> {
   const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
@@ -88,7 +110,8 @@ async function sendResend(apiKey: string, mail: { to: string; subject: string; t
       ...(mail.replyTo ? { reply_to: mail.replyTo } : {}),
     }),
   });
-  if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+  // Тялото на грешката може да съдържа адреса на получателя - в лога отива само статусът.
+  if (!res.ok) throw new Error(`Resend ${res.status}`);
 }
 
 async function sendTelegram(token: string, chatId: string, text: string) {
@@ -97,7 +120,7 @@ async function sendTelegram(token: string, chatId: string, text: string) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ chat_id: chatId, text }),
   });
-  if (!res.ok) throw new Error(`Telegram ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new Error(`Telegram ${res.status}`);
 }
 
 function notificationText(locale: Locale, d: Inquiry, ip: string): string {
@@ -119,7 +142,16 @@ function notificationText(locale: Locale, d: Inquiry, ip: string): string {
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const wantsJson = (request.headers.get('accept') ?? '').includes('application/json');
-  const form = await request.formData();
+  // 0. Произход и размер на тялото - преди да се чете каквото и да е.
+  if (!sameOrigin(request)) return new Response(null, { status: 403 });
+  const length = Number(request.headers.get('content-length') ?? '0');
+  if (length > MAX_BODY) return new Response(null, { status: 413 });
+  let form: FormData;
+  try {
+    form = await request.formData();
+  } catch {
+    return new Response(null, { status: 400 });
+  }
   const field = (name: string) => {
     const v = form.get(name);
     return typeof v === 'string' ? v : '';
@@ -212,7 +244,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   try {
     await sendResend(env.RESEND_API_KEY, {
       to: env.NOTIFY_TO?.trim() || company.email,
-      subject: t('bg', 'mail.notify.subject', { name: data.name }),
+      subject: t('bg', 'mail.notify.subject', { name: oneLine(data.name) }),
       text: notify,
       replyTo: data.email,
     });
@@ -222,7 +254,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       text: t(locale, 'mail.autoreply.body', { email: data.email, phone: company.phone }),
     });
   } catch (err) {
-    console.error('[inquiry] resend failed', err);
+    console.error('[inquiry] resend failed:', safeError(err));
     return fail(502, 'error.generic');
   }
   // Telegram получава цялото запитване (решение на Марти, 10.09.2026; описано в privacy.md).
@@ -231,7 +263,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     try {
       await sendTelegram(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, notify);
     } catch (err) {
-      console.error('[inquiry] telegram failed', err);
+      console.error('[inquiry] telegram failed:', safeError(err));
     }
   }
   return ok();
