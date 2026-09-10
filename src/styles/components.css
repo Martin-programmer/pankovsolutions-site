@@ -213,6 +213,31 @@ a:hover > .frame,
   color: var(--color-ink);
 }
 
+/* Номер на услуга/стъпка (09.2026, замества mono „01“): кръгъл бадж в петрол с цифрата без
+   водеща нула, Sans 600 върху paper. Един и същ на началната, /services и в процеса. */
+.step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: calc(var(--spacing-8) + var(--spacing-2));
+  height: calc(var(--spacing-8) + var(--spacing-2));
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-paper);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-base);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.step-badge-lg {
+  width: var(--spacing-12);
+  height: var(--spacing-12);
+  font-size: var(--text-md);
+}
+
 /* Етикет („в изпълнение“, „примерен - ще бъде заменен“): body шрифт, не mono — етикетите
    са на български, а mono-то няма български форми. */
 .tag {

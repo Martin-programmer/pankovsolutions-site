@@ -12,7 +12,7 @@ const { items } = Astro.props;
   {
     items.map((step) => (
       <li>
-        <span class="num" aria-hidden="true">{step.number}</span>
+        <span class="step-badge" aria-hidden="true">{Number(step.number)}</span>
         <h3 set:html={step.title} />
         {step.text && <p set:html={step.text} />}
       </li>
@@ -29,23 +29,22 @@ const { items } = Astro.props;
     list-style: none;
   }
 
+  /* Мобилно: вертикален списък, баджът над заглавието, без линии. */
   .steps li {
-    border-top: 1px solid var(--color-line);
-    padding-top: var(--spacing-3);
+    position: relative;
+    padding-top: var(--spacing-1);
   }
 
-  /* Ink, не охра: 16 px в охра е 3,25:1 върху paper. */
-  .num {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    line-height: 1.6;
+  .steps .step-badge {
+    position: relative;
+    z-index: 1;
   }
 
   /* Наследява serif 700 от tokens.css (CHECKLIST §A: заглавия само 700/300). */
   h3 {
     font-size: var(--text-base);
     text-wrap: pretty;
-    margin: var(--spacing-2) 0 var(--spacing-1);
+    margin: var(--spacing-3) 0 var(--spacing-1);
   }
 
   p {
@@ -58,6 +57,24 @@ const { items } = Astro.props;
   @media (min-width: 48rem) {
     .steps {
       grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    /* Десктоп: баджовете са свързани с тънка линия през средата им - стъпките се четат
+       като път. Линията минава зад баджа (z-index); при последния спира на баджа. */
+    .steps li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      /* Средата на баджа (40 px): padding 4 + 20. */
+      top: calc(var(--spacing-1) + var(--spacing-4) + var(--spacing-1));
+      height: 1px;
+      background: var(--color-line);
+    }
+
+    .steps li:last-child::before {
+      right: auto;
+      width: calc(var(--spacing-4) + var(--spacing-1));
     }
   }
 </style>

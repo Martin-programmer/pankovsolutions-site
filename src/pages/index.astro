@@ -210,8 +210,8 @@ const jsonLd = {
         {
           services.items.map((item) => (
             <li class="tile tile-surface reveal">
-              <span class="num" aria-hidden="true">
-                {item.number}
+              <span class="step-badge" aria-hidden="true">
+                {Number(item.number)}
               </span>
               <div class="service-body">
                 <h3 set:html={item.title} />
@@ -567,13 +567,6 @@ const jsonLd = {
     gap: var(--spacing-4);
   }
 
-  .num {
-    font-family: var(--font-mono);
-    font-size: var(--text-lg);
-    line-height: 1;
-    color: var(--color-accent);
-  }
-
   .services h3 {
     font-size: var(--text-md);
     line-height: 1.2;
@@ -760,9 +753,11 @@ const jsonLd = {
       align-items: start;
     }
 
-    .services li:first-child .num,
-    .services li:nth-child(4) .num {
-      font-size: var(--text-2xl);
+    .services li:first-child .step-badge,
+    .services li:nth-child(4) .step-badge {
+      width: var(--spacing-12);
+      height: var(--spacing-12);
+      font-size: var(--text-md);
     }
 
     /* Двете широки плочки са на едно ниво: еднакъв номер, еднакво заглавие. */

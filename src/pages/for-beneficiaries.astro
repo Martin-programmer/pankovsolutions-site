@@ -144,6 +144,61 @@ for (const [i, s] of raw.entries()) {
   </div>
 </Base>
 
+<script>
+  // Съдържание на страницата: (1) при клик - плавен скрол до секцията (reduced-motion → без
+  // анимация); (2) при скрол - маркира се секцията, която е под хедъра (aria-current).
+  const toc = document.querySelector<HTMLElement>('nav.toc');
+  const links = [...(toc?.querySelectorAll<HTMLAnchorElement>('a[href^="#"]') ?? [])];
+  const sections = links
+    .map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1))))
+    .filter((el): el is HTMLElement => el !== null);
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const setCurrent = (id: string) => {
+    for (const a of links) {
+      if (decodeURIComponent(a.hash.slice(1)) === id) a.setAttribute('aria-current', 'true');
+      else a.removeAttribute('aria-current');
+    }
+  };
+
+  for (const a of links) {
+    a.addEventListener('click', (e) => {
+      const target = document.getElementById(decodeURIComponent(a.hash.slice(1)));
+      if (!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+      history.replaceState(null, '', a.hash);
+      setCurrent(target.id);
+    });
+  }
+
+  // Текуща е последната секция, чийто горен ръб е минал линията на 1/3 от екрана.
+  if (sections.length) {
+    let ticking = false;
+    const update = () => {
+      const line = window.innerHeight / 3;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.getBoundingClientRect().top <= line) current = s;
+      }
+      setCurrent(current.id);
+      ticking = false;
+    };
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(update);
+        }
+      },
+      { passive: true },
+    );
+    window.addEventListener('resize', update);
+    update();
+  }
+</script>
+
 <style>
   .layout {
     display: grid;
@@ -180,8 +235,8 @@ for (const [i, s] of raw.entries()) {
   section {
     padding-block: var(--spacing-8);
     border-top: 1px solid var(--color-line);
-    /* Котвата да не се крие под горния ръб. */
-    scroll-margin-top: var(--spacing-8);
+    /* Котвата да не се крие под sticky хедъра (~80 px) + отстъп. */
+    scroll-margin-top: calc(var(--spacing-24) + var(--spacing-4));
   }
 
   section h2 {
@@ -315,6 +370,36 @@ for (const [i, s] of raw.entries()) {
       text-decoration: underline;
       text-underline-offset: var(--spacing-1);
       text-decoration-thickness: 1px;
+    }
+
+    /* Текущата секция (скриптът по-долу слага aria-current при скрол): петрол, 600,
+       и къса охрена черта отляво - като маркер в полето на книга. */
+    .toc a {
+      position: relative;
+      padding-left: var(--spacing-4);
+      transition: color 160ms ease-out;
+    }
+
+    .toc a::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: var(--spacing-2);
+      height: 2px;
+      background: var(--color-accent);
+      transform: translateY(-50%) scaleX(0);
+      transform-origin: left;
+      transition: transform 160ms ease-out;
+    }
+
+    .toc a[aria-current='true'] {
+      color: var(--color-primary);
+      font-weight: 600;
+    }
+
+    .toc a[aria-current='true']::before {
+      transform: translateY(-50%) scaleX(1);
     }
 
     .content {

@@ -89,8 +89,8 @@ const jsonLd = faq && {
     services.map((s) => (
       <section class="wrap" id={`service-${s.number}`} aria-labelledby={`service-${s.number}-title`}>
         <div class="service tile tile-surface reveal">
-        <span class="num" aria-hidden="true">
-          {s.number}
+        <span class="step-badge step-badge-lg" aria-hidden="true">
+          {Number(s.number)}
         </span>
         <div class="service-body">
           <h2 id={`service-${s.number}-title`} set:html={s.title} />
@@ -165,20 +165,13 @@ const jsonLd = faq && {
     font-size: var(--text-base);
   }
 
-  /* Услуга — бяла плочка: mono номер в охра (28 px → над прага 3:1) вляво, съдържание вдясно. */
-  /* На мобилно номерът е над съдържанието: „Дигитализация“ не се побира до него. */
+  /* Услуга — бяла плочка: кръгъл бадж с номера (.step-badge) вляво, съдържание вдясно. */
+  /* На мобилно баджът е над съдържанието: „Дигитализация“ не се побира до него. */
   .service {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     row-gap: var(--spacing-3);
     margin-bottom: var(--spacing-4);
-  }
-
-  .num {
-    font-family: var(--font-mono);
-    font-size: var(--text-lg);
-    line-height: 1.15;
-    color: var(--color-accent);
   }
 
   .service h2 {
@@ -317,12 +310,7 @@ const jsonLd = faq && {
       grid-template-columns: var(--spacing-24) minmax(0, 1fr);
       column-gap: var(--spacing-4);
       row-gap: 0;
-      /* Номерът и h2 на една базова линия. */
-      align-items: baseline;
-    }
-
-    .num {
-      font-size: var(--text-xl);
+      align-items: start;
     }
 
     .section {
