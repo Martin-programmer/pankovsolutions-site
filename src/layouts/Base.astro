@@ -15,6 +15,8 @@ interface Props {
   // OG изображение; по подразбиране /og/<път>.png, ако е генерирано, иначе /og/index.png.
   ogImage?: string;
   ogType?: 'website' | 'article';
+  // Лендинги: минимален хедър (лого, телефон, CTA) вместо навигацията.
+  header?: { minimal: true; cta: { text: string; href: string } };
 }
 
 const {
@@ -23,6 +25,7 @@ const {
   locale = (Astro.currentLocale as Locale | undefined) ?? 'bg',
   noindex = false,
   ogType = 'website',
+  header,
 } = Astro.props;
 
 const t = useTranslations(locale);
@@ -106,7 +109,7 @@ const ogImage = new URL(Astro.props.ogImage ?? `/og/${ogSlugs.has(ogSlug) ? ogSl
   </head>
   <body>
     <a class="skip-link" href="#main">{t('skip')}</a>
-    <Header locale={locale} />
+    <Header locale={locale} minimal={header?.minimal} cta={header?.cta} />
     <main id="main">
       <slot />
     </main>

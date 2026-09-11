@@ -81,4 +81,39 @@ const testimonials = defineCollection({
   }),
 });
 
-export const collections = { pages, projects, clients, testimonials };
+// content/<locale>/campaigns/<slug>.md — лендинг по процедура/ниша (docs/11). Фиксираните
+// блокове (безплатно до одобрение, стъпки, партньор, общ FAQ, форма) са в _shared.md на
+// същата папка — отделна колекция, за да не излиза като страница.
+const campaignImage = z.object({ src: z.string(), alt: z.string() });
+const campaigns = defineCollection({
+  loader: glob({ base: './content', pattern: ['*/campaigns/*.md', '!*/campaigns/_*.md'] }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    procedure: z.object({ code: z.string(), name: z.string(), programme: z.string() }),
+    // Ниша („производствени предприятия“) — в readout реда над заглавието; без нея е общата страница.
+    niche: z.string().optional(),
+    status: z.enum(['upcoming', 'open', 'closed']).default('open'),
+    // Текст, както ще се покаже („10 ноември 2026, 16:30“), не дата — форматът е решение на текста.
+    deadline: z.string().optional(),
+    // Лентата с числа под hero-то: до 4 двойки стойност/етикет, от условията на процедурата.
+    facts: z.array(z.object({ value: z.string(), label: z.string() })).max(4).default([]),
+    // Линк към официалните условия — проверимост (docs/07, Stanford №1).
+    source: z.string().url().optional(),
+    // Снимка в hero-то (4:5 или 16:10) и широк банер по средата; до качване — Placeholder.
+    image: campaignImage.optional(),
+    banner: campaignImage.optional(),
+    // Кейсове за доказателството (slug-ове от projects); без списък — всички с program.
+    projects: z.array(z.string()).optional(),
+    // Стойността на скритото поле във формата; по подразбиране slug-ът на файла.
+    campaign: z.string().optional(),
+    noindex: z.boolean().default(false),
+  }),
+});
+
+const campaignBlocks = defineCollection({
+  loader: glob({ base: './content', pattern: '*/campaigns/_*.md' }),
+  schema: z.object({ title: z.string() }),
+});
+
+export const collections = { pages, projects, clients, testimonials, campaigns, campaignBlocks };

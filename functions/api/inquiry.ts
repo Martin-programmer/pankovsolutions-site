@@ -39,7 +39,15 @@ const schema = z.object({
   // Кратката форма няма поле type → 'other'; пълната го праща и празно е грешка (проверява се
   // отделно по-долу, защото Zod не различава „липсва“ от „празно“ след трансформация).
   type: z.enum(TYPES).default('other'),
-  message: z.string().trim().min(10).max(2000),
+  // Лендинг по процедура (docs/11): slug на страницата, от скрито поле. При кампания описанието
+  // е по избор, а телефонът - задължителен (проверява се отделно, както type).
+  campaign: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9-]{1,80}$/)
+    .optional()
+    .or(z.literal('')),
+  message: z.string().trim().max(2000),
   consent: z.literal('on'),
 });
 
@@ -126,6 +134,7 @@ async function sendTelegram(token: string, chatId: string, text: string) {
 function notificationText(locale: Locale, d: Inquiry, ip: string): string {
   const typeLabel = t(locale, `form.type.${d.type}` as keyof (typeof ui)['bg']);
   return [
+    d.campaign ? `${t('bg', 'form.campaign')}: ${d.campaign}` : null,
     `${t('bg', 'form.name')}: ${d.name}`,
     d.company ? `${t('bg', 'form.company')}: ${d.company}` : null,
     `${t('bg', 'form.email')}: ${d.email}`,
@@ -211,11 +220,16 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     email: field('email'),
     phone: field('phone'),
     type: field('type') || undefined,
+    campaign: field('campaign'),
     message: field('message'),
     consent: field('consent'),
   });
   const errors: Record<string, string> = {};
   if (form.has('type') && field('type') === '') errors.type = t(locale, 'error.type');
+  // Кампания: телефонът е задължителен (обаждаме се за проверката); иначе описанието е задължително.
+  const isCampaign = field('campaign').trim() !== '';
+  if (isCampaign && field('phone').trim() === '') errors.phone = t(locale, 'error.phone.required');
+  if (!isCampaign && field('message').trim().length < 10) errors.message = t(locale, 'error.message');
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {
       const f = String(issue.path[0] ?? '');
@@ -244,7 +258,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   try {
     await sendResend(env.RESEND_API_KEY, {
       to: env.NOTIFY_TO?.trim() || company.email,
-      subject: t('bg', 'mail.notify.subject', { name: oneLine(data.name) }),
+      subject: data.campaign
+        ? t('bg', 'mail.notify.subject.campaign', { name: oneLine(data.name), campaign: data.campaign })
+        : t('bg', 'mail.notify.subject', { name: oneLine(data.name) }),
       text: notify,
       replyTo: data.email,
     });

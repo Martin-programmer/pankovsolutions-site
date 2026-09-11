@@ -6,9 +6,13 @@ import { alternateUrl, localeUrl, useTranslations, type Locale } from '../i18n/u
 
 interface Props {
   locale: Locale;
+  // Лендинги по процедури (docs/11): само лого, телефон и CTA към формата - без навигация,
+  // за да има една цел на страницата. Логото остава линк към началната.
+  minimal?: boolean;
+  cta?: { text: string; href: string };
 }
 
-const { locale } = Astro.props;
+const { locale, minimal = false, cta } = Astro.props;
 const t = useTranslations(locale);
 
 const nav = [
@@ -37,6 +41,18 @@ const shownLocales = locales.filter((code) => code === locale || hasEn);
       <img src="/img/logo.webp" alt={company.brand} width="284" height="96" />
     </a>
 
+    {
+      minimal ? (
+        <div class="minimal-nav">
+          <a class="mono phone" href={company.phoneHref}>{company.phone}</a>
+          {cta && (
+            <a class="btn" href={cta.href}>
+              {cta.text}
+            </a>
+          )}
+        </div>
+      ) : (
+        <>
     <button
       class="menu-btn"
       type="button"
@@ -88,6 +104,9 @@ const shownLocales = locales.filter((code) => code === locale || hasEn);
         )}
       </ul>
     </nav>
+        </>
+      )
+    }
   </div>
 </header>
 
@@ -179,6 +198,33 @@ const shownLocales = locales.filter((code) => code === locale || hasEn);
     display: block;
     height: 40px;
     width: auto;
+  }
+
+  /* Минимален хедър (лендинги): телефон + CTA вдясно; на мобилно само телефонът - CTA-то
+     е в лепкавата лента долу на самата страница. */
+  .minimal-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-6);
+  }
+
+  .minimal-nav .btn {
+    display: none;
+  }
+
+  .phone {
+    display: inline-block;
+    padding-block: var(--spacing-3);
+    margin-block: calc(-1 * var(--spacing-3));
+    color: var(--color-ink);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .phone:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: var(--spacing-1);
   }
 
   .menu-btn {
@@ -297,6 +343,10 @@ const shownLocales = locales.filter((code) => code === locale || hasEn);
 
     .nav-cta {
       margin-left: var(--spacing-4);
+    }
+
+    .minimal-nav .btn {
+      display: inline-block;
     }
   }
 </style>

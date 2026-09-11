@@ -10,6 +10,7 @@ export type OgPage = { slug: string; title: string };
 export async function ogPages(): Promise<OgPage[]> {
   const pages = await getCollection('pages', (p) => p.id.startsWith('bg/'));
   const projects = await getCollection('projects', (p) => p.id.startsWith('bg/'));
+  const campaigns = await getCollection('campaigns', (p) => p.id.startsWith('bg/'));
   return [
     ...pages.map((p) => ({
       slug: p.id === 'bg/home' ? 'index' : p.id.replace(/^bg\//, ''),
@@ -20,6 +21,8 @@ export async function ogPages(): Promise<OgPage[]> {
       ? []
       : [{ slug: 'projects', title: `${ui.bg['nav.projects']} - ${company.brand}` }]),
     ...projects.map((p) => ({ slug: p.id.replace(/^bg\//, ''), title: cleanText(p.data.title) })),
+    // Лендинги по процедури: /f/<slug> → /og/f/<slug>.png
+    ...campaigns.map((p) => ({ slug: p.id.replace(/^bg\/campaigns\//, 'f/'), title: cleanText(p.data.title) })),
   ];
 }
 

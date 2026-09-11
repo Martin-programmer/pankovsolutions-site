@@ -27,6 +27,8 @@
 `/` Начало · `/projects` (листинг) · `/projects/[slug]` (кейс стъди) · `/services` ·
 `/for-beneficiaries` (за бенефициенти и консултанти) · `/products` (FudiAR) ·
 `/about` · `/contact` · `/privacy` · `/404`. Всички и под `/en/`.
+`/f/[slug]` - лендинги по процедура/ниша за реклама (само BG; `content/bg/campaigns/`,
+общите блокове в `_shared.md`, шаблон `src/pages/f/[slug].astro`; бриф и решения в `docs/11`).
 
 ## Правила, които не се нарушават
 1. **Съдържанието идва само от `content/`.** Ако нещо липсва — остави

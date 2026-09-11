@@ -1,0 +1,1290 @@
+---
+import { getCollection, getEntry, type CollectionEntry } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import InquiryForm from '../../components/InquiryForm.astro';
+import Placeholder from '../../components/Placeholder.astro';
+import Process from '../../components/Process.astro';
+import { company } from '../../data/company';
+import { localeUrl, useTranslations, type Locale } from '../../i18n/utils';
+import { publicFileExists, publicImageSize } from '../../lib/assets';
+import { toJsonLd } from '../../lib/jsonld';
+import {
+  md,
+  mdInline,
+  paragraphs,
+  parseFaq,
+  parseRunIns,
+  parseStepLines,
+  parseTermLines,
+  plainText,
+  splitH3,
+  splitSections,
+  takeHeading,
+} from '../../lib/markdown';
+import { cleanHtml, cleanText, warnTodos } from '../../lib/todos';
+
+// Лендинг по процедура/ниша (docs/11). Една цел: запитване за безплатна проверка на
+// допустимостта. Фиксираната част (X) идва от content/bg/campaigns/_shared.md, променливата
+// (Y) - от content/bg/campaigns/<slug>.md. Хедърът е минимален (лого, телефон, CTA), футърът
+// е пълният (фирмени данни по ЗЕТ + доверие). Нищо от текста не е написано тук.
+//
+// Ред на секциите (всяка с различна структура от предишната):
+//   hero (текст 7/12 + снимка 5/12) → лента с числата на процедурата → ред доверие с логата →
+//   за кого (две колони +/-) → какво се финансира (софтуерът първи) → примери (таблица) →
+//   банер → „нищо не плащате до одобрение“ → как става (5 стъпки) → кой стои зад това →
+//   доказателство (кадри, таблица, отзив) → защо сега → FAQ → форма.
+export async function getStaticPaths() {
+  const campaigns = await getCollection('campaigns', (c) => c.id.startsWith('bg/'));
+  return campaigns.map((c) => ({ params: { slug: c.id.replace(/^bg\/campaigns\//, '') }, props: { entry: c } }));
+}
+
+interface Props {
+  entry: CollectionEntry<'campaigns'>;
+}
+
+const { entry } = Astro.props as Props;
+const locale: Locale = 'bg';
+const t = useTranslations(locale);
+const isProd = import.meta.env.PROD;
+const showPlaceholders = !isProd || process.env.SHOW_PLACEHOLDERS === '1';
+const slug = entry.id.replace(/^bg\/campaigns\//, '');
+const campaignId = entry.data.campaign ?? slug;
+const cta = { text: t('cta.check'), href: '#form' };
+
+const shared = await getEntry('campaignBlocks', 'bg/campaigns/_shared');
+if (!shared) throw new Error('content/bg/campaigns/_shared.md липсва');
+warnTodos(entry.filePath ?? entry.id, entry.body);
+warnTodos(shared.filePath ?? shared.id, shared.body);
+
+const own = splitSections(entry.body ?? '');
+const common = splitSections(shared.body ?? '');
+const need = (map: Map<string, string>, key: string, file: string) => {
+  const v = map.get(key);
+  if (v === undefined) throw new Error(`${file}: няма секция <!-- ${key} -->`);
+  return v;
+};
+
+// „## Заглавие“ + произволен markdown (без CTA ред).
+const headed = async (source: string) => {
+  const { heading, rest } = takeHeading(source, 2);
+  return { heading: await mdInline(heading), body: rest };
+};
+// „## Заглавие“ + „### Подзаглавие“ + текст - двуколонните секции.
+const columns = async (source: string) => {
+  const { heading, body } = await headed(source);
+  const { sections } = splitH3(body);
+  return {
+    heading,
+    cols: await Promise.all(
+      sections.map(async (c) => ({ heading: await mdInline(c.heading), html: cleanHtml(await md(c.body)) })),
+    ),
+  };
+};
+
+// --- Променлива част (Y) ---
+const heroSrc = need(own, 'HERO', slug);
+const { heading: h1Md, rest: ledeMd } = takeHeading(heroSrc, 1);
+const hero = { title: await mdInline(h1Md), lede: cleanHtml(await md(ledeMd)) };
+const who = own.has('ЗА КОГО') ? await columns(own.get('ЗА КОГО')!) : null;
+const funds = own.has('ФИНАНСИРА') ? await columns(own.get('ФИНАНСИРА')!) : null;
+const examples = own.has('ПРИМЕРИ')
+  ? await (async () => {
+      const { heading, body } = await headed(own.get('ПРИМЕРИ')!);
+      return { heading, items: await parseTermLines(body) };
+    })()
+  : null;
+const whyNow = own.has('ЗАЩО СЕГА')
+  ? await (async () => {
+      const { heading, body } = await headed(own.get('ЗАЩО СЕГА')!);
+      return { heading, html: cleanHtml(await md(body)) };
+    })()
+  : null;
+const ownFaq = own.has('FAQ') ? await parseFaq(own.get('FAQ')!) : [];
+
+// --- Фиксирана част (X) ---
+const trustLine = cleanHtml(await mdInline(need(common, 'ДОВЕРИЕ', '_shared')));
+const free = await (async () => {
+  const { heading, body } = await headed(need(common, 'БЕЗПЛАТНО', '_shared'));
+  return { heading, html: cleanHtml(await md(body)) };
+})();
+const deliver = await (async () => {
+  const { heading, body } = await headed(need(common, 'ПОЛУЧАВАТЕ', '_shared'));
+  return { heading, items: await parseRunIns(body) };
+})();
+const steps = await (async () => {
+  const { heading, body } = await headed(need(common, 'СТЪПКИ', '_shared'));
+  return { heading, items: await parseStepLines(body) };
+})();
+const whoWe = await columns(need(common, 'ПАРТНЬОР', '_shared'));
+const proof = await (async () => {
+  const { heading, body } = await headed(need(common, 'ДОКАЗАТЕЛСТВО', '_shared'));
+  return { heading, lede: cleanHtml(await md(body)) };
+})();
+const sharedFaq = await (async () => {
+  const { heading, body } = await headed(need(common, 'FAQ', '_shared'));
+  return { heading, items: await parseFaq(body) };
+})();
+const faq = [...ownFaq, ...sharedFaq.items].map((q) => ({ question: q.question, answer: cleanHtml(q.answer) }));
+const formBlock = await (async () => {
+  const { heading, body } = await headed(need(common, 'ФОРМА', '_shared'));
+  const paras = paragraphs(body);
+  return {
+    heading,
+    lede: cleanHtml(await md(paras.slice(0, -1).join('\n\n'))),
+    after: paras.length > 1 ? cleanHtml(await md(paras.at(-1)!)) : '',
+  };
+})();
+
+// --- Лога: партньорът от clients.yaml и нашето ---
+const clients = await getCollection('clients');
+const partner = clients.find((c) => c.data.partner);
+const partnerKey = partner?.data.name.replace(/\s*(ООД|ЕООД|АД|ЕАД)$/, '') ?? '';
+const showPartnerLogo = partner && (!partner.data.placeholder || showPlaceholders);
+const ourLogo = { src: '/img/logo.webp', alt: company.brand };
+const clientBySlug = new Map(clients.map((c) => [c.id, c]));
+const logoFor = (s?: string) => (s ? clientBySlug.get(s) : undefined);
+
+// --- Доказателство: кейсове по програми (избрани във frontmatter или всички с program) ---
+const allProjects = await getCollection('projects', (p) => p.id.startsWith('bg/'));
+const projectSlug = (id: string) => id.replace(/^bg\/projects\//, '');
+const wanted = entry.data.projects;
+const projects = (wanted
+  ? wanted.flatMap((s) => allProjects.filter((p) => projectSlug(p.id) === s))
+  : allProjects.filter((p) => p.data.program)
+).sort((a, b) => a.data.order - b.data.order);
+const shots = (
+  await Promise.all(
+    projects.map(async (p) => {
+      const img = p.data.images[0];
+      if (!img || !publicFileExists(img.src)) return null;
+      return { project: p, img, size: await publicImageSize(img.src) };
+    }),
+  )
+).filter((x): x is NonNullable<typeof x> => x !== null);
+const projectSlugs = new Set(projects.map((p) => projectSlug(p.id)));
+const testimonials = (await getCollection('testimonials'))
+  .filter((x) => projectSlugs.has(x.data.project) && (!x.data.placeholder || showPlaceholders))
+  .slice(0, 2);
+
+// --- Изображения от frontmatter (hero, банер) - до качване Placeholder „снимка“ ---
+const image = entry.data.image && publicFileExists(entry.data.image.src)
+  ? { ...entry.data.image, ...(await publicImageSize(entry.data.image.src)) }
+  : null;
+const banner = entry.data.banner && publicFileExists(entry.data.banner.src)
+  ? { ...entry.data.banner, ...(await publicImageSize(entry.data.banner.src)) }
+  : null;
+
+const isLatin = (text: string) => /^[\x00-\x7F]*$/.test(text);
+const { procedure, niche, status, deadline, facts, source } = entry.data;
+const statusText = t(`campaign.status.${status}`);
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faq.map((item) => ({
+    '@type': 'Question',
+    name: plainText(item.question),
+    acceptedAnswer: { '@type': 'Answer', text: plainText(item.answer) },
+  })),
+};
+---
+
+<Base
+  title={entry.data.title}
+  description={entry.data.description}
+  locale={locale}
+  noindex={entry.data.noindex}
+  header={{ minimal: true, cta }}
+>
+  <script is:inline type="application/ld+json" slot="head" set:html={toJsonLd(jsonLd)} />
+
+  <!-- HERO - текст 7/12 + снимка 5/12 (DESIGN.md §Вместо това); под тях числата на процедурата -->
+  <section class="hero-band">
+    <div class="wrap hero">
+      <div class="hero-text">
+        <p class="readout">
+          {t('campaign.procedure')}{' '}<span class="mono">{procedure.code}</span> · {procedure.programme} ·{' '}
+          {statusText}{deadline && status !== 'closed' && <> · {t('campaign.deadline')}{' '}{deadline}</>}
+          {niche && <> · {t('campaign.niche')}{' '}{niche}</>}
+        </p>
+        <h1 set:html={hero.title} />
+        <div class="lede prose" set:html={hero.lede} />
+        <p class="hero-cta" data-cta-anchor>
+          <a class="btn" href={cta.href}>{cta.text}</a>
+          <a class="arrow-link" href="#how">{t('campaign.how')}</a>
+        </p>
+      </div>
+      <div class="hero-media">
+        {
+          image ? (
+            <img class="photo" src={image.src} alt={image.alt} width={image.width} height={image.height} fetchpriority="high" />
+          ) : (
+            <Placeholder label={t('placeholder.photo')} caption={entry.data.image?.alt} variant="photo" ratio="4 / 3" />
+          )
+        }
+      </div>
+
+      {
+        facts.length > 0 && (
+          <div class="facts tile tile-surface" aria-label={t('campaign.facts')}>
+            <dl>
+              {facts.map((f) => (
+                <div class="fact">
+                  <dt>{f.label}</dt>
+                  <dd>{f.value}</dd>
+                </div>
+              ))}
+            </dl>
+            {source && (
+              <p class="facts-source">
+                <a class="arrow-link" href={source} rel="noopener" target="_blank">
+                  {t('campaign.source')}
+                </a>
+              </p>
+            )}
+          </div>
+        )
+      }
+    </div>
+  </section>
+
+  <!-- РЕД ДОВЕРИЕ - логата на партньора и нашето + едно изречение -->
+  <section class="section section-trust">
+    <div class="wrap trust">
+      <ul class="logos">
+        {
+          showPartnerLogo && (
+            <li>
+              {partner.data.placeholder ? (
+                <>
+                  <span class="mono">{partner.data.name}</span>
+                  <span class="tag">{t('placeholder.sample')}</span>
+                </>
+              ) : (
+                <img class="logo" src={partner.data.logo} alt={partner.data.name} height="36" loading="lazy" />
+              )}
+            </li>
+          )
+        }
+        <li><img class="logo" src={ourLogo.src} alt={ourLogo.alt} height="36" loading="lazy" /></li>
+      </ul>
+      <p class="trust-line" set:html={trustLine} />
+    </div>
+  </section>
+
+  <!-- ЗА КОГО - бяла плочка, две колони: „+“ за вас е, „–“ не е за вас -->
+  {
+    who && (
+      <section class="section">
+        <div class="wrap">
+          <div class="tile tile-surface reveal who">
+            <h2 class="centered" set:html={who.heading} />
+            <div class="cols-2">
+              {who.cols.map((c, i) => (
+                <div class:list={['who-col', i === 0 ? 'yes' : 'no']}>
+                  <h3 set:html={c.heading} />
+                  <div class="prose" set:html={c.html} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- КАКВО СЕ ФИНАНСИРА - студена плочка; софтуерът е първата колона и е нашата част -->
+  {
+    funds && (
+      <section class="section">
+        <div class="wrap">
+          <div class="tile tile-cool reveal funds">
+            <h2 class="centered" set:html={funds.heading} />
+            <div class="cols-2">
+              {funds.cols.map((c, i) => (
+                <div class:list={['funds-col', i === 0 && 'ours']}>
+                  <h3 set:html={c.heading} />
+                  <div class="prose" set:html={c.html} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ПРИМЕРИ - таблица дейност → какво се намалява и коя система го доказва („ръчна котва“) -->
+  {
+    examples && examples.items.length > 0 && (
+      <section class="section">
+        <div class="wrap">
+          <h2 class="centered" set:html={examples.heading} />
+          <table class="examples" role="table">
+            <thead role="rowgroup">
+              <tr role="row">
+                <th role="columnheader" scope="col">{t('campaign.examples.term')}</th>
+                <th role="columnheader" scope="col">{t('campaign.examples.text')}</th>
+              </tr>
+            </thead>
+            <tbody role="rowgroup">
+              {examples.items.map((it) => (
+                <tr role="row">
+                  <th role="rowheader" scope="row" set:html={it.term} />
+                  <td role="cell" set:html={it.text} />
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- БАНЕР - широк кадър (реална снимка от производство/система); до качване - placeholder -->
+  <section class="section">
+    <div class="wrap">
+      {
+        banner ? (
+          <img class="photo banner" src={banner.src} alt={banner.alt} width={banner.width} height={banner.height} loading="lazy" />
+        ) : (
+          <Placeholder label={t('campaign.banner')} caption={entry.data.banner?.alt} variant="photo" ratio="21 / 9" />
+        )
+      }
+    </div>
+  </section>
+
+  <!-- НИЩО НЕ ПЛАЩАТЕ ДО ОДОБРЕНИЕ - плочка в accent-soft (единственият топъл акцент на страницата) -->
+  <section class="section">
+    <div class="wrap">
+      <div class="tile free reveal">
+        <div class="free-head">
+          <h2 set:html={free.heading} />
+        </div>
+        <div class="free-body">
+          <div class="prose" set:html={free.html} />
+          <p class="free-cta">
+            <a class="btn" href={cta.href}>{cta.text}</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- КАКВО ПОЛУЧАВАТЕ - бяла плочка, run-in заглавия в две колони -->
+  <section class="section">
+    <div class="wrap">
+      <div class="tile tile-surface reveal deliver">
+        <h2 class="centered" set:html={deliver.heading} />
+        <dl class="deliver-list">
+          {
+            deliver.items.map((it) => (
+              <div class="deliver-item">
+                <dt set:html={it.title} />
+                <dd set:html={it.text} />
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- КАК СТАВА - топла плочка, 5 стъпки (Process.astro) -->
+  <section class="section" id="how">
+    <div class="wrap">
+      <div class="tile tile-tint reveal process-tile">
+        <h2 class="centered" set:html={steps.heading} />
+        <Process items={steps.items} />
+      </div>
+    </div>
+  </section>
+
+  <!-- КОЙ СТОИ ЗАД ТОВА - бяла плочка, партньорът и ние, с лога и роли -->
+  <section class="section">
+    <div class="wrap">
+      <div class="tile tile-surface reveal whowe">
+        <h2 class="centered" set:html={whoWe.heading} />
+        <div class="cols-2">
+          {
+            whoWe.cols.map((c) => {
+              const isPartner = Boolean(partnerKey) && c.heading.includes(partnerKey);
+              const logo = isPartner
+                ? showPartnerLogo && !partner.data.placeholder
+                  ? { src: partner.data.logo, alt: partner.data.name, url: partner.data.url }
+                  : null
+                : { src: ourLogo.src, alt: ourLogo.alt, url: localeUrl(locale, '/') };
+              return (
+                <div class="whowe-col">
+                  {logo && (
+                    <p class="whowe-logo">
+                      {logo.url ? (
+                        <a href={logo.url} rel={isPartner ? 'noopener' : undefined} target={isPartner ? '_blank' : undefined}>
+                          <img src={logo.src} alt={isPartner ? `${logo.alt} – ${t('partner.site')}` : logo.alt} height="36" loading="lazy" />
+                        </a>
+                      ) : (
+                        <img src={logo.src} alt={logo.alt} height="36" loading="lazy" />
+                      )}
+                    </p>
+                  )}
+                  <h3 set:html={c.heading} />
+                  <div class="prose" set:html={c.html} />
+                </div>
+              );
+            })
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ДОКАЗАТЕЛСТВО - реални кадри в продуктови рамки, таблица на проектите по програми, отзив -->
+  {
+    projects.length > 0 && (
+      <section class="section">
+        <div class="wrap">
+          <h2 class="centered" set:html={proof.heading} />
+          <div class="proof-lede prose centered-text" set:html={proof.lede} />
+          {shots.length > 0 && (
+            <div class="shots">
+              {shots.map(({ project, img, size }) => (
+                <figure class="figure">
+                  <div class="frame">
+                    <div class:list={['frame-bar', isLatin(img.alt) && 'mono']}>{img.alt}</div>
+                    <img class="frame-body" src={img.src} alt="" width={size.width} height={size.height} loading="lazy" />
+                  </div>
+                  <figcaption>
+                    {cleanText(project.data.client)} · {cleanText(project.data.program)}
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          )}
+          <table class="programs" role="table">
+            <thead role="rowgroup">
+              <tr role="row">
+                <th role="columnheader" scope="col">{t('facts.client')}</th>
+                <th role="columnheader" scope="col">{t('facts.program')}</th>
+                <th role="columnheader" scope="col">{t('facts.services')}</th>
+              </tr>
+            </thead>
+            <tbody role="rowgroup">
+              {projects.map((p) => (
+                <tr role="row">
+                  <td role="cell" class="client">
+                    <a href={localeUrl(locale, `/projects/${projectSlug(p.id)}`)}>{cleanText(p.data.client)}</a>
+                    {p.data.status === 'in-progress' && <span class="tag">{t('projects.inProgress')}</span>}
+                  </td>
+                  <td role="cell" class="program">{cleanText(p.data.program)}</td>
+                  <td role="cell" class="services">{p.data.services.join(' · ')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {testimonials.length > 0 && (
+            <div class="quotes">
+              {testimonials.map((x) => (
+                <figure class="quote tile tile-surface reveal">
+                  <blockquote>
+                    <span class="open" aria-hidden="true">
+                      „
+                    </span>
+                    <p>{x.data.quote}</p>
+                  </blockquote>
+                  <figcaption>
+                    {logoFor(x.data.client) && !logoFor(x.data.client)!.data.placeholder && (
+                      <img class="quote-logo" src={logoFor(x.data.client)!.data.logo} alt="" height="28" loading="lazy" />
+                    )}
+                    <span>
+                      {x.data.name && <><span class="who">{x.data.name}</span>, </>}
+                      {x.data.role}, {x.data.company}
+                      {x.data.placeholder && <span class="tag">{t('placeholder.sample')}</span>}
+                    </span>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ЗАЩО СЕГА - студена плочка със сроковете на процедурата + CTA -->
+  {
+    whyNow && (
+      <section class="section">
+        <div class="wrap">
+          <div class="tile tile-cool reveal why">
+            <h2 set:html={whyNow.heading} />
+            <div class="prose" set:html={whyNow.html} />
+            <p class="why-cta">
+              <a class="btn" href={cta.href}>{cta.text}</a>
+            </p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- FAQ - въпросите по процедурата, после общите; <details> както на /services -->
+  <section class="section faq" aria-labelledby="faq-title">
+    <div class="wrap">
+      <h2 id="faq-title" class="centered" set:html={sharedFaq.heading} />
+      <div class="faq-list">
+        {
+          faq.map((item) => (
+            <details>
+              <summary set:html={item.question} />
+              <div class="answer prose" set:html={item.answer} />
+            </details>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ФОРМА - топла плочка: текст вляво, lead форма вдясно; скрито поле campaign -->
+  <section class="section section-cta" id="form" data-cta-anchor>
+    <div class="wrap">
+      <div class="tile tile-tint reveal cta">
+        <div class="cta-text">
+          <h2 set:html={formBlock.heading} />
+          <div class="prose" set:html={formBlock.lede} />
+        </div>
+        <div class="cta-form">
+          <InquiryForm locale={locale} variant="lead" campaign={campaignId} submitText={cta.text}>
+            {formBlock.after && <div slot="after" class="cta-after" set:html={formBlock.after} />}
+          </InquiryForm>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Мобилно: CTA-то е винаги на екрана в лента долу; скрива се, когато формата се вижда. -->
+  <div class="sticky-cta" data-sticky-cta>
+    <a class="btn" href={cta.href}>{cta.text}</a>
+  </div>
+</Base>
+
+<script>
+  // Лентата с CTA на мобилно изчезва, докато на екрана е бутонът в hero-то или формата -
+  // иначе стои върху тях. Без JS лентата просто стои.
+  const bar = document.querySelector<HTMLElement>('[data-sticky-cta]');
+  const anchors = document.querySelectorAll<HTMLElement>('[data-cta-anchor]');
+  if (bar && anchors.length && 'IntersectionObserver' in window) {
+    const visible = new Set<Element>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) e.isIntersecting ? visible.add(e.target) : visible.delete(e.target);
+        bar.toggleAttribute('data-hidden', visible.size > 0);
+      },
+      { threshold: 0.1 },
+    );
+    anchors.forEach((el) => io.observe(el));
+  }
+</script>
+
+<style>
+  .section {
+    padding-block: var(--spacing-6);
+  }
+
+  .section h2 {
+    font-size: var(--text-xl);
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    margin: 0 0 var(--spacing-8);
+  }
+
+  .section h2.centered {
+    text-align: center;
+  }
+
+  .section h3 {
+    font-size: var(--text-md);
+    line-height: 1.2;
+    margin: 0 0 var(--spacing-3);
+  }
+
+  .prose :global(p) {
+    line-height: 1.6;
+    margin: 0 0 var(--spacing-4);
+  }
+
+  .prose :global(p:last-child),
+  .prose :global(ul:last-child) {
+    margin-bottom: 0;
+  }
+
+  .cols-2 {
+    display: grid;
+    gap: var(--spacing-8);
+  }
+
+  /* Hero: студена лента, текст + снимка; числата в бяла плочка под тях */
+  .hero-band {
+    background: var(--color-primary-soft);
+  }
+
+  .hero {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--spacing-6);
+    row-gap: var(--spacing-8);
+    padding-block: var(--spacing-8) var(--spacing-12);
+  }
+
+  .hero-text,
+  .hero-media,
+  .facts {
+    grid-column: 1 / -1;
+  }
+
+  /* Кодът е латиница (mono), останалото е български (body). */
+  .readout {
+    margin: 0 0 var(--spacing-4);
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+  }
+
+  .hero h1 {
+    font-size: var(--text-xl);
+    line-height: 1.08;
+    letter-spacing: -0.015em;
+    margin: 0 0 var(--spacing-6);
+  }
+
+  .lede :global(p) {
+    font-size: var(--text-base);
+    line-height: 1.5;
+    color: var(--color-muted);
+    max-width: var(--measure);
+  }
+
+  .hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-6);
+    margin: var(--spacing-6) 0 0;
+  }
+
+  /* Снимка (не скрийншот): заоблена, 1px линия, без адресен ред. */
+  .photo {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+  }
+
+  /* Числата на процедурата: Source Serif 300 (както лентата с числа на началната). */
+  .facts {
+    padding: var(--spacing-6);
+  }
+
+  .facts dl {
+    display: grid;
+    gap: var(--spacing-6);
+    margin: 0;
+  }
+
+  /* dt преди dd в DOM (семантика); визуално числото е над етикета. */
+  .fact {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+
+  .fact dd {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 300;
+    font-size: var(--text-lg);
+    white-space: nowrap;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-ink);
+  }
+
+  .fact dt {
+    margin-bottom: var(--spacing-1);
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    line-height: 1.4;
+  }
+
+  .facts-source {
+    margin: var(--spacing-6) 0 0;
+    font-size: var(--text-xs);
+  }
+
+  .facts-source .arrow-link {
+    font-size: var(--text-xs);
+  }
+
+  /* Ред доверие */
+  .section-trust {
+    padding-block: var(--spacing-8) var(--spacing-2);
+  }
+
+  .trust {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-4);
+    text-align: center;
+  }
+
+  .logos {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacing-4) var(--spacing-8);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .logo {
+    display: block;
+    height: var(--logo-height);
+    width: auto;
+  }
+
+  .trust-line {
+    margin: 0;
+    max-width: var(--measure);
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    line-height: 1.6;
+  }
+
+  /* За кого: типографски маркери „+“ / „–“ в mono, като на FAQ-а */
+  .who-col :global(ul) {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .who-col :global(li) {
+    position: relative;
+    padding-left: var(--spacing-6);
+    margin-bottom: var(--spacing-3);
+    line-height: 1.5;
+  }
+
+  .who-col :global(li)::before {
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+  }
+
+  .yes :global(li)::before {
+    content: '+';
+    color: var(--color-primary);
+  }
+
+  .no :global(li)::before {
+    content: '–';
+    color: var(--color-muted);
+  }
+
+  .no h3,
+  .no .prose {
+    color: var(--color-muted);
+  }
+
+  /* Какво се финансира: нашата колона с лява охрена черта - единственият акцент в плочката */
+  .funds-col :global(ul) {
+    padding-left: var(--spacing-6);
+    margin: 0;
+  }
+
+  .funds-col :global(li) {
+    margin-bottom: var(--spacing-2);
+    line-height: 1.5;
+  }
+
+  .ours {
+    padding-left: var(--spacing-4);
+    border-left: 2px solid var(--color-accent);
+  }
+
+  /* Примери: таблица; на мобилно всеки ред е блок (както таблицата на /for-beneficiaries) */
+  .examples,
+  .programs {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+  }
+
+  .examples,
+  .examples tbody,
+  .programs,
+  .programs tbody {
+    display: block;
+  }
+
+  .examples thead,
+  .programs thead {
+    display: block;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .examples tr,
+  .programs tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--spacing-1);
+    padding-block: var(--spacing-3);
+    border-top: 1px solid var(--color-line);
+    position: relative;
+  }
+
+  .examples tr:last-child,
+  .programs tr:last-child {
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .examples th[scope='row'],
+  .examples td,
+  .programs td {
+    display: block;
+    text-align: left;
+    line-height: 1.5;
+  }
+
+  .examples th[scope='row'] {
+    font-family: var(--font-body);
+    font-weight: 600;
+  }
+
+  .examples td,
+  .programs .program,
+  .programs .services {
+    color: var(--color-muted);
+  }
+
+  .programs {
+    margin-top: var(--spacing-8);
+  }
+
+  .programs .client a {
+    color: var(--color-ink);
+    text-decoration: underline;
+    text-decoration-color: var(--color-line);
+    text-underline-offset: var(--spacing-1);
+    text-decoration-thickness: 1px;
+  }
+
+  .programs tbody tr:hover {
+    background: var(--color-surface);
+  }
+
+  .programs tbody tr:hover .client a {
+    text-decoration-color: var(--color-primary);
+  }
+
+  /* Нищо не плащате: accent-soft (фон на бележка), заглавие 5/12, текст 7/12 */
+  .free {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--spacing-6);
+    row-gap: var(--spacing-6);
+    background: var(--color-accent-soft);
+  }
+
+  .free-head,
+  .free-body {
+    grid-column: 1 / -1;
+  }
+
+  .free h2 {
+    margin-bottom: 0;
+  }
+
+  .free-body :global(ul) {
+    margin: var(--spacing-4) 0 0;
+    padding-left: var(--spacing-6);
+  }
+
+  .free-body :global(li) {
+    margin-bottom: var(--spacing-2);
+    line-height: 1.5;
+  }
+
+  .free-cta {
+    margin: var(--spacing-8) 0 0;
+  }
+
+  /* Какво получавате: run-in заглавия като dl */
+  .deliver-list {
+    display: grid;
+    gap: var(--spacing-6);
+    margin: 0;
+  }
+
+  .deliver-item dt {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-md);
+    line-height: 1.25;
+    margin-bottom: var(--spacing-2);
+  }
+
+  .deliver-item dd {
+    margin: 0;
+    line-height: 1.6;
+    color: var(--color-muted);
+  }
+
+  .process-tile h2 {
+    margin-bottom: var(--spacing-8);
+  }
+
+  /* Кой стои зад това */
+  .whowe-logo {
+    margin: 0 0 var(--spacing-4);
+    line-height: 0;
+  }
+
+  .whowe-logo img {
+    display: inline-block;
+    height: var(--logo-height);
+    width: auto;
+  }
+
+  /* Доказателство */
+  .centered-text {
+    text-align: center;
+    margin: calc(-1 * var(--spacing-6)) auto var(--spacing-8);
+    color: var(--color-muted);
+  }
+
+  .shots {
+    display: grid;
+    gap: var(--spacing-4);
+  }
+
+  .figure figcaption {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+  }
+
+  .quotes {
+    display: grid;
+    gap: var(--spacing-4);
+    margin-top: var(--spacing-8);
+  }
+
+  /* Защо сега */
+  .why .prose {
+    max-width: var(--measure);
+  }
+
+  .why-cta {
+    margin: var(--spacing-6) 0 0;
+  }
+
+  /* FAQ: както на /services - без икона, „+“ / „-“ в mono */
+  .faq-list {
+    max-width: var(--measure);
+    margin-inline: auto;
+    border-top: 1px solid var(--color-line);
+  }
+
+  details {
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--spacing-4);
+    list-style: none;
+    cursor: pointer;
+    padding-block: var(--spacing-4);
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary::after {
+    content: '+';
+    flex: none;
+    font-family: var(--font-mono);
+    font-weight: 400;
+    color: var(--color-muted);
+  }
+
+  details[open] summary::after {
+    content: '-';
+  }
+
+  summary:hover {
+    color: var(--color-primary);
+  }
+
+  details[open] summary {
+    padding-bottom: var(--spacing-2);
+  }
+
+  .answer {
+    padding-bottom: var(--spacing-4);
+    max-width: none;
+  }
+
+  /* Форма: текст 5/12, форма 6/12 (както на началната) */
+  .cta {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: 0;
+    row-gap: var(--spacing-8);
+    /* Котвата #form да не се крие под sticky хедъра. */
+    scroll-margin-top: var(--spacing-24);
+  }
+
+  .cta-text,
+  .cta-form {
+    grid-column: 1 / -1;
+  }
+
+  .cta h2 {
+    max-width: var(--measure);
+  }
+
+  .cta-after :global(p) {
+    margin: var(--spacing-4) 0 0;
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    line-height: 1.6;
+  }
+
+  .cta-after :global(a) {
+    font-family: var(--font-mono);
+    color: var(--color-primary);
+    white-space: nowrap;
+  }
+
+  /* Лепкава CTA лента (само мобилно): плътен surface фон, 1px линия отгоре; мястото под
+     страницата се пази с padding на body, за да не покрива футъра. */
+  .sticky-cta {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 15;
+    padding: var(--spacing-3) var(--spacing-6);
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-line);
+  }
+
+  .sticky-cta .btn {
+    display: block;
+    text-align: center;
+  }
+
+  .sticky-cta[data-hidden] {
+    display: none;
+  }
+
+  :global(body) {
+    padding-bottom: calc(var(--spacing-16) + var(--spacing-4));
+  }
+
+  .section-cta {
+    padding-bottom: var(--spacing-16);
+  }
+
+  /* = --breakpoint-md в tokens.css */
+  @media (min-width: 48rem) {
+    .section {
+      padding-block: var(--spacing-8);
+    }
+
+    .section h2 {
+      font-size: var(--text-2xl);
+    }
+
+    .cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--spacing-12);
+    }
+
+    .hero {
+      padding-block: var(--spacing-16) var(--spacing-12);
+      row-gap: var(--spacing-12);
+    }
+
+    .hero-text {
+      grid-column: 1 / span 7;
+      align-self: center;
+    }
+
+    .hero-media {
+      grid-column: 8 / span 5;
+      align-self: center;
+    }
+
+    .hero h1 {
+      font-size: var(--text-2xl);
+    }
+
+    .lede :global(p) {
+      font-size: var(--text-md);
+    }
+
+    .facts {
+      padding: var(--spacing-8) var(--spacing-12);
+    }
+
+    .facts dl {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--spacing-8);
+    }
+
+    /* 36 px: „до 450 000 €“ в колона от ~230 px; на 48 px се пренася. */
+    .fact dd {
+      font-size: var(--text-xl);
+    }
+
+    .section-trust {
+      padding-block: var(--spacing-8) var(--spacing-2);
+    }
+
+    .trust {
+      flex-direction: row;
+      justify-content: center;
+      gap: var(--spacing-8);
+      text-align: left;
+    }
+
+    .examples,
+    .programs {
+      display: table;
+    }
+
+    .examples thead,
+    .programs thead {
+      display: table-header-group;
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip-path: none;
+    }
+
+    .examples tbody,
+    .programs tbody {
+      display: table-row-group;
+    }
+
+    .examples tr,
+    .programs tr {
+      display: table-row;
+      padding: 0;
+    }
+
+    .examples th,
+    .examples th[scope='row'],
+    .examples td,
+    .programs th,
+    .programs td {
+      display: table-cell;
+      text-align: left;
+      vertical-align: top;
+      padding: var(--spacing-3) var(--spacing-6) var(--spacing-3) 0;
+      border-top: 1px solid var(--color-line);
+    }
+
+    .examples thead th,
+    .programs thead th {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--color-muted);
+      border-top: 0;
+    }
+
+    .examples th[scope='row'] {
+      width: 28%;
+    }
+
+    .examples tr:last-child th,
+    .examples tr:last-child td,
+    .programs tr:last-child td {
+      border-bottom: 1px solid var(--color-line);
+    }
+
+    .examples tr:last-child,
+    .programs tr:last-child {
+      border-bottom: 0;
+    }
+
+    .examples {
+      max-width: calc(var(--container) - 2 * var(--spacing-24));
+      margin-inline: auto;
+    }
+
+    .free-head {
+      grid-column: 1 / span 5;
+    }
+
+    .free-body {
+      grid-column: 7 / span 6;
+    }
+
+    .deliver-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--spacing-8) var(--spacing-12);
+    }
+
+    .shots {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--spacing-6);
+    }
+
+    /* Един-единствен кадър (втори кейс без изображение): центриран на 8/12, не в лявата половина. */
+    .shots > :only-child {
+      grid-column: 1 / -1;
+      max-width: calc(var(--container) * 8 / 12);
+      margin-inline: auto;
+      width: 100%;
+    }
+
+    .quotes {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .cta {
+      column-gap: var(--spacing-8);
+    }
+
+    .cta-text {
+      grid-column: 1 / span 5;
+    }
+
+    .cta-form {
+      grid-column: 7 / span 6;
+    }
+
+    .sticky-cta {
+      display: none;
+    }
+
+    :global(body) {
+      padding-bottom: 0;
+    }
+  }
+</style>

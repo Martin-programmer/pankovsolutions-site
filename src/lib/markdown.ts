@@ -133,13 +133,51 @@ export async function parseSteps(source: string) {
 
 // Страница, нарязана по „## “: текстът преди първото h2 + секциите.
 export function splitH2(source: string): { preface: string; sections: Array<{ heading: string; body: string }> } {
-  const parts = source.split(/^(?=## )/m);
+  // Водещ ред: split не реже при съвпадение на позиция 0, иначе първата секция остава в preface.
+  const parts = `
+${source}`.split(/^(?=## )/m);
   const preface = parts[0]?.trim() ?? '';
   const sections = parts.slice(1).map((p) => {
     const { heading, rest } = takeHeading(p, 2);
     return { heading, body: rest };
   });
   return { preface, sections };
+}
+
+// Секция, нарязана по „### “: текстът преди първото h3 + подсекциите (лендинги: „За вас е,
+// ако“ / „Не е за вас, ако“; „Софтуер“ / „Машини“).
+export function splitH3(source: string): { preface: string; sections: Array<{ heading: string; body: string }> } {
+  const parts = `
+${source}`.split(/^(?=### )/m);
+  const preface = parts[0]?.trim() ?? '';
+  const sections = parts.slice(1).map((p) => {
+    const m = p.match(/^###\s+(.+)$/m);
+    return { heading: m?.[1].trim() ?? '', body: m ? p.replace(m[0], '').trim() : p.trim() };
+  });
+  return { preface, sections };
+}
+
+// „- **Ниша** - текст“ — по един ред на пример (лендинги: примери по дейности).
+export async function parseTermLines(source: string) {
+  const items = [];
+  for (const line of source.split('\n')) {
+    const m = line.match(/^-\s+\*\*(.+?)\*\*\s*[-–—]\s*(.+)$/);
+    if (!m) continue;
+    items.push({ term: await mdInline(m[1]), text: await mdInline(m[2]) });
+  }
+  return items;
+}
+
+// „**Заглавие.** Текст.“ — по един абзац (лендинги: какво получавате). Като parseServices,
+// но без номер.
+export async function parseRunIns(source: string) {
+  const items = [];
+  for (const p of paragraphs(source)) {
+    const m = p.match(/^\*\*(.+?)\*\*\s*([\s\S]*)$/);
+    if (!m) continue;
+    items.push({ title: await mdInline(trimDot(m[1])), text: await mdInline(m[2]) });
+  }
+  return items;
 }
 
 // „**Въпрос?** Отговор.“ — по един абзац на въпрос.
