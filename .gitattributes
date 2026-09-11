@@ -1,0 +1,3 @@
+# Парсерите в src/lib/markdown.ts режат по LF; с autocrlf=true нов checkout би дал CRLF и
+# би счупил списъците със стъпки/секции. Всичко текстово е LF.
+* text=auto eol=lf
