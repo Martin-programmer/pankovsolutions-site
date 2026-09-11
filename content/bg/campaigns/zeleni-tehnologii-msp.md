@@ -7,6 +7,7 @@ procedure:
   programme: "ПКИП 2021-2027"
 status: open
 deadline: "10 ноември 2026, 16:30 ч."
+registeredBefore: "31.12.2023 г."
 facts:
   - value: "77 000 €"
     label: "минимална безвъзмездна помощ"

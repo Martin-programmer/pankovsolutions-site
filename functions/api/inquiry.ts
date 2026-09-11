@@ -2,22 +2,12 @@
 import { z } from 'zod';
 import { company } from '../../src/data/company';
 import { ui, type Locale } from '../../src/i18n/ui';
+import { type Env, isLocale, oneLine, respond, safeError, sameOrigin, sendResend, sendTelegram, t, verifyTurnstile } from '../lib';
 
-// POST /api/inquiry — Cloudflare Pages Function. Ред (CLAUDE.md §Стек):
+// POST /api/inquiry — Cloudflare Pages Function (общите части: functions/lib.ts). Ред (CLAUDE.md §Стек):
 // honeypot → timing → rate limit (KV) → Turnstile siteverify → Zod → Resend (известие +
 // автоотговор) → Telegram → отговор. С INQUIRY_MOCK=1 нищо не се изпраща — payload-ът се
 // логва. Работи и без JS: form POST → 303 към /contact/sent или /contact/error.
-
-interface Env {
-  RESEND_API_KEY?: string;
-  TURNSTILE_SECRET?: string;
-  TELEGRAM_BOT_TOKEN?: string;
-  TELEGRAM_CHAT_ID?: string;
-  // Къде отива известието за запитване; по подразбиране company.email (hello@).
-  NOTIFY_TO?: string;
-  INQUIRY_RL?: KVNamespace;
-  INQUIRY_MOCK?: string;
-}
 
 const TYPES = ['erp', 'eu', 'shop', 'app', 'other'] as const;
 const RATE_LIMIT = 5; // на час, на IP
@@ -39,102 +29,18 @@ const schema = z.object({
   // Кратката форма няма поле type → 'other'; пълната го праща и празно е грешка (проверява се
   // отделно по-долу, защото Zod не различава „липсва“ от „празно“ след трансформация).
   type: z.enum(TYPES).default('other'),
-  // Лендинг по процедура (docs/11): slug на страницата, от скрито поле. При кампания описанието
-  // е по избор, а телефонът - задължителен (проверява се отделно, както type).
-  campaign: z
-    .string()
-    .trim()
-    .regex(/^[a-z0-9-]{1,80}$/)
-    .optional()
-    .or(z.literal('')),
-  message: z.string().trim().max(2000),
+  message: z.string().trim().min(10).max(2000),
   consent: z.literal('on'),
 });
 
 type Inquiry = z.infer<typeof schema>;
 
-const isLocale = (v: unknown): v is Locale => v === 'bg' || v === 'en';
-
-function t(locale: Locale, key: keyof (typeof ui)['bg'], vars: Record<string, string> = {}) {
-  return Object.entries(vars).reduce((s, [k, v]) => s.replaceAll(`{${k}}`, v), ui[locale][key]);
-}
-
-function respond(
-  wantsJson: boolean,
-  status: number,
-  body: { ok: boolean; message?: string; errors?: Record<string, string> },
-  redirectTo: string,
-) {
-  if (wantsJson) {
-    return new Response(JSON.stringify(body), {
-      status,
-      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
-    });
-  }
-  return new Response(null, { status: 303, headers: { location: redirectTo, 'cache-control': 'no-store' } });
-}
-
 // Максимален размер на тялото: полетата са ≤ 2 000 знака, Turnstile токенът ≤ 2 KB.
 const MAX_BODY = 32 * 1024;
-
-// Само нашият произход може да праща формата (защита от cross-site POST). Origin липсва при
-// някои не-браузърни клиенти - тогава се гледа Sec-Fetch-Site; без нито едно - пропуска се.
-function sameOrigin(request: Request): boolean {
-  const own = new URL(request.url).origin;
-  const origin = request.headers.get('origin');
-  if (origin) return origin === own;
-  const site = request.headers.get('sec-fetch-site');
-  return !site || site === 'same-origin' || site === 'none';
-}
-
-// Лог без лични данни и без секрети: само класът на грешката и статусът.
-function safeError(err: unknown): string {
-  const msg = err instanceof Error ? err.message : String(err);
-  return msg.replace(/bot\d+:[A-Za-z0-9_-]+/g, 'bot[token]').split('\n')[0].slice(0, 120);
-}
-
-// Един ред, без CR/LF - за теми на имейли и етикети.
-const oneLine = (s: string) => s.replace(/[\r\n\t]+/g, ' ').trim();
-
-async function verifyTurnstile(secret: string, token: string, ip: string): Promise<boolean> {
-  const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ secret, response: token, remoteip: ip }),
-  });
-  const data = (await res.json()) as { success?: boolean };
-  return data.success === true;
-}
-
-async function sendResend(apiKey: string, mail: { to: string; subject: string; text: string; replyTo?: string }) {
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
-    body: JSON.stringify({
-      from: `${company.brand} <${company.email}>`,
-      to: [mail.to],
-      subject: mail.subject,
-      text: mail.text,
-      ...(mail.replyTo ? { reply_to: mail.replyTo } : {}),
-    }),
-  });
-  // Тялото на грешката може да съдържа адреса на получателя - в лога отива само статусът.
-  if (!res.ok) throw new Error(`Resend ${res.status}`);
-}
-
-async function sendTelegram(token: string, chatId: string, text: string) {
-  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text }),
-  });
-  if (!res.ok) throw new Error(`Telegram ${res.status}`);
-}
 
 function notificationText(locale: Locale, d: Inquiry, ip: string): string {
   const typeLabel = t(locale, `form.type.${d.type}` as keyof (typeof ui)['bg']);
   return [
-    d.campaign ? `${t('bg', 'form.campaign')}: ${d.campaign}` : null,
     `${t('bg', 'form.name')}: ${d.name}`,
     d.company ? `${t('bg', 'form.company')}: ${d.company}` : null,
     `${t('bg', 'form.email')}: ${d.email}`,
@@ -220,16 +126,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     email: field('email'),
     phone: field('phone'),
     type: field('type') || undefined,
-    campaign: field('campaign'),
     message: field('message'),
     consent: field('consent'),
   });
   const errors: Record<string, string> = {};
   if (form.has('type') && field('type') === '') errors.type = t(locale, 'error.type');
-  // Кампания: телефонът е задължителен (обаждаме се за проверката); иначе описанието е задължително.
-  const isCampaign = field('campaign').trim() !== '';
-  if (isCampaign && field('phone').trim() === '') errors.phone = t(locale, 'error.phone.required');
-  if (!isCampaign && field('message').trim().length < 10) errors.message = t(locale, 'error.message');
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {
       const f = String(issue.path[0] ?? '');
@@ -258,9 +159,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   try {
     await sendResend(env.RESEND_API_KEY, {
       to: env.NOTIFY_TO?.trim() || company.email,
-      subject: data.campaign
-        ? t('bg', 'mail.notify.subject.campaign', { name: oneLine(data.name), campaign: data.campaign })
-        : t('bg', 'mail.notify.subject', { name: oneLine(data.name) }),
+      subject: t('bg', 'mail.notify.subject', { name: oneLine(data.name) }),
       text: notify,
       replyTo: data.email,
     });

@@ -1,7 +1,7 @@
 ---
 import { getCollection, getEntry, type CollectionEntry } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import InquiryForm from '../../components/InquiryForm.astro';
+import EligibilitySurvey from '../../components/EligibilitySurvey.astro';
 import Placeholder from '../../components/Placeholder.astro';
 import Process from '../../components/Process.astro';
 import { company } from '../../data/company';
@@ -544,7 +544,7 @@ const jsonLd = {
     </div>
   </section>
 
-  <!-- ФОРМА - топла плочка: текст вляво, lead форма вдясно; скрито поле campaign -->
+  <!-- АНКЕТА - топла плочка: текст вляво, стъпковата анкета вдясно (EligibilitySurvey) -->
   <section class="section section-cta" id="form" data-cta-anchor>
     <div class="wrap">
       <div class="tile tile-tint reveal cta">
@@ -553,9 +553,9 @@ const jsonLd = {
           <div class="prose" set:html={formBlock.lede} />
         </div>
         <div class="cta-form">
-          <InquiryForm locale={locale} variant="lead" campaign={campaignId} submitText={cta.text}>
+          <EligibilitySurvey locale={locale} campaign={campaignId} registeredBefore={entry.data.registeredBefore} submitText={cta.text}>
             {formBlock.after && <div slot="after" class="cta-after" set:html={formBlock.after} />}
-          </InquiryForm>
+          </EligibilitySurvey>
         </div>
       </div>
     </div>

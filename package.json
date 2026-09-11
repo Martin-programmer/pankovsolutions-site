@@ -16,6 +16,7 @@
     "overflow": "node scripts/overflow.mjs",
     "crop": "node scripts/crop.mjs",
     "test:form": "node scripts/formtest.mjs",
+    "test:survey": "node scripts/surveytest.mjs",
     "serve:dist": "serve dist -l 4177 --no-clipboard",
     "audit:lh": "lhci autorun",
     "audit:a11y": "pa11y-ci",

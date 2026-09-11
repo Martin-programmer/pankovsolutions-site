@@ -96,6 +96,8 @@ const campaigns = defineCollection({
     status: z.enum(['upcoming', 'open', 'closed']).default('open'),
     // Текст, както ще се покаже („10 ноември 2026, 16:30“), не дата — форматът е решение на текста.
     deadline: z.string().optional(),
+    // Първият въпрос на анкетата: „Регистрирана ли е вашата фирма преди {registeredBefore}?“
+    registeredBefore: z.string(),
     // Лентата с числа под hero-то: до 4 двойки стойност/етикет, от условията на процедурата.
     facts: z.array(z.object({ value: z.string(), label: z.string() })).max(4).default([]),
     // Линк към официалните условия — проверимост (docs/07, Stanford №1).

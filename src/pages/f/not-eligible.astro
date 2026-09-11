@@ -1,0 +1,51 @@
+---
+import Base from '../../layouts/Base.astro';
+import { company } from '../../data/company';
+import { useTranslations, type Locale } from '../../i18n/utils';
+
+// „Не“ на първия въпрос от анкетата без JS (functions/api/survey.ts пренасочва тук с 303).
+// С JS съобщението се показва на място под въпроса.
+const locale: Locale = 'bg';
+const t = useTranslations(locale);
+---
+
+<Base title={`${t('survey.ineligibleTitle')} - ${company.brand}`} locale={locale} noindex>
+  <div class="wrap outer">
+    <div class="page tile tile-surface">
+      <h1>{t('survey.ineligibleTitle')}</h1>
+      <p class="note" role="status">
+        {t('survey.ineligible')}
+        <a class="mono" href={company.phoneHref}>{company.phone}</a>
+      </p>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .outer {
+    padding-block: var(--spacing-12) var(--spacing-24);
+  }
+
+  .page {
+    max-width: calc(var(--measure) + 2 * var(--spacing-12));
+  }
+
+  h1 {
+    font-size: var(--text-xl);
+    line-height: 1.15;
+    margin: 0 0 var(--spacing-6);
+  }
+
+  .note {
+    margin: 0;
+    padding: var(--spacing-4) var(--spacing-6);
+    background: var(--color-accent-soft);
+    font-size: var(--text-base);
+    line-height: 1.6;
+  }
+
+  .note a {
+    color: var(--color-primary);
+    white-space: nowrap;
+  }
+</style>

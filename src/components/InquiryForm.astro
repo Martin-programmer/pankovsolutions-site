@@ -3,22 +3,17 @@ import { company } from '../data/company';
 import { localeUrl, useTranslations, type Locale } from '../i18n/utils';
 
 // Формата за запитване. Пълен вариант (/contact): 6 полета по content/bg/contact.md +
-// съгласие; кратък (начална): име, имейл, фирма, съобщение + съгласие; lead (лендинги по
-// процедури, docs/11): име, фирма, телефон, имейл, описание по избор + съгласие, плюс скрити
-// campaign (от коя страница идва) и type=eu - влизат в имейла и Telegram. Backend:
+// съгласие; кратък (начална): име, имейл, фирма, съобщение + съгласие. Backend:
 // functions/api/inquiry.ts. Работи без JS (POST + 303 към /contact/sent); скриптът
 // по-долу добавя fetch, грешки по поле и успех на място. Turnstile е единственият
 // external скрипт и се зарежда само когато има TURNSTILE_SITE_KEY при build.
 interface Props {
   locale: Locale;
-  variant?: 'short' | 'full' | 'lead';
+  variant?: 'short' | 'full';
   successText?: string;
-  // Само за variant="lead": стойността на скритото поле и текстът на бутона (CTA на лендинга).
-  campaign?: string;
-  submitText?: string;
 }
 
-const { locale, variant = 'short', successText, campaign = '', submitText } = Astro.props;
+const { locale, variant = 'short', successText } = Astro.props;
 const t = useTranslations(locale);
 const id = (name: string) => `inquiry-${variant}-${name}`;
 // process.env първо: в Workers Builds променливите са в process.env, не в .env файл.
@@ -40,14 +35,6 @@ const types = ['erp', 'eu', 'shop', 'app', 'other'] as const;
   <input type="hidden" name="locale" value={locale} />
   <!-- Скриптът записва момента на зареждане; сървърът отхвърля submit под 3 s. -->
   <input type="hidden" name="ts" value="" />
-  {
-    variant === 'lead' && (
-      <>
-        <input type="hidden" name="campaign" value={campaign} />
-        <input type="hidden" name="type" value="eu" />
-      </>
-    )
-  }
 
   <p class="form-status" role="alert" tabindex="-1" hidden></p>
 
@@ -64,23 +51,6 @@ const types = ['erp', 'eu', 'shop', 'app', 'other'] as const;
         <input id={id('company')} name="company" type="text" autocomplete="organization" maxlength="120" aria-describedby={id('company-error')} />
         <p class="error" id={id('company-error')} role="alert" hidden />
       </div>
-    )
-  }
-
-  {
-    variant === 'lead' && (
-      <>
-        <div class="field">
-          <label for={id('company')}>{t('form.company.required')}</label>
-          <input id={id('company')} name="company" type="text" autocomplete="organization" required maxlength="120" aria-describedby={id('company-error')} />
-          <p class="error" id={id('company-error')} role="alert" hidden />
-        </div>
-        <div class="field">
-          <label for={id('phone')}>{t('form.phone.required')}</label>
-          <input id={id('phone')} name="phone" type="tel" autocomplete="tel" required maxlength="40" aria-describedby={id('phone-error')} />
-          <p class="error" id={id('phone-error')} role="alert" hidden />
-        </div>
-      </>
     )
   }
 
@@ -110,26 +80,18 @@ const types = ['erp', 'eu', 'shop', 'app', 'other'] as const;
           <p class="error" id={id('type-error')} role="alert" hidden />
         </div>
       </>
-    ) : variant === 'short' ? (
+    ) : (
       <div class="field">
         <label for={id('company')}>{t('form.company')}</label>
         <input id={id('company')} name="company" type="text" autocomplete="organization" maxlength="120" aria-describedby={id('company-error')} />
         <p class="error" id={id('company-error')} role="alert" hidden />
       </div>
-    ) : null
+    )
   }
 
   <div class="field">
-    <label for={id('message')}>{variant === 'lead' ? t('form.plan') : t('form.message')}</label>
-    <textarea
-      id={id('message')}
-      name="message"
-      rows="3"
-      required={variant !== 'lead'}
-      minlength={variant === 'lead' ? undefined : 10}
-      maxlength="2000"
-      aria-describedby={id('message-error')}
-    ></textarea>
+    <label for={id('message')}>{t('form.message')}</label>
+    <textarea id={id('message')} name="message" rows="3" required minlength="10" maxlength="2000" aria-describedby={id('message-error')}></textarea>
     <p class="error" id={id('message-error')} role="alert" hidden></p>
   </div>
 
@@ -158,7 +120,7 @@ const types = ['erp', 'eu', 'shop', 'app', 'other'] as const;
     )
   }
 
-  <button class="btn" type="submit">{submitText ?? t('form.submit')}</button>
+  <button class="btn" type="submit">{t('form.submit')}</button>
 
   <!-- Редът под бутона (DESIGN.md §Форма). Страницата може да го подаде от content/ през
        slot „after“; иначе се ползва UI низът + данните от company.ts. -->

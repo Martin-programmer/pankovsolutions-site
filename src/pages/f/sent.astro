@@ -1,0 +1,53 @@
+---
+import Base from '../../layouts/Base.astro';
+import { company } from '../../data/company';
+import { useTranslations, type Locale } from '../../i18n/utils';
+
+// След анкетата за допустимост без JS (functions/api/survey.ts пренасочва тук с 303).
+// С JS същият текст се показва на място във формата.
+const locale: Locale = 'bg';
+const t = useTranslations(locale);
+---
+
+<Base title={`${t('survey.sentTitle')} - ${company.brand}`} locale={locale} noindex>
+  <div class="wrap outer">
+    <div class="page tile tile-surface">
+      <h1>{t('survey.sentTitle')}</h1>
+      <p class="form-success" role="status">{t('survey.success')}</p>
+      <p class="direct">
+        <a class="mono" href={company.phoneHref}>{company.phone}</a>&nbsp;·
+        <a class="mono" href={`mailto:${company.email}`}>{company.email}</a>
+      </p>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .outer {
+    padding-block: var(--spacing-12) var(--spacing-24);
+  }
+
+  .page {
+    max-width: calc(var(--measure) + 2 * var(--spacing-12));
+  }
+
+  h1 {
+    font-size: var(--text-xl);
+    line-height: 1.15;
+    margin: 0 0 var(--spacing-6);
+  }
+
+  .form-success {
+    margin: 0 0 var(--spacing-8);
+    padding: var(--spacing-4) var(--spacing-6);
+    background: var(--color-accent-soft);
+    font-size: var(--text-base);
+    line-height: 1.6;
+  }
+
+  .direct a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: var(--spacing-1);
+  }
+</style>
