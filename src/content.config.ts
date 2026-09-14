@@ -100,6 +100,8 @@ const campaigns = defineCollection({
     registeredBefore: z.string(),
     // Лентата с числа под hero-то: до 4 двойки стойност/етикет, от условията на процедурата.
     facts: z.array(z.object({ value: z.string(), label: z.string() })).max(4).default([]),
+    // Ред под числата: какво остава за сметка на фирмата, откъде са данните и към коя дата.
+    factsNote: z.string().optional(),
     // Линк към официалните условия — проверимост (docs/07, Stanford №1).
     source: z.string().url().optional(),
     // Снимка в hero-то (4:5 или 16:10) и широк банер по средата; до качване — Placeholder.
@@ -115,7 +117,21 @@ const campaigns = defineCollection({
 
 const campaignBlocks = defineCollection({
   loader: glob({ base: './content', pattern: '*/campaigns/_*.md' }),
-  schema: z.object({ title: z.string() }),
+  schema: z.object({
+    title: z.string(),
+    // Лицата в секцията „Кой стои зад…“ (Stanford №4: реални хора зад сайта). `match` е
+    // текст от съответното „### “ заглавие — по него портретът се сдвоява с колоната.
+    people: z
+      .array(
+        z.object({
+          match: z.string(),
+          name: z.string(),
+          role: z.string(),
+          photo: z.string(),
+        }),
+      )
+      .default([]),
+  }),
 });
 
 export const collections = { pages, projects, clients, testimonials, campaigns, campaignBlocks };

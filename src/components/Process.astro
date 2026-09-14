@@ -57,6 +57,9 @@ const { items } = Astro.props;
   @media (min-width: 48rem) {
     .steps {
       grid-template-columns: repeat(5, minmax(0, 1fr));
+      /* Линията на последната стъпка стърчи в gap-а; clip я реже, без да прави скрол
+         контейнер (за разлика от overflow: hidden). */
+      overflow-x: clip;
     }
 
     /* Десктоп: баджовете са свързани с тънка линия през средата им - стъпките се четат
@@ -65,7 +68,8 @@ const { items } = Astro.props;
       content: '';
       position: absolute;
       left: 0;
-      right: 0;
+      /* Прескача gap-а на решетката, за да е един непрекъснат път, не пет отрязъка. */
+      right: calc(-1 * var(--spacing-6));
       /* Средата на баджа (40 px): padding 4 + 20. */
       top: calc(var(--spacing-1) + var(--spacing-4) + var(--spacing-1));
       height: 1px;

@@ -1,5 +1,8 @@
 /* Единствената точка, в която Tailwind се свързва с токените.
    Тук НЕ се дефинират стойности — всичко идва от tokens.css (виж CLAUDE.md §Правила 2). */
-@import "tailwindcss";
+/* source(none) + изричен @source: иначе Tailwind сканира и DESIGN.md/CHECKLIST.md/docs и
+   емитва точно забранените там утилити (bg-gradient-*, rounded-3xl, shadow-lg…) в CSS-а. */
+@import "tailwindcss" source(none);
+@source "../../src";
 @import "./tokens.css";
 @import "./components.css";

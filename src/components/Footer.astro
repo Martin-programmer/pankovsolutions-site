@@ -132,10 +132,15 @@ const year = new Date().getFullYear();
 
   /* = --breakpoint-md в tokens.css */
   @media (min-width: 48rem) {
-    /* Колоните са 2 или 3 (езиците се показват само при ≥ 2 езика) — решетката следва броя. */
+    /* Колоните са 2 или 3 (езиците се показват само при ≥ 2 езика). auto-fit правеше трети
+       празен трак при две колони, затова броят се задава изрично. */
     .cols {
-      grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: var(--spacing-12);
+    }
+
+    .cols:has(> :nth-child(3)) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 

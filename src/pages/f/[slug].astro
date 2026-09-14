@@ -2,7 +2,6 @@
 import { getCollection, getEntry, type CollectionEntry } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import EligibilitySurvey from '../../components/EligibilitySurvey.astro';
-import Placeholder from '../../components/Placeholder.astro';
 import Process from '../../components/Process.astro';
 import { company } from '../../data/company';
 import { localeUrl, useTranslations, type Locale } from '../../i18n/utils';
@@ -69,16 +68,27 @@ const headed = async (source: string) => {
   const { heading, rest } = takeHeading(source, 2);
   return { heading: await mdInline(heading), body: rest };
 };
-// „## Заглавие“ + „### Подзаглавие“ + текст - двуколонните секции.
+// „## Заглавие“ + „### Подзаглавие“ + текст - двуколонните секции. Абзац, отделен с празен ред
+// след последния списък в последната подсекция, излиза под колоните (`tail`).
 const columns = async (source: string) => {
   const { heading, body } = await headed(source);
   const { sections } = splitH3(body);
-  return {
-    heading,
-    cols: await Promise.all(
-      sections.map(async (c) => ({ heading: await mdInline(c.heading), html: cleanHtml(await md(c.body)) })),
-    ),
-  };
+  const cols = [];
+  let tail = '';
+  for (const [i, c] of sections.entries()) {
+    let text = c.body;
+    if (i === sections.length - 1) {
+      const paras = paragraphs(text);
+      const last = paras.at(-1) ?? '';
+      // Опашка = последният абзац, ако не е част от списъка.
+      if (paras.length > 1 && !last.startsWith('-')) {
+        text = paras.slice(0, -1).join('\n\n');
+        tail = cleanHtml(await md(last));
+      }
+    }
+    cols.push({ heading: await mdInline(c.heading), html: cleanHtml(await md(text)) });
+  }
+  return { heading, cols, tail };
 };
 
 // --- Променлива част (Y) ---
@@ -116,6 +126,14 @@ const steps = await (async () => {
   return { heading, items: await parseStepLines(body) };
 })();
 const whoWe = await columns(need(common, 'ПАРТНЬОР', '_shared'));
+// Лице към всяка колона (frontmatter на _shared.md, сдвоено по `match` със заглавието).
+// Липсващ файл → само лого и текст, без счупено <img> (CLAUDE.md §Правила 1).
+const people = await Promise.all(
+  shared.data.people
+    .filter((x) => publicFileExists(x.photo))
+    .map(async (x) => ({ ...x, ...(await publicImageSize(x.photo)) })),
+);
+const personFor = (heading: string) => people.find((x) => heading.includes(x.match));
 const proof = await (async () => {
   const { heading, body } = await headed(need(common, 'ДОКАЗАТЕЛСТВО', '_shared'));
   return { heading, lede: cleanHtml(await md(body)) };
@@ -138,7 +156,6 @@ const formBlock = await (async () => {
 // --- Лога: партньорът от clients.yaml и нашето ---
 const clients = await getCollection('clients');
 const partner = clients.find((c) => c.data.partner);
-const partnerKey = partner?.data.name.replace(/\s*(ООД|ЕООД|АД|ЕАД)$/, '') ?? '';
 const showPartnerLogo = partner && (!partner.data.placeholder || showPlaceholders);
 const ourLogo = { src: '/img/logo.webp', alt: company.brand };
 const clientBySlug = new Map(clients.map((c) => [c.id, c]));
@@ -166,7 +183,11 @@ const testimonials = (await getCollection('testimonials'))
   .filter((x) => projectSlugs.has(x.data.project) && (!x.data.placeholder || showPlaceholders))
   .slice(0, 2);
 
-// --- Изображения от frontmatter (hero, банер) - до качване Placeholder „снимка“ ---
+// --- Изображения ---
+// Hero: снимката от frontmatter, ако я има; иначе реален кадър от кейс по европейска програма
+// в продуктова рамка (софтуерът, който доставяме - DESIGN.md §Ревизия). Празен цветен блок с
+// надпис „снимка“ на рекламна страница чете като счупено изображение, затова го няма:
+// без нито един кадър hero-то е само текст на цялата ширина.
 const image = entry.data.image && publicFileExists(entry.data.image.src)
   ? { ...entry.data.image, ...(await publicImageSize(entry.data.image.src)) }
   : null;
@@ -175,6 +196,29 @@ const banner = entry.data.banner && publicFileExists(entry.data.banner.src)
   : null;
 
 const isLatin = (text: string) => /^[\x00-\x7F]*$/.test(text);
+
+// Визуалът в hero-то: (1) снимката от frontmatter; (2) реален кадър от кейс по европейска
+// програма в продуктова рамка; (3) нищо - текстът заема цялата ширина. Никога празен блок.
+type HeroVisual =
+  | { kind: 'photo'; src: string; alt: string; width: number; height: number }
+  | { kind: 'frame'; src: string; alt: string; width: number; height: number; bar: string; caption: string };
+const heroShot = shots[0];
+const heroVisual: HeroVisual | null = image
+  ? { kind: 'photo', src: image.src, alt: image.alt, width: image.width, height: image.height }
+  : heroShot
+    ? {
+        kind: 'frame',
+        src: heroShot.img.src,
+        alt: heroShot.img.alt,
+        width: heroShot.size.width,
+        height: heroShot.size.height,
+        bar: heroShot.img.alt,
+        caption: `${cleanText(heroShot.project.data.client)} · ${cleanText(heroShot.project.data.program)}`,
+      }
+    : null;
+// Кадърът в hero-то не се повтаря в „Доказателство“.
+const proofShots = heroVisual?.kind === 'frame' ? shots.slice(1) : shots;
+
 const { procedure, niche, status, deadline, facts, source } = entry.data;
 const statusText = t(`campaign.status.${status}`);
 
@@ -214,19 +258,41 @@ const jsonLd = {
           <a class="arrow-link" href="#how">{t('campaign.how')}</a>
         </p>
       </div>
-      <div class="hero-media">
-        {
-          image ? (
-            <img class="photo" src={image.src} alt={image.alt} width={image.width} height={image.height} fetchpriority="high" />
-          ) : (
-            <Placeholder label={t('placeholder.photo')} caption={entry.data.image?.alt} variant="photo" ratio="4 / 3" />
-          )
-        }
-      </div>
+      {
+        heroVisual && (
+          <div class="hero-media">
+            {heroVisual.kind === 'photo' ? (
+              <img
+                class="photo"
+                src={heroVisual.src}
+                alt={heroVisual.alt}
+                width={heroVisual.width}
+                height={heroVisual.height}
+                fetchpriority="high"
+              />
+            ) : (
+              <figure class="figure">
+                <div class="frame">
+                  <div class:list={['frame-bar', isLatin(heroVisual.bar) && 'mono']}>{heroVisual.bar}</div>
+                  <img
+                    class="frame-body"
+                    src={heroVisual.src}
+                    alt={heroVisual.alt}
+                    width={heroVisual.width}
+                    height={heroVisual.height}
+                    fetchpriority="high"
+                  />
+                </div>
+                <figcaption>{heroVisual.caption}</figcaption>
+              </figure>
+            )}
+          </div>
+        )
+      }
 
       {
         facts.length > 0 && (
-          <div class="facts tile tile-surface" aria-label={t('campaign.facts')}>
+          <section class="facts tile tile-surface" aria-label={t('campaign.facts')}>
             <dl>
               {facts.map((f) => (
                 <div class="fact">
@@ -235,14 +301,19 @@ const jsonLd = {
                 </div>
               ))}
             </dl>
-            {source && (
-              <p class="facts-source">
-                <a class="arrow-link" href={source} rel="noopener" target="_blank">
-                  {t('campaign.source')}
-                </a>
-              </p>
+            {(entry.data.factsNote || source) && (
+              <div class="facts-foot">
+                {entry.data.factsNote && <p class="facts-note">{entry.data.factsNote}</p>}
+                {source && (
+                  <p class="facts-source">
+                    <a class="arrow-link" href={source} rel="noopener" target="_blank">
+                      {t('campaign.source')}
+                    </a>
+                  </p>
+                )}
+              </div>
             )}
-          </div>
+          </section>
         )
       }
     </div>
@@ -299,15 +370,16 @@ const jsonLd = {
       <section class="section">
         <div class="wrap">
           <div class="tile tile-cool reveal funds">
-            <h2 class="centered" set:html={funds.heading} />
-            <div class="cols-2">
+            <h2 set:html={funds.heading} />
+            <div class="funds-grid">
               {funds.cols.map((c, i) => (
-                <div class:list={['funds-col', i === 0 && 'ours']}>
+                <div class:list={['funds-col', i === 1 && 'ours']}>
                   <h3 set:html={c.heading} />
                   <div class="prose" set:html={c.html} />
                 </div>
               ))}
             </div>
+            {funds.tail && <div class="funds-tail prose" set:html={funds.tail} />}
           </div>
         </div>
       </section>
@@ -317,7 +389,7 @@ const jsonLd = {
   <!-- ПРИМЕРИ - таблица дейност → какво се намалява и коя система го доказва („ръчна котва“) -->
   {
     examples && examples.items.length > 0 && (
-      <section class="section">
+      <section class="section section-plain">
         <div class="wrap">
           <h2 class="centered" set:html={examples.heading} />
           <table class="examples" role="table">
@@ -341,18 +413,16 @@ const jsonLd = {
     )
   }
 
-  <!-- БАНЕР - широк кадър (реална снимка от производство/система); до качване - placeholder -->
-  <section class="section">
-    <div class="wrap">
-      {
-        banner ? (
+  <!-- БАНЕР - широк реален кадър; няма ли такъв, секцията не се рендерира -->
+  {
+    banner && (
+      <section class="section">
+        <div class="wrap">
           <img class="photo banner" src={banner.src} alt={banner.alt} width={banner.width} height={banner.height} loading="lazy" />
-        ) : (
-          <Placeholder label={t('campaign.banner')} caption={entry.data.banner?.alt} variant="photo" ratio="21 / 9" />
-        )
-      }
-    </div>
-  </section>
+        </div>
+      </section>
+    )
+  }
 
   <!-- НИЩО НЕ ПЛАЩАТЕ ДО ОДОБРЕНИЕ - плочка в accent-soft (единственият топъл акцент на страницата) -->
   <section class="section">
@@ -360,12 +430,12 @@ const jsonLd = {
       <div class="tile free reveal">
         <div class="free-head">
           <h2 set:html={free.heading} />
-        </div>
-        <div class="free-body">
-          <div class="prose" set:html={free.html} />
           <p class="free-cta">
             <a class="btn" href={cta.href}>{cta.text}</a>
           </p>
+        </div>
+        <div class="free-body">
+          <div class="prose" set:html={free.html} />
         </div>
       </div>
     </div>
@@ -375,7 +445,7 @@ const jsonLd = {
   <section class="section">
     <div class="wrap">
       <div class="tile tile-surface reveal deliver">
-        <h2 class="centered" set:html={deliver.heading} />
+        <h2 set:html={deliver.heading} />
         <dl class="deliver-list">
           {
             deliver.items.map((it) => (
@@ -404,30 +474,33 @@ const jsonLd = {
   <section class="section">
     <div class="wrap">
       <div class="tile tile-surface reveal whowe">
-        <h2 class="centered" set:html={whoWe.heading} />
+        <h2 set:html={whoWe.heading} />
         <div class="cols-2">
           {
             whoWe.cols.map((c) => {
-              const isPartner = Boolean(partnerKey) && c.heading.includes(partnerKey);
-              const logo = isPartner
-                ? showPartnerLogo && !partner.data.placeholder
-                  ? { src: partner.data.logo, alt: partner.data.name, url: partner.data.url }
-                  : null
-                : { src: ourLogo.src, alt: ourLogo.alt, url: localeUrl(locale, '/') };
+              const person = personFor(c.heading);
               return (
                 <div class="whowe-col">
-                  {logo && (
-                    <p class="whowe-logo">
-                      {logo.url ? (
-                        <a href={logo.url} rel={isPartner ? 'noopener' : undefined} target={isPartner ? '_blank' : undefined}>
-                          <img src={logo.src} alt={isPartner ? `${logo.alt} – ${t('partner.site')}` : logo.alt} height="36" loading="lazy" />
-                        </a>
-                      ) : (
-                        <img src={logo.src} alt={logo.alt} height="36" loading="lazy" />
+                  <div class="whowe-head">
+                    {person && (
+                      <img
+                        class="person-photo"
+                        src={person.photo}
+                        alt={person.name}
+                        width={person.width}
+                        height={person.height}
+                        loading="lazy"
+                      />
+                    )}
+                    <div class="whowe-title">
+                      <h3 set:html={c.heading} />
+                      {person && (
+                        <p class="person-name">
+                          {person.name} · <span class="person-role">{person.role}</span>
+                        </p>
                       )}
-                    </p>
-                  )}
-                  <h3 set:html={c.heading} />
+                    </div>
+                  </div>
                   <div class="prose" set:html={c.html} />
                 </div>
               );
@@ -441,13 +514,13 @@ const jsonLd = {
   <!-- ДОКАЗАТЕЛСТВО - реални кадри в продуктови рамки, таблица на проектите по програми, отзив -->
   {
     projects.length > 0 && (
-      <section class="section">
+      <section class="section section-plain">
         <div class="wrap">
           <h2 class="centered" set:html={proof.heading} />
-          <div class="proof-lede prose centered-text" set:html={proof.lede} />
-          {shots.length > 0 && (
+          <div class="proof-lede prose" set:html={proof.lede} />
+          {proofShots.length > 0 && (
             <div class="shots">
-              {shots.map(({ project, img, size }) => (
+              {proofShots.map(({ project, img, size }) => (
                 <figure class="figure">
                   <div class="frame">
                     <div class:list={['frame-bar', isLatin(img.alt) && 'mono']}>{img.alt}</div>
@@ -516,11 +589,19 @@ const jsonLd = {
       <section class="section">
         <div class="wrap">
           <div class="tile tile-cool reveal why">
-            <h2 set:html={whyNow.heading} />
-            <div class="prose" set:html={whyNow.html} />
-            <p class="why-cta">
-              <a class="btn" href={cta.href}>{cta.text}</a>
-            </p>
+            <div class="why-text">
+              <h2 set:html={whyNow.heading} />
+              <div class="prose" set:html={whyNow.html} />
+              <p class="why-cta">
+                <a class="btn" href={cta.href}>{cta.text}</a>
+              </p>
+            </div>
+            {deadline && status !== 'closed' && (
+              <p class="why-deadline">
+                <b>{deadline}</b>
+                <span>{t('campaign.deadlineFull')}</span>
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -528,13 +609,13 @@ const jsonLd = {
   }
 
   <!-- FAQ - въпросите по процедурата, после общите; <details> както на /services -->
-  <section class="section faq" aria-labelledby="faq-title">
-    <div class="wrap">
-      <h2 id="faq-title" class="centered" set:html={sharedFaq.heading} />
+  <section class="section section-plain faq" aria-labelledby="faq-title">
+    <div class="wrap faq-wrap">
+      <h2 id="faq-title" set:html={sharedFaq.heading} />
       <div class="faq-list">
         {
-          faq.map((item) => (
-            <details>
+          faq.map((item, i) => (
+            <details open={i < 2}>
               <summary set:html={item.question} />
               <div class="answer prose" set:html={item.answer} />
             </details>
@@ -552,7 +633,7 @@ const jsonLd = {
           <h2 set:html={formBlock.heading} />
           <div class="prose" set:html={formBlock.lede} />
         </div>
-        <div class="cta-form">
+        <div class="cta-form tile tile-surface">
           <EligibilitySurvey locale={locale} campaign={campaignId} registeredBefore={entry.data.registeredBefore} submitText={cta.text}>
             {formBlock.after && <div slot="after" class="cta-after" set:html={formBlock.after} />}
           </EligibilitySurvey>
@@ -587,6 +668,12 @@ const jsonLd = {
 
 <style>
   .section {
+    padding-block: var(--spacing-6);
+  }
+
+  /* Секция без плочка (примери, доказателство, FAQ): същият вътрешен отстъп като .tile,
+     за да е разстоянието между съдържание и съдържание еднакво по цялата страница. */
+  .section-plain > .wrap {
     padding-block: var(--spacing-6);
   }
 
@@ -684,23 +771,30 @@ const jsonLd = {
     padding: var(--spacing-6);
   }
 
+  /* Две редици (числа, после етикети) - иначе по-дългият етикет бута числото си нагоре и
+     стойностите застават на различни височини. `display: contents` вкарва dt/dd направо в
+     решетката на dl. */
   .facts dl {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--spacing-6);
     margin: 0;
   }
 
-  /* dt преди dd в DOM (семантика); визуално числото е над етикета. */
+  /* dt преди dd в DOM (семантика); визуално числото е над етикета. `justify-content: flex-end`
+     в column-reverse подпира съдържанието към числото, така че стойностите остават на една
+     базова линия, когато съседен етикет се пренася на два реда. */
   .fact {
     display: flex;
     flex-direction: column-reverse;
+    justify-content: flex-end;
   }
 
   .fact dd {
     margin: 0;
     font-family: var(--font-display);
     font-weight: 300;
-    font-size: var(--text-lg);
+    font-size: var(--text-md);
     white-space: nowrap;
     line-height: 1.1;
     letter-spacing: -0.01em;
@@ -709,14 +803,29 @@ const jsonLd = {
   }
 
   .fact dt {
-    margin-bottom: var(--spacing-1);
+    margin: var(--spacing-1) 0 0;
     font-size: var(--text-xs);
     color: var(--color-muted);
     line-height: 1.4;
   }
 
+  .facts-foot {
+    display: grid;
+    gap: var(--spacing-4);
+    margin-top: var(--spacing-6);
+    padding-top: var(--spacing-4);
+    border-top: 1px solid var(--color-line);
+  }
+
+  .facts-note {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    line-height: 1.6;
+  }
+
   .facts-source {
-    margin: var(--spacing-6) 0 0;
+    margin: 0;
     font-size: var(--text-xs);
   }
 
@@ -799,7 +908,22 @@ const jsonLd = {
     color: var(--color-muted);
   }
 
-  /* Какво се финансира: нашата колона с лява охрена черта - единственият акцент в плочката */
+  /* Какво се финансира: ляво заглавие, машините широки, софтуерът по-тесен с охрена черта -
+     различен скелет от „За кого е“, която е точно отгоре. */
+  .funds-grid {
+    display: grid;
+    gap: var(--spacing-8);
+  }
+
+  .funds-tail {
+    margin-top: var(--spacing-8);
+    padding-top: var(--spacing-4);
+    border-top: 1px solid var(--color-line);
+    max-width: var(--measure);
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
   .funds-col :global(ul) {
     padding-left: var(--spacing-6);
     margin: 0;
@@ -923,7 +1047,7 @@ const jsonLd = {
   }
 
   .free-cta {
-    margin: var(--spacing-8) 0 0;
+    margin: var(--spacing-6) 0 0;
   }
 
   /* Какво получавате: run-in заглавия като dl */
@@ -931,6 +1055,7 @@ const jsonLd = {
     display: grid;
     gap: var(--spacing-6);
     margin: 0;
+    max-width: var(--measure);
   }
 
   .deliver-item dt {
@@ -951,22 +1076,51 @@ const jsonLd = {
     margin-bottom: var(--spacing-8);
   }
 
-  /* Кой стои зад това */
-  .whowe-logo {
-    margin: 0 0 var(--spacing-4);
-    line-height: 0;
+  /* Кой стои зад това: лице, после лого, заглавие и текст */
+  .person {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-4);
+    margin: 0 0 var(--spacing-6);
   }
 
-  .whowe-logo img {
-    display: inline-block;
-    height: var(--logo-height);
-    width: auto;
+  /* Лицето стои до заглавието на фирмата: квадратен кадър с радиуса на рамките, не кръгъл
+     аватар (DESIGN.md §Забранено). Размерът е от спейсинг скалата. */
+  .whowe-head {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-4);
+    margin-bottom: var(--spacing-4);
+  }
+
+  .person-photo {
+    flex: none;
+    width: var(--spacing-16);
+    height: var(--spacing-16);
+    object-fit: cover;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+  }
+
+  .whowe-title h3 {
+    margin-bottom: var(--spacing-1);
+  }
+
+  .person-name {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    line-height: 1.4;
+  }
+
+  .person-role {
+    color: var(--color-muted);
   }
 
   /* Доказателство */
-  .centered-text {
-    text-align: center;
-    margin: calc(-1 * var(--spacing-6)) auto var(--spacing-8);
+  .proof-lede {
+    max-width: var(--measure);
+    margin: 0 0 var(--spacing-8);
     color: var(--color-muted);
   }
 
@@ -986,7 +1140,20 @@ const jsonLd = {
     margin-top: var(--spacing-8);
   }
 
-  /* Защо сега */
+  /* Защо сега: текстът вляво, срокът като едро число вдясно - иначе дясната половина на
+     плочката остава празна на десктоп. */
+  .why {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: 0;
+    row-gap: var(--spacing-8);
+  }
+
+  .why-text,
+  .why-deadline {
+    grid-column: 1 / -1;
+  }
+
   .why .prose {
     max-width: var(--measure);
   }
@@ -995,10 +1162,44 @@ const jsonLd = {
     margin: var(--spacing-6) 0 0;
   }
 
+  .why-deadline {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+    align-self: center;
+    padding-left: var(--spacing-6);
+    border-left: 1px solid var(--color-line);
+  }
+
+  .why-deadline b {
+    font-family: var(--font-display);
+    font-weight: 300;
+    font-size: var(--text-xl);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .why-deadline span {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+  }
+
   /* FAQ: както на /services - без икона, „+“ / „-“ в mono */
+  .faq-wrap {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--spacing-6);
+    row-gap: var(--spacing-6);
+  }
+
+  .faq-wrap h2 {
+    grid-column: 1 / -1;
+    margin-bottom: 0;
+  }
+
   .faq-list {
-    max-width: var(--measure);
-    margin-inline: auto;
+    grid-column: 1 / -1;
     border-top: 1px solid var(--color-line);
   }
 
@@ -1066,6 +1267,10 @@ const jsonLd = {
     max-width: var(--measure);
   }
 
+  .cta-form {
+    padding: var(--spacing-6);
+  }
+
   .cta-after :global(p) {
     margin: var(--spacing-4) 0 0;
     font-size: var(--text-xs);
@@ -1094,6 +1299,7 @@ const jsonLd = {
   .sticky-cta .btn {
     display: block;
     text-align: center;
+    padding-inline: var(--spacing-4);
   }
 
   .sticky-cta[data-hidden] {
@@ -1112,6 +1318,10 @@ const jsonLd = {
   @media (min-width: 48rem) {
     .section {
       padding-block: var(--spacing-8);
+    }
+
+    .section-plain > .wrap {
+      padding-block: var(--spacing-12);
     }
 
     .section h2 {
@@ -1152,7 +1362,17 @@ const jsonLd = {
 
     .facts dl {
       grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--spacing-2) var(--spacing-8);
+    }
+
+    .facts-foot {
+      grid-template-columns: 8fr 4fr;
+      align-items: start;
       gap: var(--spacing-8);
+    }
+
+    .facts-source {
+      text-align: right;
     }
 
     /* 36 px: „до 450 000 €“ в колона от ~230 px; на 48 px се пренася. */
@@ -1166,7 +1386,8 @@ const jsonLd = {
 
     .trust {
       flex-direction: row;
-      justify-content: center;
+      justify-content: flex-start;
+      align-items: center;
       gap: var(--spacing-8);
       text-align: left;
     }
@@ -1245,9 +1466,43 @@ const jsonLd = {
       grid-column: 7 / span 6;
     }
 
+    /* Една колона с run-in заглавия - различен скелет от съседните двуколонни секции. */
     .deliver-list {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--spacing-8) var(--spacing-12);
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--spacing-6);
+      max-width: calc(var(--measure) + 8ch);
+    }
+
+    .funds-grid {
+      grid-template-columns: 7fr 5fr;
+      gap: var(--spacing-12);
+    }
+
+    .why {
+      column-gap: var(--spacing-8);
+    }
+
+    .why-text {
+      grid-column: 1 / span 7;
+    }
+
+    .why-deadline {
+      grid-column: 9 / span 4;
+    }
+
+    .faq-wrap h2 {
+      grid-column: 1 / span 4;
+      position: sticky;
+      top: calc(var(--spacing-24) + var(--spacing-4));
+      align-self: start;
+    }
+
+    .faq-list {
+      grid-column: 6 / span 7;
+    }
+
+    .cta-form {
+      padding: var(--spacing-8);
     }
 
     .shots {
@@ -1269,6 +1524,10 @@ const jsonLd = {
 
     .cta {
       column-gap: var(--spacing-8);
+    }
+
+    .cta h2 {
+      font-size: var(--text-xl);
     }
 
     .cta-text {
