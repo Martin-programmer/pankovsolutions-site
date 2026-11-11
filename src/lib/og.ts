@@ -5,13 +5,15 @@ import satori from 'satori';
 
 // OG изображение 1200×630 в стила на сайта: navy фон, бяло лого, заглавие в Onest 600,
 // lime блок с асиметричен ъгъл. Шрифтовете са статични WOFF (satori не чете WOFF2).
+// Кирилицата е с отделно име: satori ползва шрифт със същото име само веднъж, а за липсващите
+// знаци минава през останалите шрифтове в списъка.
 const dir = join(process.cwd(), 'src/assets/og');
 const font = (f: string) => readFileSync(join(dir, f));
 const fonts = [
   { name: 'Onest', data: font('onest-latin-600-normal.woff'), weight: 600 as const, style: 'normal' as const },
-  { name: 'Onest', data: font('onest-cyrillic-600-normal.woff'), weight: 600 as const, style: 'normal' as const },
+  { name: 'Onest Cyrillic', data: font('onest-cyrillic-600-normal.woff'), weight: 600 as const, style: 'normal' as const },
   { name: 'Manrope', data: font('manrope-latin-600-normal.woff'), weight: 600 as const, style: 'normal' as const },
-  { name: 'Manrope', data: font('manrope-cyrillic-600-normal.woff'), weight: 600 as const, style: 'normal' as const },
+  { name: 'Manrope Cyrillic', data: font('manrope-cyrillic-600-normal.woff'), weight: 600 as const, style: 'normal' as const },
 ];
 const logo = `data:image/svg+xml;base64,${readFileSync(join(dir, 'logo-white.svg'), 'base64')}`;
 

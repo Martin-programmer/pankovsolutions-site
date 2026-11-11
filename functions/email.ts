@@ -42,7 +42,7 @@ function layout(o: Layout): string {
     .join('');
   const p = (html: string) => `<p style="margin:0 0 16px;font:400 16px/26px ${FONT};color:#2B3A55;">${html}</p>`;
   return `<!doctype html>
-<html lang="${o.locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>*{font-feature-settings:"locl" 0}</style><title>${esc(o.title)}</title></head>
+<html lang="${o.locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>*{font-feature-settings:"locl" 0 !important}</style><title>${esc(o.title)}</title></head>
 <body style="margin:0;padding:0;background:#F6F8FB;">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${esc(o.preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F6F8FB;"><tr><td align="center" style="padding:32px 16px;">
