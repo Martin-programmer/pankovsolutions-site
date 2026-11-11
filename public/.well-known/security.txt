@@ -1,0 +1,5 @@
+Contact: mailto:mpankov@pankovsolutions.com
+Contact: tel:+359877944224
+Expires: 2027-11-11T00:00:00.000Z
+Preferred-Languages: bg, en
+Canonical: https://pankovsolutions.com/.well-known/security.txt

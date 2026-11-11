@@ -51,7 +51,7 @@ const M = {
     'field.budget': 'Изберете ориентировъчен бюджет.',
     'field.cofin': 'Отговорете дали можете да осигурите собствено участие.',
     'field.debts': 'Отговорете дали фирмата има просрочени задължения.',
-    'field.consentPartner': 'Нужно е съгласие данните да се предоставят на партньора ни.',
+    'field.consentPartner': 'Потвърдете, че сте запознати с предоставянето на данните на партньора ни.',
     'field.consentPrivacy': 'Потвърдете, че сте се запознали с Политиката за поверителност.',
   },
   en: {
@@ -76,7 +76,7 @@ const M = {
     'field.budget': 'Please choose an approximate budget.',
     'field.cofin': 'Please answer whether you can co-finance the project.',
     'field.debts': 'Please answer whether the company has overdue liabilities.',
-    'field.consentPartner': 'We need your consent to share the data with our partner.',
+    'field.consentPartner': 'Please confirm that you understand the data is shared with our partner.',
     'field.consentPrivacy': 'Please confirm you have read the Privacy Policy.',
   },
 } as const;

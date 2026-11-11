@@ -82,3 +82,4 @@ button[disabled]{opacity:.7;cursor:progress}
 }
 @media (prefers-reduced-motion:reduce){.ps-show__view img.on{transform:none !important}.ps-show__cursor,.ps-show__ripple{display:none}}
 #top .ps-hero-text mark{white-space:nowrap}
+.ps-scroll:focus-visible{outline:3px solid #2563EB;outline-offset:3px}

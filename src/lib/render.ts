@@ -62,6 +62,8 @@ function ctaFor(key: string, locale: Locale): string {
   return `${contact}#forma`;
 }
 
+const PROJECTS_PUBLISHED = '2026-11-11';
+
 export function headerHtml(key: string, locale: Locale): string {
   let html = file(locale, '_header');
   const section = activeSection(key);
@@ -174,7 +176,14 @@ export function jsonLd(meta: PageMeta, locale: Locale, html: string) {
     inLanguage: locale,
     isPartOf: { '@id': `${site}/#website` },
     ...(meta.kind === 'project'
-      ? { headline: meta.title[locale].replace(/ – Pankov Solutions$/, ''), author: { '@id': `${site}/#organization` } }
+      ? {
+          headline: meta.title[locale].replace(/ – Pankov Solutions$/, ''),
+          author: { '@id': `${site}/#organization` },
+          publisher: { '@id': `${site}/#organization` },
+          image: `${site}/og/${locale === 'en' ? 'en/' : ''}${meta.key}.png`,
+          // Датата, на която описанията на проектите излязоха на новия сайт.
+          datePublished: PROJECTS_PUBLISHED,
+        }
       : {}),
   });
   if (meta.kind === 'service') {

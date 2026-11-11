@@ -120,16 +120,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     locale,
   });
   const reply = inquiryAutoreply({ name: oneLine(d.name), message: d.message, service: service?.[locale], locale });
-  const telegram = [
-    `📩 Ново запитване (${locale})`,
-    `Име: ${oneLine(d.name)}`,
-    d.company ? `Фирма: ${oneLine(d.company)}` : null,
-    `Имейл: ${d.email}`,
-    `Телефон: ${d.phone}`,
-    service ? `Услуга: ${service.bg}` : null,
-    '',
-    d.message,
-  ]
+  // Telegram е извън ЕС, затова там отива само известие без лични данни; самото запитване е в пощата.
+  const telegram = [`📩 Ново запитване (${locale})`, service ? `Услуга: ${service.bg}` : null, 'Детайлите са в пощата.']
     .filter((l) => l !== null)
     .join('\n');
 

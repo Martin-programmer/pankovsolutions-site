@@ -18,7 +18,8 @@
   финансиране), `functions/api/consent.ts` (запис на съгласие за бисквитки). Общото е в
   `functions/lib.ts`, текстовете в `functions/messages.ts`, HTML имейлите в `functions/email.ts`.
 - Pipeline на формите: произход → размер → timing (< 3 s) → honeypot → rate limit (KV) →
-  Turnstile → Zod → Resend (известие до hello@ + автоотговор) → Telegram.
+  Turnstile → Zod → Resend (известие до hello@ + автоотговор) → Telegram. Telegram е извън ЕС:
+  там отива само известие без лични данни (вид услуга / номер), детайлите са само в пощата.
 - Шрифтове: Onest (заглавия) и Manrope (текст), self-hosted variable WOFF2 в `public/fonts/`.
   `font-feature-settings: "locl" 0` навсякъде — така е в дизайна.
 - Бисквитки и проследяване: `public/consent.js` (банер, Google Consent Mode v2, Meta). Google

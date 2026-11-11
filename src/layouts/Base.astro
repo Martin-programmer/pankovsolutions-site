@@ -26,7 +26,9 @@ const abs = (p: string) => site + (p === '/' ? '' : p);
 const bgUrl = abs(pathFor(key, 'bg'));
 const enUrl = abs(pathFor(key, 'en'));
 const canonical = locale === 'bg' ? bgUrl : enUrl;
-const ogImage = `${site}/og/${locale === 'en' ? 'en/' : ''}${key === 'home' ? 'index' : key}.png`;
+// Страниците с noindex (и 404) нямат собствена OG картинка; ползват тази на началната.
+const ogKey = key === 'home' || noindex || !indexable ? 'index' : key;
+const ogImage = `${site}/og/${locale === 'en' ? 'en/' : ''}${ogKey}.png`;
 
 // Тракинг (Google Analytics 4, Google Ads, Meta Pixel): ID-тата идват при build от
 // Build → Variables. Без нито едно ID банерът за бисквитки не се показва, защото тогава

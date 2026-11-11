@@ -15,7 +15,7 @@ export default defineConfig({
   },
   integrations: [
     sitemap({
-      i18n: { defaultLocale: 'bg', locales: { bg: 'bg-BG', en: 'en-US' } },
+      i18n: { defaultLocale: 'bg', locales: { bg: 'bg', en: 'en' } },
       // Вътрешните/noindex страници не влизат в sitemap-а.
       filter: (page) => !/\/(contact\/sent|contact\/error|404)(\/|$)/.test(page) && !page.includes('/og/'),
     }),

@@ -18,5 +18,10 @@ not_found_handling = "404-page"
 binding = "INQUIRY_RL"
 id = "bc9f984e5d2f47498ca3dbaf57ce2c30"
 
+# Записи на съгласията за бисквитки (до 3 години, виж functions/api/consent.ts). Без id:
+# wrangler deploy създава namespace-а сам при първото качване и после го ползва (wrangler ≥ 4.45).
+[[kv_namespaces]]
+binding = "CONSENT_LOG"
+
 [observability]
 enabled = true

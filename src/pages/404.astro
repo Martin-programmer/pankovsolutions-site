@@ -3,10 +3,10 @@ import Base from '../layouts/Base.astro';
 import { NOT_FOUND } from '../data/pages';
 import { pageCss, pageHtml } from '../lib/render';
 
-// Cloudflare връща този файл за всеки несъществуващ адрес (not_found_handling = "404-page"),
-// затова е на български; линковете в хедъра водят към двата езика.
+// Cloudflare връща най-близкия 404.html (not_found_handling = "404-page"): този за българските
+// адреси, src/pages/en/404.astro за адресите под /en.
 ---
 
-<Base key="home" locale="bg" title={NOT_FOUND.title.bg} description={NOT_FOUND.description.bg} noindex indexable={false} css={pageCss('404')}>
+<Base key="404" locale="bg" title={NOT_FOUND.title.bg} description={NOT_FOUND.description.bg} noindex indexable={false} css={pageCss('404')}>
   <Fragment set:html={pageHtml('404', 'bg')} />
 </Base>

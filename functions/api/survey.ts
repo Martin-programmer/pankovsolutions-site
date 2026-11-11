@@ -94,12 +94,14 @@ const LABELS: Record<Field, string> = {
   name: 'Име',
   email: 'Имейл',
   phone: 'Телефон',
-  consentPartner: 'Съгласие за партньора',
+  consentPartner: 'Запознат с предоставянето на партньора',
   consentPrivacy: 'Политика за поверителност',
 };
 
 // Личните данни (последната стъпка) никога не тръгват с частично известие.
-const PERSONAL: Field[] = ['name', 'email', 'phone', 'consentPartner', 'consentPrivacy'];
+// Telegram е извън ЕС: частичните известия носят само отговорите с избор, без свободен текст и без
+// данни, по които може да се познае фирма или човек (ЕТ носи името на собственика).
+const STEP_SAFE: Field[] = ['registered', 'staff', 'revenue', 'wants', 'budget', 'cofin', 'debts'];
 
 const full = z
   .object(fields)
@@ -165,17 +167,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (event === 'step') {
     const clean: Partial<Record<Field, string>> = {};
     for (const f of Object.keys(fields) as Field[]) {
-      if (PERSONAL.includes(f) || !raw[f]) continue;
+      if (!STEP_SAFE.includes(f) || !raw[f]) continue;
       if (fields[f].safeParse(raw[f]).success) clean[f] = raw[f];
     }
     const text = [
       `🇪🇺 Проверка за ЕС финансиране · стъпка ${step} от 5 · ${ref} (${locale})`,
       '',
       ...rowsOf(clean).map((r) => `${r.label}: ${r.value}`),
-      clean.description ? `Идея: ${clean.description}` : null,
-    ]
-      .filter((l) => l !== null)
-      .join('\n');
+    ].join('\n');
     await rateCount(env, rlKey, RATE_WINDOW);
     if (mock) {
       console.log('[survey] MOCK step:\n' + text);
@@ -217,14 +216,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const all = d as unknown as Record<Field, string>;
   const notify = surveyNotification({ ref, rows: rowsOf(all), company: oneLine(d.company), locale, description: d.description });
   const reply = surveyAutoreply({ ref, name: oneLine(d.name), company: oneLine(d.company), locale });
-  const telegram = [
-    `✅ Лист с чакащи (ЕС) · ${ref} (${locale})`,
-    '',
-    ...rowsOf(all)
-      .filter((r) => !r.label.startsWith('Съгласие') && !r.label.startsWith('Политика'))
-      .map((r) => `${r.label}: ${r.value}`),
-    `Идея: ${d.description}`,
-  ].join('\n');
+  // Само известие без лични данни; цялата проверка е в пощата.
+  const telegram = [`✅ Лист с чакащи (ЕС) · ${ref} (${locale})`, 'Детайлите са в пощата.'].join('\n');
 
   if (mock) {
     console.log('[survey] MOCK - would send:\n' + notify.text + '\n---\n' + reply.text + '\n---\n' + telegram);

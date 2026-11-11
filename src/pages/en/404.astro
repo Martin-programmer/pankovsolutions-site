@@ -1,0 +1,12 @@
+---
+import Base from '../../layouts/Base.astro';
+import { NOT_FOUND } from '../../data/pages';
+import { pageCss, pageHtml } from '../../lib/render';
+
+// Cloudflare връща най-близкия 404.html (not_found_handling = "404-page"): този за българските
+// адреси, src/pages/en/404.astro за адресите под /en.
+---
+
+<Base key="404" locale="en" title={NOT_FOUND.title.en} description={NOT_FOUND.description.en} noindex indexable={false} css={pageCss('404')}>
+  <Fragment set:html={pageHtml('404', 'en')} />
+</Base>
