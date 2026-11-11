@@ -227,7 +227,15 @@
       if (a === 'save') finish({ analytics: root.querySelector('#pc-an').getAttribute('aria-checked') === 'true',
                                  marketing: root.querySelector('#pc-mk').getAttribute('aria-checked') === 'true' }, 'custom');
     });
-    root.addEventListener('keydown', function (e) { if (e.key === 'Escape' && readConsent()) close(); });
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && readConsent()) { close(); return; }
+      // aria-modal: Tab остава вътре в прозореца.
+      if (e.key !== 'Tab') return;
+      var f = root.querySelectorAll('a[href], button');
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
     root.querySelector('.pc-sw').focus();
   }
 
