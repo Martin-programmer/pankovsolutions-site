@@ -43,7 +43,7 @@ for (const [name, sel] of [
   ['sans400', '.f-body-400[style*="--text-3xl"]'],
   ['mono400', '.f-mono-400[style*="--text-2xl"]'],
 ]) {
-  // Само на /styleguide има такива елементи — на другите страници се прескача.
+  // Ако на страницата няма такива елементи, стъпката се прескача.
   if ((await zoom.locator(sel).count()) === 0) continue;
   const path = `${outDir}/letterforms-${name}.png`;
   await zoom.locator(sel).first().screenshot({ path });
