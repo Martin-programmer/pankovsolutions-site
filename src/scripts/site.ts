@@ -1,6 +1,8 @@
 // Целият JavaScript на сайта: спиране на движещите се лога, формата за запитване и
 // проверката за европейско финансиране. Без JS формите пак работят (обикновен POST).
 
+import { initHeroShow } from './hero-show';
+
 declare global {
   interface Window {
     turnstile?: { reset: (el?: Element) => void };
@@ -32,6 +34,9 @@ const L = {
 }[lang];
 
 type Reply = { ok: boolean; message?: string; errors?: Record<string, string>; ref?: string };
+
+const show = document.querySelector<HTMLElement>('[data-show]');
+if (show) initHeroShow(show);
 
 // ---- Движещите се лога: бутон „Спри/Пусни движението“ ---------------------------------
 for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-marquee-toggle]')) {
