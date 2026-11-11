@@ -1,6 +1,9 @@
 /* Допълнения към стиловете от дизайна (src/styles/design.css): неща, които дизайнът няма,
    защото там формите и превключването на езика не бяха живи. */
 .ps-hp{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+.ps-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.ps-lang__short{display:none}
+@media (max-width:760px){.ps-lang__long{display:none}.ps-lang__short{display:inline}}
 .ps-lang:hover{background:#E3ECFE;color:#0A2A66 !important}
 .ps-field-err{margin:0;font-weight:600;font-size:14px;line-height:20px;color:#B91C1C}
 [aria-invalid="true"]{border-color:#B91C1C !important;box-shadow:0 0 0 1px #B91C1C}

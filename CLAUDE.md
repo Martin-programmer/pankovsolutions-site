@@ -36,7 +36,7 @@ secret-bar,domoupravitel}` · `/about` · `/contact` · `/eu-funding` · `/priva
   българския текст изисква същата промяна в `src/design/en/`.
 - Заглавие и meta description: `src/data/pages.ts`.
 - Хедър и футър: `src/design/<locale>/_header.html`, `_footer.html`. Маркерите `__CTA__`,
-  `__ALT_URL__`, `__ALT_LANG__`, `__ALT_SHORT__`, `__ALT_LABEL__`, `__ALT_NAME__`, `__LOCALE__`
+  `__ALT_URL__`, `__ALT_LANG__`, `__ALT_SHORT__`, `__ALT_NAME__`, `__LOCALE__`
   и `<!--TURNSTILE-->` се подменят в `src/lib/render.ts` — не ги трий.
 - Цветове на марката: navy #0A2A66, синьо #2563EB, lime #C6F24E (по едно парче на композиция),
   текст #0B1B3A, приглушен #4A5872, фон #F6F8FB. Модулни ъгли „16px 16px 72px 16px“ и

@@ -33,6 +33,18 @@ export function initHeroShow(root: HTMLElement) {
   let paused = reduce;
   let hover = false;
   let timers: number[] = [];
+  // Кадрите без src се теглят, когато им дойде редът: текущият и следващият.
+  const load = (k?: string) => {
+    const i = k ? imgs[k] : undefined;
+    if (i?.dataset.src) {
+      i.src = i.dataset.src;
+      delete i.dataset.src;
+    }
+  };
+  const next = (t: number, s: number) => {
+    const l = [...lists[t].querySelectorAll<HTMLButtonElement>('button')];
+    return s < l.length - 1 ? l[s + 1] : lists[(t + 1) % lists.length].querySelector<HTMLButtonElement>('button')!;
+  };
   const steps = () => [...lists[tr].querySelectorAll<HTMLButtonElement>('button')];
   const area = (b: HTMLButtonElement) => (b.dataset.hs ?? '0,0,100,100').split(',').map(Number);
 
@@ -87,6 +99,8 @@ export function initHeroShow(root: HTMLElement) {
     const small = mobile.matches;
     const z = reduce ? 1 : Number(b.dataset.z ?? 1) + (small ? 0.35 : 0);
     const im = imgs[b.dataset.img!];
+    load(b.dataset.img);
+    load(next(tr, s).dataset.img);
     im.style.objectPosition = small ? `${cx}% ${cy}%` : '';
     im.style.transformOrigin = `${cx}% ${cy}%`;
     im.style.transform = 'scale(1)';

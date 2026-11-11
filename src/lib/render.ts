@@ -78,8 +78,7 @@ export function headerHtml(key: string, locale: Locale): string {
     .replaceAll('__CTA__', ctaFor(key, locale))
     .replaceAll('__ALT_URL__', pathFor(altKey, other))
     .replaceAll('__ALT_LANG__', other)
-    .replaceAll('__ALT_SHORT__', other.toUpperCase())
-    .replaceAll('__ALT_LABEL__', other === 'en' ? 'English version' : 'Българска версия')
+    .replaceAll('__ALT_SHORT__', other === 'en' ? 'EN' : 'БГ')
     .replaceAll('__ALT_NAME__', other === 'en' ? 'English' : 'Български');
 }
 
