@@ -1,6 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 import { onRequest as inquiryGet, onRequestPost as inquiryPost } from '../functions/api/inquiry';
 import { onRequest as surveyGet, onRequestPost as surveyPost } from '../functions/api/survey';
+import { onRequest as consentGet, onRequestPost as consentPost } from '../functions/api/consent';
 
 // Worker със статични файлове (Cloudflare Workers Builds; Pages вече не се предлага за нови
 // акаунти). Всичко, което не е API, идва от dist/ през ASSETS binding-а - заедно с _headers и
@@ -12,10 +13,12 @@ interface Env {
 
 type Handler = Parameters<typeof inquiryPost>[0] extends infer C ? (context: C) => Promise<Response> | Response : never;
 
-// /api/inquiry - формата за запитване; /api/survey - анкетата за допустимост на лендингите.
+// /api/inquiry - формата за запитване; /api/survey - проверката за ЕС финансиране;
+// /api/consent - доказателство за съгласието за бисквитки.
 const ROUTES: Record<string, { post: Handler; other: Handler }> = {
   '/api/inquiry': { post: inquiryPost as Handler, other: inquiryGet as Handler },
   '/api/survey': { post: surveyPost as Handler, other: surveyGet as Handler },
+  '/api/consent': { post: consentPost as Handler, other: consentGet as Handler },
 };
 
 export default {

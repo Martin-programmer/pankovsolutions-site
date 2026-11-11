@@ -1,57 +1,31 @@
 import type { APIRoute } from 'astro';
-import { getCollection, getEntry } from 'astro:content';
+import { PAGES, pathFor } from '../data/pages';
 import { company } from '../data/company';
-import { ui } from '../i18n/ui';
-import { cleanText } from '../lib/todos';
 
-// llms.txt (llmstxt.org): кратко описание и линкове към страниците, от същите източници
-// като самия сайт — frontmatter-ите в content/bg.
-export const GET: APIRoute = async ({ site }) => {
-  const base = site?.href ?? 'https://pankovsolutions.com/';
-  const url = (path: string) => new URL(path, base).href;
-  const t = ui.bg;
+// llms.txt: кратко описание на фирмата и списък на страниците за езикови модели.
+export const GET: APIRoute = () => {
+  const site = company.site;
+  const list = (kind: string[]) =>
+    PAGES.filter((p) => kind.includes(p.kind) && !p.noindex)
+      .map((p) => `- [${p.name.en}](${site}${pathFor(p.key, 'en')}) ([BG](${site}${pathFor(p.key, 'bg') === '/' ? '' : pathFor(p.key, 'bg')})): ${p.description.en}`)
+      .join('\n');
+  const body = `# ${company.brand}
 
-  const home = await getEntry('pages', 'bg/home');
-  const pages = await getCollection('pages', (p) => p.id.startsWith('bg/') && p.id !== 'bg/home');
-  const projects = (await getCollection('projects', (p) => p.id.startsWith('bg/'))).sort(
-    (a, b) => a.data.order - b.data.order,
-  );
+> ${company.brand} (${company.nameEn}, Bulgaria) builds business systems (Odoo ERP, CRM, warehouse management), online stores, custom web and mobile applications, integrations and IT infrastructure for small and medium-sized companies. The site is in Bulgarian (default) and English (/en).
 
-  const routes: Record<string, string> = {
-    'bg/projects': '/projects',
-    'bg/about': '/about',
-    'bg/services': '/services',
-    'bg/for-beneficiaries': '/for-beneficiaries',
-    'bg/products': '/products',
-    'bg/contact': '/contact',
-    'bg/privacy': '/privacy',
-    'bg/accessibility': '/accessibility',
-  };
+Contact: ${company.phone} · ${company.contactEmail} · ${site}/en/contact
 
-  const lines = [
-    `# ${company.brand}`,
-    '',
-    `> ${home?.data.description ?? ''}`,
-    '',
-    `${company.name}, ЕИК ${company.eik}, ${company.address}. ${company.email} · ${company.phone}.`,
-    '',
-    `## ${t['llms.pages']}`,
-    '',
-    `- [${home?.data.title ?? company.brand}](${url('/')})`,
-    ...pages
-      .filter((p) => routes[p.id])
-      .map((p) => `- [${p.data.title}](${url(routes[p.id])}): ${p.data.description}`),
-    '',
-    `## ${t['llms.projects']}`,
-    '',
-    ...projects.map(
-      (p) =>
-        `- [${cleanText(p.data.title)}](${url(`/projects/${p.id.replace(/^bg\/projects\//, '')}`)}): ${cleanText(p.data.result)}`,
-    ),
-    '',
-  ];
+## Main pages
+${list(['home', 'services', 'projects', 'page'])}
 
-  return new Response(lines.join('\n'), {
-    headers: { 'content-type': 'text/plain; charset=utf-8' },
-  });
+## Services
+${list(['service'])}
+
+## Projects
+${list(['project'])}
+
+## Legal
+${list(['legal'])}
+`;
+  return new Response(body, { headers: { 'content-type': 'text/plain; charset=utf-8' } });
 };

@@ -1,10 +1,10 @@
 /// <reference types="@cloudflare/workers-types" />
 import { company } from '../src/data/company';
-import { ui, type Locale } from '../src/i18n/ui';
+import type { Mail } from './email';
 
-// Общото между двата endpoint-а (functions/api/inquiry.ts - формата за запитване;
-// functions/api/survey.ts - анкетата за допустимост на лендингите): env, отговори, защити,
-// изпращане през Resend и Telegram. Логиката на всяка форма е в нейния файл.
+// Общото между endpoint-ите (functions/api/inquiry.ts - формата за запитване;
+// functions/api/survey.ts - проверката за ЕС финансиране; functions/api/consent.ts - записът
+// на съгласията за бисквитки): env, отговори, защити, изпращане през Resend и Telegram.
 
 export interface Env {
   RESEND_API_KEY?: string;
@@ -14,15 +14,9 @@ export interface Env {
   // Къде отива известието; по подразбиране company.email (hello@).
   NOTIFY_TO?: string;
   INQUIRY_RL?: KVNamespace;
+  // Доказателства за съгласие за бисквитки (KV namespace „consent-log“). По избор.
+  CONSENT_LOG?: KVNamespace;
   INQUIRY_MOCK?: string;
-}
-
-export type UiKey = keyof (typeof ui)['bg'];
-
-export const isLocale = (v: unknown): v is Locale => v === 'bg' || v === 'en';
-
-export function t(locale: Locale, key: UiKey, vars: Record<string, string> = {}) {
-  return Object.entries(vars).reduce((s, [k, v]) => s.replaceAll(`{${k}}`, v), ui[locale][key]);
 }
 
 // JSON за fetch (accept: application/json), иначе 303 към страница - формите работят и без JS.
@@ -70,7 +64,7 @@ export async function verifyTurnstile(secret: string, token: string, ip: string)
   return data.success === true;
 }
 
-export async function sendResend(apiKey: string, mail: { to: string; subject: string; text: string; replyTo?: string }) {
+export async function sendResend(apiKey: string, mail: Mail & { to: string; replyTo?: string }) {
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
@@ -79,6 +73,7 @@ export async function sendResend(apiKey: string, mail: { to: string; subject: st
       to: [mail.to],
       subject: mail.subject,
       text: mail.text,
+      html: mail.html,
       ...(mail.replyTo ? { reply_to: mail.replyTo } : {}),
     }),
   });

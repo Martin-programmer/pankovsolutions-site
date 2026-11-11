@@ -1,0 +1,19 @@
+/* Допълнения към стиловете от дизайна (src/styles/design.css): неща, които дизайнът няма,
+   защото там формите и превключването на езика не бяха живи. */
+.ps-hp{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+.ps-lang:hover{background:#E3ECFE;color:#0A2A66 !important}
+.ps-field-err{margin:0;font-weight:600;font-size:14px;line-height:20px;color:#B91C1C}
+[aria-invalid="true"]{border-color:#B91C1C !important;box-shadow:0 0 0 1px #B91C1C}
+.ps-form-status:empty{display:none}
+.ps-form-status[data-tone="error"]{padding:12px 14px;border-radius:10px;background:#FEE2E2;color:#991B1B !important;font-weight:600}
+.ps-form-status[data-tone="ok"]{padding:12px 14px;border-radius:10px;background:#DCFCE7;color:#14532D !important;font-weight:600}
+button[disabled]{opacity:.7;cursor:progress}
+.cf-turnstile{min-height:65px}
+[data-eu-done]:not([hidden]){display:flex}
+.pe-form [data-step][hidden],.pe-form [hidden]{display:none !important}
+.ps-check{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.ps-check li{display:flex;gap:12px;align-items:flex-start;font-size:16px;line-height:24px}
+.ps-check li::before{content:"";flex:none;width:22px;height:22px;border-radius:6px;background:#2563EB url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4 8-9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat;margin-top:1px}
+/* Българските форми на кирилицата (locl) са изключени навсякъде, както в дизайна. Inline
+   `font:` в бутоните иначе ги връща. */
+*,*::before,*::after,::placeholder{font-feature-settings:"locl" 0 !important}

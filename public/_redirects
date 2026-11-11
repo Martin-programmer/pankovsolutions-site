@@ -1,0 +1,29 @@
+# Стари адреси от предишната версия на сайта → най-близката нова страница (301).
+/for-beneficiaries /eu-funding 301
+/en/for-beneficiaries /en/eu-funding 301
+/products /services 301
+/en/products /en/services 301
+/accessibility / 301
+/en/accessibility /en 301
+/styleguide / 301
+/projects/domoupravitel-bulgaria /projects/domoupravitel 301
+/en/projects/domoupravitel-bulgaria /en/projects/domoupravitel 301
+/projects/dosev-impex /projects/dushcabini 301
+/en/projects/dosev-impex /en/projects/dushcabini 301
+/projects/her-harmony-glow /projects 301
+/en/projects/her-harmony-glow /en/projects 301
+/projects/infralink /projects 301
+/en/projects/infralink /en/projects 301
+/projects/stegi-store /projects 301
+/en/projects/stegi-store /en/projects 301
+# Българските адреси от дизайна, ако някой ги е запазил.
+/uslugi /services 301
+/proekti /projects 301
+/za-nas /about 301
+/kontakti /contact 301
+/politika-za-poveritelnost /privacy 301
+/politika-za-biskvitki /cookies 301
+/obshti-uslovia /terms 301
+/finansirane/proverka /eu-funding 301
+# Splat правилата накрая.
+/f/* /eu-funding 301

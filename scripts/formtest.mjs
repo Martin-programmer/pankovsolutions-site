@@ -1,56 +1,48 @@
+// Тест на формите срещу `npm run dev:functions` с INQUIRY_MOCK=1 в .dev.vars (нищо не се
+// изпраща). Пускане: npm run build && npm run dev:functions, после npm run test:form [base] [/en].
+// PW_CHANNEL=msedge, ако Playwright няма собствен Chromium.
 import { chromium } from 'playwright';
-
-const base = process.argv[2] ?? 'http://localhost:8788';
-const out = process.argv[3] ?? '.shots';
-const b = await chromium.launch({ channel: 'msedge' });
-const page = await b.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
-page.on('console', (m) => { if (m.type() === 'error') console.log('console.error:', m.text()); });
-await page.goto(`${base}/contact`, { waitUntil: 'networkidle' });
-await page.evaluate(() => document.fonts.ready);
-
-const form = page.locator('form.inquiry');
-await form.screenshot({ path: `${out}/form-default-1440.png` });
-console.log('ts set by script:', await page.locator('input[name=ts]').inputValue() !== '');
-// Иначе сървърът отхвърля submit-а тихо като „под 3 s“ (което е и целта на ts).
-const backdate = () => page.evaluate(() => { document.querySelector('input[name=ts]').value = String(Date.now() - 5000); });
-await backdate();
-const responses = [];
-page.on('response', (r) => { if (r.url().endsWith('/api/inquiry')) responses.push(r.status()); });
-
-// Грешки по поле: submit събитие без native validation (както би дошло от сървъра).
-await page.fill('[name=name]', 'A');
-await page.fill('[name=email]', 'not-an-email');
-await page.fill('[name=message]', 'кратко');
-// Реален клик: с JS формата е noValidate и сървърът връща грешките по поле.
-await page.click('form.inquiry button[type=submit]');
-await page.waitForSelector('.error:not([hidden])', { timeout: 10000 });
-console.log('banner visible with field errors (should be false):', await page.locator('.form-status').isVisible());
-const errors = await page.locator('.error:not([hidden])').evaluateAll((els) => els.map((e) => e.id.replace(/^inquiry-full-|-error$/g, '') + ': ' + e.textContent));
-console.log('errors shown:', errors);
-console.log('aria-invalid count:', await page.locator('[aria-invalid="true"]').count());
-console.log('focused:', await page.evaluate(() => document.activeElement?.getAttribute('name')));
-await form.screenshot({ path: `${out}/form-error-1440.png` });
-
-// Успех (mock)
-await page.fill('[name=name]', 'Тест Тестов');
-await page.fill('[name=company]', 'Тест ЕООД');
-await page.fill('[name=email]', 'test@example.com');
-await page.fill('[name=phone]', '+359 877 000 000');
-await page.selectOption('[name=type]', 'eu');
-await page.fill('[name=message]', 'Пробно запитване от Playwright, достатъчно дълго.');
-await page.check('[name=consent]');
-await backdate();
-await page.click('form.inquiry button[type=submit]');
-await page.waitForSelector('.form-success', { timeout: 10000 });
-console.log('api responses:', responses.join(', '));
-console.log('success text:', await page.locator('.form-success').textContent());
-console.log('focused after success:', await page.evaluate(() => document.activeElement?.className));
-await page.locator('#inquiry').screenshot({ path: `${out}/form-success-1440.png` });
-
-// Мобилен default
-const m = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
-await m.goto(`${base}/contact`, { waitUntil: 'networkidle' });
-await m.locator('form.inquiry').screenshot({ path: `${out}/form-default-390.png` });
-console.log('390 input height:', await m.locator('[name=name]').evaluate((e) => Math.round(e.getBoundingClientRect().height)));
-console.log('honeypot offscreen:', await m.locator('[name=website]').evaluate((e) => e.getBoundingClientRect().right < 0));
+const base = process.argv[2] || 'http://localhost:8788';
+const lang = process.argv[3] || '';
+const b = await chromium.launch(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {});
+const p = await b.newPage();
+const errs = []; p.on('pageerror', e => errs.push(String(e))); p.on('console', m => m.type()==='error' && errs.push(m.text()));
+// Contact form
+await p.goto(`${base}${lang}/contact?service=crm`);
+console.log('prefill', await p.$eval('select[name=service]', s => s.value));
+await p.click('form.ps-inquiry button[type=submit]');
+console.log('client errors', await p.$$eval('.ps-field-err', a => a.map(x => x.dataset.for + ':' + x.textContent)));
+await p.waitForTimeout(3100);
+await p.fill('input[name=name]', 'Иван Петров');
+await p.fill('input[name=email]', 'ivan@example.com');
+await p.fill('input[name=phone]', '0888 123 456');
+await p.fill('textarea[name=message]', 'Искаме складът и магазинът да са свързани.');
+await Promise.all([p.waitForURL(/contact\/sent/), p.click('form.ps-inquiry button[type=submit]')]);
+console.log('contact ->', p.url());
+// EU check
+await p.goto(`${base}${lang}/eu-funding`);
+const visible = async () => p.$$eval('[data-step]', a => a.filter(x => !x.hidden).map(x => x.dataset.step));
+console.log('visible steps', await visible());
+await p.click('[data-next]');
+console.log('err1', await p.$eval('[data-err]', e => e.hidden ? '' : e.textContent));
+await p.check('input[name=registered][value="lt1"]');
+console.log('note lt1 shown', await p.$eval('[data-show-if="registered=lt1"]', e => !e.hidden));
+await p.click('[data-next]');
+await p.selectOption('select[name=staff]', 'lt10'); await p.selectOption('select[name=revenue]', 'lt100k');
+await p.click('[data-next]');
+await p.fill('input[name=company]', 'Пример ЕООД'); await p.fill('input[name=eik]', '123'); await p.fill('input[name=city]', 'Варна'); await p.fill('input[name=activity]', 'мебели');
+await p.click('[data-next]');
+console.log('eik err', await p.$eval('[data-err]', e => e.textContent));
+await p.fill('input[name=eik]', '123456789'); await p.click('[data-next]'); 
+await p.check('input[name=wants][value=soft]'); await p.check('input[name=wants][value=green]');
+await p.fill('textarea[name=description]', 'Искаме една система за всичко.');
+await p.selectOption('select[name=budget]', '50-150k'); await p.check('input[name=cofin][value=yes]'); await p.check('input[name=debts][value=no]');
+await p.click('[data-next]');
+console.log('step', await visible());
+await p.fill('input[name=name]', 'Иван Петров'); await p.fill('input[name=email]', 'ivan@example.com'); await p.fill('input[name=phone]', '0888123456');
+await p.check('input[name=consentPartner]'); await p.check('input[name=consentPrivacy]');
+await p.click('[data-submit]');
+await p.waitForSelector('[data-eu-done]:not([hidden])', { timeout: 8000 });
+console.log('done', (await p.$eval('[data-eu-done]', e => e.innerText)).replace(/\n+/g,' | '));
+console.log('errors', errs);
 await b.close();

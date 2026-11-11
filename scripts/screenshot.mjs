@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 
-const url = process.argv[2] ?? 'http://localhost:4321/styleguide';
+const url = process.argv[2] ?? 'http://localhost:4321/';
 const outDir = process.argv[3] ?? '.';
 // /projects/stegi-store -> "projects-stegi-store"; / -> "index"
 const slug = new URL(url).pathname.replace(/^\/|\/$/g, '').replace(/\//g, '-') || 'index';

@@ -1,11 +1,10 @@
 /// <reference types="@cloudflare/workers-types" />
 import { z } from 'zod';
 import { company } from '../../src/data/company';
-import { type Locale } from '../../src/i18n/ui';
+import { surveyAutoreply, surveyNotification, type MailRow } from '../email';
+import { fieldMsg, isLocale, msg, type Locale } from '../messages';
 import {
   type Env,
-  type UiKey,
-  isLocale,
   oneLine,
   rateCount,
   rateLimited,
@@ -14,134 +13,117 @@ import {
   sameOrigin,
   sendResend,
   sendTelegram,
-  t,
   verifyTurnstile,
 } from '../lib';
 
-// POST /api/survey - стъпковата анкета за допустимост на лендингите по процедури
-// (src/components/EligibilitySurvey.astro, docs/11). Три вида заявки от една и съща форма:
-//   event=step   - потребителят завърши стъпка N (JS, след „Напред“): частичните отговори
-//                  отиват в Telegram, за да се вижда докъде стигат хората и къде спират;
-//   event=stop   - отговори „не“ на първия въпрос (фирмата е регистрирана след срока);
-//   event=submit - цялата анкета: Turnstile → Zod → имейл до нас + автоотговор + Telegram.
+// POST /api/survey - проверката за европейско финансиране (/eu-funding). Две събития:
+//   event=step   - потребителят мина стъпка N (JS, след „Напред“). Частичните отговори отиват
+//                  в Telegram, за да се вижда докъде стигат хората. Без лични данни.
+//   event=submit - цялата проверка: Turnstile → Zod → имейл до нас + потвърждение + Telegram.
 // Ред на защитите: произход → размер → honeypot → timing (само submit) → rate limit (KV) →
 // Turnstile (само submit) → Zod. С INQUIRY_MOCK=1 нищо не се изпраща - логва се.
-// Лични данни (име, имейл, телефон) са в последната стъпка и тръгват само при submit -
-// частичните известия носят само данни за фирмата (content/bg/privacy.md).
 
-const STAFF = ['lt10', '10-50', '50-250', 'gt250'] as const;
-const REVENUE = ['lt100k', '100k-150k', '150k-400k', 'gt400k'] as const;
-const TOTAL = 5;
-const RATE_LIMIT = 40; // на час, на IP - до 5 стъпки + повторения на една анкета
+const RATE_LIMIT = 40; // на час, на IP: до 4 стъпки + повторения
 const RATE_WINDOW = 60 * 60;
 const MIN_SECONDS = 3;
 const MAX_BODY = 32 * 1024;
 
+const OPTIONS = {
+  registered: { gt3: 'Повече от 3 години', '1-3': 'Между 1 и 3 години', lt1: 'По-малко от 1 година', no: 'Още не е регистрирана' },
+  staff: { lt10: 'под 10', '10-50': 'между 10 и 49', '50-250': 'между 50 и 249', gt250: '250 и повече' },
+  revenue: {
+    none: 'нямат приходи още',
+    lt100k: 'под 100 000 €',
+    '100-150k': '100 000 – 150 000 €',
+    '150-400k': '150 000 – 400 000 €',
+    '400k-2m': '400 000 € – 2 млн. €',
+    gt2m: 'над 2 млн. €',
+  },
+  wants: {
+    soft: 'софтуер и дигитализация',
+    mach: 'машини и оборудване',
+    green: 'зелени технологии и енергийна ефективност',
+    shop: 'онлайн магазин или сайт',
+    train: 'обучение на служителите',
+    other: 'друго',
+  },
+  budget: { lt50k: 'до 50 000 €', '50-150k': '50 000 – 150 000 €', '150-500k': '150 000 – 500 000 €', gt500k: 'над 500 000 €', unknown: 'още не знаят' },
+  cofin: { yes: 'да', maybe: 'не е сигурен', no: 'не' },
+  debts: { no: 'не', yes: 'да', unknown: 'не знае' },
+} as const;
+
+const oneOf = <K extends keyof typeof OPTIONS>(k: K) => z.enum(Object.keys(OPTIONS[k]) as [string, ...string[]]);
+
 const fields = {
-  registered: z.enum(['yes', 'no']),
-  staff: z.enum(STAFF),
-  revenue: z.enum(REVENUE),
+  registered: oneOf('registered'),
+  staff: oneOf('staff'),
+  revenue: oneOf('revenue'),
   company: z.string().trim().min(2).max(120),
-  // ЕИК/БУЛСТАТ: 9 или 13 цифри.
-  eik: z.string().trim().regex(/^\d{9}(\d{4})?$/),
+  eik: z.string().trim().regex(/^(\d{9}|\d{13})?$/),
   city: z.string().trim().min(2).max(80),
   activity: z.string().trim().min(3).max(200),
-  description: z.string().trim().min(10).max(1000),
-  name: z.string().trim().min(2).max(80),
-  email: z.string().trim().email().max(200),
-  phone: z
+  wants: z
     .string()
     .trim()
-    .regex(/^\+?[\d\s()./-]{5,40}$/),
-  consent: z.literal('on'),
+    .refine((v) => v.split(',').filter(Boolean).length > 0 && v.split(',').every((w) => w in OPTIONS.wants)),
+  description: z.string().trim().min(10).max(1000),
+  budget: oneOf('budget'),
+  cofin: oneOf('cofin'),
+  debts: oneOf('debts'),
+  name: z.string().trim().min(2).max(80),
+  email: z.string().trim().email().max(200),
+  phone: z.string().trim().regex(/^\+?[\d\s()./-]{6,40}$/),
+  consentPartner: z.literal('on'),
+  consentPrivacy: z.literal('on'),
 };
 type Field = keyof typeof fields;
-type Survey = { [K in Field]: z.infer<(typeof fields)[K]> };
 
-// Полетата по стъпки - редът в известията и коя стъпка да се отвори при грешка.
-const STEP_FIELDS: readonly (readonly Field[])[] = [
-  ['registered'],
-  ['staff', 'revenue'],
-  ['company', 'eik', 'city'],
-  ['activity', 'description'],
-  ['name', 'email', 'phone', 'consent'],
-];
-
-const full = z.object(fields);
-const meta = z.object({
-  event: z.enum(['step', 'stop', 'submit']).default('submit'),
-  step: z.coerce.number().int().min(1).max(TOTAL).default(TOTAL),
-  // Генерира се от скрипта при първата стъпка; свързва известията от една и съща анкета.
-  session: z.string().trim().regex(/^[a-z0-9-]{6,40}$/i).optional().or(z.literal('')),
-  campaign: z.string().trim().regex(/^[a-z0-9-]{1,80}$/),
-});
-
-// Грешка по поле → UI низ (src/i18n/ui.ts).
-const ERROR_KEY: Record<Field, UiKey> = {
-  registered: 'survey.error.registered',
-  staff: 'survey.error.staff',
-  revenue: 'survey.error.revenue',
-  company: 'survey.error.company',
-  eik: 'survey.error.eik',
-  city: 'survey.error.city',
-  activity: 'survey.error.activity',
-  description: 'survey.error.description',
-  name: 'error.name',
-  email: 'error.email',
-  phone: 'survey.error.phone',
-  consent: 'error.consent',
+const LABELS: Record<Field, string> = {
+  registered: 'Фирмата съществува',
+  staff: 'Служители',
+  revenue: 'Приходи (средно за 3 г.)',
+  company: 'Фирма',
+  eik: 'ЕИК',
+  city: 'Населено място',
+  activity: 'Дейност',
+  wants: 'Иска да финансира',
+  description: 'Идея',
+  budget: 'Бюджет',
+  cofin: 'Собствено участие',
+  debts: 'Просрочени задължения',
+  name: 'Име',
+  email: 'Имейл',
+  phone: 'Телефон',
+  consentPartner: 'Съгласие за партньора',
+  consentPrivacy: 'Политика за поверителност',
 };
 
-// Етикет на полето в известието (име и имейл ползват низовете на общата форма).
-const LABEL_KEY: Record<Field, UiKey> = {
-  registered: 'survey.notify.registered',
-  staff: 'survey.staff',
-  revenue: 'survey.revenue',
-  company: 'survey.company',
-  eik: 'survey.eik',
-  city: 'survey.city',
-  activity: 'survey.activity',
-  description: 'survey.description',
-  name: 'form.name',
-  email: 'form.email',
-  phone: 'survey.phone',
-  consent: 'form.consent',
-};
+// Личните данни (последната стъпка) никога не тръгват с частично известие.
+const PERSONAL: Field[] = ['name', 'email', 'phone', 'consentPartner', 'consentPrivacy'];
 
-// Стойност за известието: етикетите на списъците вместо кодовете им; „да/не“ за регистрацията.
-function display(field: Field, value: string): string {
-  if (field === 'registered') return t('bg', value === 'yes' ? 'survey.yes' : 'survey.no');
-  if (field === 'staff' || field === 'revenue') return t('bg', `survey.${field}.${value}` as UiKey);
-  return value;
+const full = z
+  .object(fields)
+  .refine((d) => d.registered === 'no' || d.eik !== '', { path: ['eik'] });
+
+function display(f: Field, v: string): string {
+  if (f === 'wants') return v.split(',').map((w) => OPTIONS.wants[w as keyof typeof OPTIONS.wants] ?? w).join(', ');
+  if (f in OPTIONS) return (OPTIONS as Record<string, Record<string, string>>)[f][v] ?? v;
+  if (f === 'consentPartner' || f === 'consentPrivacy') return v === 'on' ? 'да' : 'не';
+  return v;
 }
 
-function notificationText(
-  locale: Locale,
-  d: Partial<Survey>,
-  head: { campaign: string; session: string; status: string },
-  ip: string,
-): string {
-  const lines = [
-    `${t('bg', 'survey.notify.title')} · ${head.campaign} · ${head.status}${head.session ? ` · #${head.session.slice(0, 6)}` : ''}`,
-    '',
-  ];
-  for (const step of STEP_FIELDS) {
-    for (const f of step) {
-      const v = d[f];
-      if (f === 'consent' || v === undefined || v === '') continue;
-      const label = t('bg', LABEL_KEY[f]);
-      lines.push(`${label}: ${display(f, String(v))}`);
-    }
-  }
-  lines.push('', `— ${locale} · ${ip}`);
-  return lines.join('\n');
-}
+const rowsOf = (d: Partial<Record<Field, string>>): MailRow[] =>
+  (Object.keys(LABELS) as Field[])
+    .filter((f) => f !== 'description' && d[f])
+    .map((f) => ({ label: LABELS[f], value: display(f, String(d[f])) }));
+
+const refFor = (session: string) =>
+  'ЛЧ-' + (session.replace(/[^a-z0-9]/gi, '').slice(0, 6).toUpperCase() || String(Date.now()).slice(-6));
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const wantsJson = (request.headers.get('accept') ?? '').includes('application/json');
   if (!sameOrigin(request)) return new Response(null, { status: 403 });
-  const length = Number(request.headers.get('content-length') ?? '0');
-  if (length > MAX_BODY) return new Response(null, { status: 413 });
+  if (Number(request.headers.get('content-length') ?? '0') > MAX_BODY) return new Response(null, { status: 413 });
   let form: FormData;
   try {
     form = await request.formData();
@@ -149,60 +131,55 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return new Response(null, { status: 400 });
   }
   const field = (name: string) => {
-    const v = form.get(name);
-    return typeof v === 'string' ? v : '';
+    const all = form.getAll(name).filter((v): v is string => typeof v === 'string');
+    return all.join(',');
   };
   const locale: Locale = isLocale(field('locale')) ? (field('locale') as Locale) : 'bg';
   const mock = env.INQUIRY_MOCK === '1';
   const ip = request.headers.get('cf-connecting-ip') ?? '0.0.0.0';
-  const base = locale === 'bg' ? '' : `/${locale}`;
-  const sentUrl = `${base}/f/sent`;
-  const ineligibleUrl = `${base}/f/not-eligible`;
-  const errorUrl = `${base}/contact/error`;
-  const ok = (extra: Record<string, unknown> = {}, redirectTo = sentUrl) => respond(wantsJson, 200, { ok: true, ...extra }, redirectTo);
-  const fail = (status: number, key: UiKey, errors?: Record<string, string>) =>
-    respond(wantsJson, status, { ok: false, message: t(locale, key), errors }, errorUrl);
+  const base = locale === 'bg' ? '' : '/en';
+  const event = field('event') === 'step' ? 'step' : 'submit';
+  const step = Math.min(5, Math.max(1, Number(field('step')) || 5));
+  const session = /^[a-z0-9-]{4,40}$/i.test(field('session')) ? field('session') : '';
+  const ref = refFor(session);
+  const ok = (extra: Record<string, unknown> = {}) => respond(wantsJson, 200, { ok: true, ...extra }, `${base}/contact/sent`);
+  const fail = (status: number, message: string, errors?: Record<string, string>) =>
+    respond(wantsJson, status, { ok: false, message, errors }, `${base}/contact/error`);
 
-  const m = meta.safeParse({ event: field('event') || undefined, step: field('step') || undefined, session: field('session'), campaign: field('campaign') });
-  if (!m.success) return new Response(null, { status: 400 });
-  const { event, step, campaign } = m.data;
-  const session = m.data.session ?? '';
-
-  // Honeypot - ботовете го попълват; отговаряме „успех“, без да изпращаме.
   if (field('website') !== '') {
     console.log('[survey] honeypot hit, dropped');
-    return ok();
+    return ok({ ref });
   }
-  // Timing - само за цялата анкета (стъпките идват по-късно от зареждането по дефиниция).
   const ts = Number(field('ts'));
   if (event === 'submit' && ts > 0 && Date.now() - ts < MIN_SECONDS * 1000) {
     console.log('[survey] submitted too fast, dropped');
-    return ok();
+    return ok({ ref });
   }
   const rlKey = `rl:s:${ip}`;
-  if (await rateLimited(env, rlKey, RATE_LIMIT)) return fail(429, 'error.rate');
+  if (await rateLimited(env, rlKey, RATE_LIMIT)) return fail(429, msg(locale, 'error.rate'));
 
-  const raw = Object.fromEntries((Object.keys(fields) as Field[]).map((f) => [f, field(f)]));
+  const raw = Object.fromEntries((Object.keys(fields) as Field[]).map((f) => [f, field(f)])) as Record<Field, string>;
+  raw.eik = raw.eik.replace(/\s/g, '');
 
-  // Частично известие: стъпка или спиране. Само валидните стойности минават (без Zod грешки към
-  // клиента - никой не чака отговор); невалидното просто не се показва.
-  if (event !== 'submit') {
-    const clean: Partial<Survey> = {};
+  // Частично известие след стъпка: само валидните стойности, без лични данни.
+  if (event === 'step') {
+    const clean: Partial<Record<Field, string>> = {};
     for (const f of Object.keys(fields) as Field[]) {
-      // Личните данни (последната стъпка) никога не тръгват с частично известие - privacy.md.
-      if (STEP_FIELDS[TOTAL - 1].includes(f)) continue;
-      const r = fields[f].safeParse(raw[f]);
-      if (r.success) (clean as Record<string, unknown>)[f] = r.data;
+      if (PERSONAL.includes(f) || !raw[f]) continue;
+      if (fields[f].safeParse(raw[f]).success) clean[f] = raw[f];
     }
-    const status =
-      event === 'stop'
-        ? `${t('bg', 'survey.notify.stopped', { n: String(step) })} · ${t('bg', 'survey.notify.ineligible')}`
-        : t('bg', 'survey.notify.step', { n: String(step), total: String(TOTAL) });
-    const text = notificationText(locale, clean, { campaign, session, status }, ip);
+    const text = [
+      `🇪🇺 Проверка за ЕС финансиране · стъпка ${step} от 5 · ${ref} (${locale})`,
+      '',
+      ...rowsOf(clean).map((r) => `${r.label}: ${r.value}`),
+      clean.description ? `Идея: ${clean.description}` : null,
+    ]
+      .filter((l) => l !== null)
+      .join('\n');
     await rateCount(env, rlKey, RATE_WINDOW);
     if (mock) {
-      console.log('[survey] MOCK — would send:\n' + text);
-      return ok({ mock: text });
+      console.log('[survey] MOCK step:\n' + text);
+      return ok({ ref, mock: text });
     }
     if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) {
       try {
@@ -211,94 +188,71 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         console.error('[survey] telegram failed:', safeError(err));
       }
     }
-    return ok();
+    return ok({ ref });
   }
 
-  // Цялата анкета.
   if (!mock) {
     if (!env.TURNSTILE_SECRET) {
       console.error('[survey] TURNSTILE_SECRET missing');
-      return fail(500, 'error.generic');
+      return fail(500, msg(locale, 'error.generic'));
     }
     const token = field('cf-turnstile-response');
     if (!token || !(await verifyTurnstile(env.TURNSTILE_SECRET, token, ip))) {
-      return fail(400, 'error.turnstile', { turnstile: t(locale, 'error.turnstile') });
+      return fail(400, msg(locale, 'error.turnstile'), { turnstile: msg(locale, 'error.turnstile') });
     }
-  }
-
-  // „Не“ на първия въпрос (без JS формата стига дотук цяла): известие и страница „не е подходяща“.
-  if (raw.registered === 'no') {
-    const status = `${t('bg', 'survey.notify.stopped', { n: '1' })} · ${t('bg', 'survey.notify.ineligible')}`;
-    const text = notificationText(locale, { registered: 'no' }, { campaign, session, status }, ip);
-    await rateCount(env, rlKey, RATE_WINDOW);
-    if (mock) {
-      console.log('[survey] MOCK — would send:\n' + text);
-      return ok({ ineligible: true, mock: text }, ineligibleUrl);
-    }
-    if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) {
-      try {
-        await sendTelegram(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, text);
-      } catch (err) {
-        console.error('[survey] telegram failed:', safeError(err));
-      }
-    }
-    return ok({ ineligible: true }, ineligibleUrl);
   }
 
   const parsed = full.safeParse(raw);
   if (!parsed.success) {
     const errors: Record<string, string> = {};
     for (const issue of parsed.error.issues) {
-      const f = String(issue.path[0] ?? '') as Field;
-      if (f && !errors[f]) errors[f] = t(locale, ERROR_KEY[f] ?? 'error.generic');
+      const f = String(issue.path[0] ?? '');
+      if (f && !errors[f]) errors[f] = fieldMsg(locale, f);
     }
-    return fail(422, 'error.generic', errors);
+    return fail(422, msg(locale, 'error.check'), errors);
   }
-  const data = parsed.data;
+  const d = parsed.data;
   await rateCount(env, rlKey, RATE_WINDOW);
 
-  const status = t('bg', 'survey.notify.done');
-  const notify = notificationText(locale, data, { campaign, session, status }, ip);
+  const all = d as unknown as Record<Field, string>;
+  const notify = surveyNotification({ ref, rows: rowsOf(all), company: oneLine(d.company), locale, description: d.description });
+  const reply = surveyAutoreply({ ref, name: oneLine(d.name), company: oneLine(d.company), locale });
+  const telegram = [
+    `✅ Лист с чакащи (ЕС) · ${ref} (${locale})`,
+    '',
+    ...rowsOf(all)
+      .filter((r) => !r.label.startsWith('Съгласие') && !r.label.startsWith('Политика'))
+      .map((r) => `${r.label}: ${r.value}`),
+    `Идея: ${d.description}`,
+  ].join('\n');
+
   if (mock) {
-    console.log('[survey] MOCK — would send:\n' + notify);
-    return ok({ mock: notify });
+    console.log('[survey] MOCK - would send:\n' + notify.text + '\n---\n' + reply.text + '\n---\n' + telegram);
+    return ok({ ref });
   }
   if (!env.RESEND_API_KEY) {
     console.error('[survey] RESEND_API_KEY missing');
-    return fail(500, 'error.generic');
+    return fail(500, msg(locale, 'error.generic'));
   }
   try {
-    await sendResend(env.RESEND_API_KEY, {
-      to: env.NOTIFY_TO?.trim() || company.email,
-      subject: t('bg', 'mail.survey.subject', { name: oneLine(data.name), campaign }),
-      text: notify,
-      replyTo: data.email,
-    });
-    await sendResend(env.RESEND_API_KEY, {
-      to: data.email,
-      subject: t(locale, 'mail.survey.autoreply.subject'),
-      text: t(locale, 'mail.survey.autoreply.body', { email: data.email, phone: data.phone }),
-    });
+    await sendResend(env.RESEND_API_KEY, { ...notify, to: env.NOTIFY_TO?.trim() || company.email, replyTo: d.email });
   } catch (err) {
-    console.error('[survey] resend failed:', safeError(err));
-    return fail(502, 'error.generic');
+    console.error('[survey] resend notify failed:', safeError(err));
+    return fail(502, msg(locale, 'error.generic'));
   }
-  // Telegram получава цялата анкета (както запитването; docs/09). Известие, не условие.
+  try {
+    await sendResend(env.RESEND_API_KEY, { ...reply, to: d.email, replyTo: company.contactEmail });
+  } catch (err) {
+    console.error('[survey] resend autoreply failed:', safeError(err));
+  }
   if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) {
     try {
-      await sendTelegram(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, notify);
+      await sendTelegram(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, telegram);
     } catch (err) {
       console.error('[survey] telegram failed:', safeError(err));
     }
   }
-  return ok();
+  return ok({ ref });
 };
 
-export const onRequest: PagesFunction<Env> = async ({ request }) =>
-  request.method === 'POST'
-    ? new Response(null, { status: 405 })
-    : new Response(null, { status: 405, headers: { allow: 'POST' } });
-
-// За тестове и за компонента: същите списъци с опции.
-export { STAFF, REVENUE, TOTAL };
-export type { Survey };
+export const onRequest: PagesFunction<Env> = async () => new Response(null, { status: 405, headers: { allow: 'POST' } });

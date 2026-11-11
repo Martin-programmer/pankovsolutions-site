@@ -1,16 +1,8 @@
-# pankovsolutions.com — всички роботи са добре дошли, включително AI crawlers
-# (CHECKLIST §D). Няма частни зони; формата е POST към /api/inquiry.
+# pankovsolutions.com - всички роботи са добре дошли, включително AI crawlers.
+# Формите са POST към /api/* и нямат какво да се индексира там.
 
 User-agent: *
 Allow: /
-
-User-agent: GPTBot
-Allow: /
-
-User-agent: ClaudeBot
-Allow: /
-
-User-agent: PerplexityBot
-Allow: /
+Disallow: /api/
 
 Sitemap: https://pankovsolutions.com/sitemap-index.xml

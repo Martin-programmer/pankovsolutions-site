@@ -1,61 +1,41 @@
 ---
-import '../styles/global.css';
-import { getCollection } from 'astro:content';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import { useTranslations, type Locale } from '../i18n/utils';
-import { ogPages, ogSlugFor } from '../lib/og-pages';
+import '../styles/fonts.css';
+import '../styles/design.css';
+import '../styles/site.css';
+import { headerHtml, footerHtml, hasTurnstile } from '../lib/render';
+import { pathFor, type Locale } from '../data/pages';
 
 interface Props {
+  key: string;
+  locale: Locale;
   title: string;
-  // Без description, когато в content/ още няма такова — празен meta таг е по-лошо от липсващ.
-  description?: string;
-  locale?: Locale;
+  description: string;
   noindex?: boolean;
-  // OG изображение; по подразбиране /og/<път>.png, ако е генерирано, иначе /og/index.png.
-  ogImage?: string;
+  // false за 404: няма собствен адрес, затова без canonical/hreflang.
+  indexable?: boolean;
+  css?: string;
+  jsonLd?: unknown;
   ogType?: 'website' | 'article';
-  // Лендинги: минимален хедър (лого, телефон, CTA) вместо навигацията.
-  header?: { minimal: true; cta: { text: string; href: string } };
+  // Само страниците с форма зареждат Turnstile.
+  turnstile?: boolean;
 }
 
-const {
-  title,
-  description,
-  locale = (Astro.currentLocale as Locale | undefined) ?? 'bg',
-  noindex = false,
-  ogType = 'website',
-  header,
-} = Astro.props;
-
-const t = useTranslations(locale);
-
-// Canonical + hreflang. bg е без префикс, en под /en/. hreflang към en се слага само когато
-// EN версията реално съществува в content/ (иначе линкът би сочил към 404); x-default е bg.
-const site = Astro.site?.href ?? 'https://pankovsolutions.com/';
-const path = Astro.url.pathname.replace(/\/$/, '') || '/';
-const bare = path.replace(/^\/en(?=\/|$)/, '') || '/';
-const bgUrl = new URL(bare, site).href;
-const enUrl = new URL(bare === '/' ? '/en' : `/en${bare}`, site).href;
+const { key, locale, title, description, noindex = false, indexable = true, css = '', jsonLd, ogType = 'website', turnstile = false } = Astro.props;
+const site = 'https://pankovsolutions.com';
+const abs = (p: string) => site + (p === '/' ? '' : p);
+const bgUrl = abs(pathFor(key, 'bg'));
+const enUrl = abs(pathFor(key, 'en'));
 const canonical = locale === 'bg' ? bgUrl : enUrl;
+const ogImage = `${site}/og/${locale === 'en' ? 'en/' : ''}${key === 'home' ? 'index' : key}.png`;
 
-const contentKey = bare === '/' ? 'home' : bare.slice(1);
-const enIds = new Set(
-  [...(await getCollection('pages')), ...(await getCollection('projects'))]
-    .filter((e) => e.id.startsWith('en/'))
-    .map((e) => e.id.slice(3)),
-);
-const hasEn = enIds.has(contentKey) || (contentKey === 'projects' && [...enIds].some((id) => id.startsWith('projects/')));
-
-// Umami (без бисквитки, docs/09): скриптът влиза само когато при build има UMAMI_URL и
-// UMAMI_WEBSITE_ID (Pages → Environment variables). CSP-то го допуска през scripts/headers.mjs.
-const umamiUrl = (process.env.UMAMI_URL ?? import.meta.env.UMAMI_URL ?? '').replace(/\/+$/, '');
-const umamiId = process.env.UMAMI_WEBSITE_ID ?? import.meta.env.UMAMI_WEBSITE_ID ?? '';
-const umami = umamiUrl && umamiId ? { src: `${umamiUrl}/script.js`, id: umamiId } : null;
-
-const ogSlugs = new Set((await ogPages()).map((p) => p.slug));
-const ogSlug = ogSlugFor(path);
-const ogImage = new URL(Astro.props.ogImage ?? `/og/${ogSlugs.has(ogSlug) ? ogSlug : 'index'}.png`, site).href;
+// Тракинг (Google Analytics 4, Google Ads, Meta Pixel): ID-тата идват при build от
+// Build → Variables. Без нито едно ID банерът за бисквитки не се показва, защото тогава
+// сайтът ползва само строго необходими бисквитки.
+const env = (name: string) => ((process.env[name] ?? import.meta.env[name] ?? '') as string).trim();
+const tracking = { ga4: env('GA4_ID'), ads: env('GOOGLE_ADS_ID'), meta: env('META_PIXEL_ID') };
+const umamiUrl = env('UMAMI_URL').replace(/\/+$/, '');
+const umamiId = env('UMAMI_WEBSITE_ID');
+const skip = locale === 'bg' ? 'Към съдържанието' : 'Skip to content';
 ---
 
 <!doctype html>
@@ -63,76 +43,62 @@ const ogImage = new URL(Astro.props.ogImage ?? `/og/${ogSlugs.has(ogSlug) ? ogSl
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>{title}</title>
-    {description && <meta name="description" content={description} />}
-    {noindex && <meta name="robots" content="noindex, nofollow" />}
-    <link rel="canonical" href={canonical} />
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
     {
-      !noindex && (
+      indexable && (
         <>
-          <link rel="alternate" hreflang="bg" href={bgUrl} />
-          {hasEn && <link rel="alternate" hreflang="en" href={enUrl} />}
-          <link rel="alternate" hreflang="x-default" href={bgUrl} />
+          <link rel="canonical" href={canonical} />
+          {!noindex && (
+            <>
+              <link rel="alternate" hreflang="bg" href={bgUrl} />
+              <link rel="alternate" hreflang="en" href={enUrl} />
+              <link rel="alternate" hreflang="x-default" href={bgUrl} />
+            </>
+          )}
         </>
       )
     }
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0A2A66" />
     <meta property="og:type" content={ogType} />
     <meta property="og:site_name" content="Pankov Solutions" />
     <meta property="og:locale" content={locale === 'bg' ? 'bg_BG' : 'en_US'} />
+    <meta property="og:locale:alternate" content={locale === 'bg' ? 'en_US' : 'bg_BG'} />
     <meta property="og:title" content={title} />
-    {description && <meta property="og:description" content={description} />}
+    <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <!-- Само двата основни: body 400 и display 700. Останалите три тегла се свалят
-         при нужда — preload на петте би се борил за честотна лента с LCP. -->
-    <link
-      rel="preload"
-      href="/fonts/SourceSans3-Regular.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="/fonts/SourceSerif4-Bold.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    {umami && <script is:inline defer src={umami.src} data-website-id={umami.id} />}
-    <slot name="head" />
+    <link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/manrope-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    {css && <style is:inline set:html={css} />}
+    {jsonLd && <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />}
+    <script
+      is:inline
+      src="/consent.js"
+      defer
+      data-lang={locale}
+      data-policy={pathFor('cookies', locale)}
+      data-ga4={tracking.ga4}
+      data-ads={tracking.ads}
+      data-meta={tracking.meta}></script>
+    {umamiUrl && umamiId && <script is:inline defer src={`${umamiUrl}/script.js`} data-website-id={umamiId} />}
+    {turnstile && hasTurnstile() && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />}
   </head>
   <body>
-    <a class="skip-link" href="#main">{t('skip')}</a>
-    <Header locale={locale} minimal={header?.minimal} cta={header?.cta} />
-    <main id="main">
+    <div style="min-height: 100vh; background: #F6F8FB; position: relative;">
+      <a href="#sadarzhanie" class="ps-skip">{skip}</a>
+      <Fragment set:html={headerHtml(key, locale)} />
       <slot />
-    </main>
-    <Footer locale={locale} />
+      <Fragment set:html={footerHtml(locale)} />
+    </div>
+    <script>
+      import '../scripts/site.ts';
+    </script>
   </body>
 </html>
-
-<style>
-  /* Скрит, докато не получи фокус от клавиатурата. */
-  .skip-link {
-    position: absolute;
-    z-index: 10;
-    left: var(--spacing-4);
-    top: calc(-1 * var(--spacing-16));
-    padding: var(--spacing-2) var(--spacing-4);
-    background: var(--color-surface);
-    color: var(--color-primary);
-    border: 1px solid var(--color-line);
-    border-radius: var(--radius-sm);
-    font-size: var(--text-sm);
-  }
-
-  .skip-link:focus {
-    top: var(--spacing-4);
-  }
-</style>

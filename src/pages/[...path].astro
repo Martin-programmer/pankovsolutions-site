@@ -1,0 +1,36 @@
+---
+import Base from '../layouts/Base.astro';
+import { PAGES, pathFor, type Locale, type PageMeta } from '../data/pages';
+import { jsonLd, pageCss, pageHtml } from '../lib/render';
+
+// Една динамична страница за всички адреси на двата езика: /<ключ> и /en/<ключ>.
+export function getStaticPaths() {
+  return PAGES.flatMap((meta) =>
+    (['bg', 'en'] as Locale[]).map((locale) => {
+      const p = pathFor(meta.key, locale).replace(/^\//, '');
+      return { params: { path: p || undefined }, props: { meta, locale } };
+    }),
+  );
+}
+
+type Props = {
+  meta: PageMeta;
+  locale: Locale;
+};
+const { meta, locale } = Astro.props as Props;
+const html = pageHtml(meta.key, locale);
+---
+
+<Base
+  key={meta.key}
+  locale={locale}
+  title={meta.title[locale]}
+  description={meta.description[locale]}
+  noindex={meta.noindex}
+  css={pageCss(meta.key)}
+  jsonLd={jsonLd(meta, locale, html)}
+  ogType={meta.kind === 'project' ? 'article' : 'website'}
+  turnstile={html.includes('cf-turnstile')}
+>
+  <Fragment set:html={html} />
+</Base>

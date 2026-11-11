@@ -1,52 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
-import { company } from '../data/company';
-import { localeUrl, useTranslations, type Locale } from '../i18n/utils';
+import { NOT_FOUND } from '../data/pages';
+import { pageCss, pageHtml } from '../lib/render';
 
-// COPY.md §Микрокопи: „Тази страница не съществува. Вижте проектите или ми пишете.“
-const locale: Locale = 'bg';
-const t = useTranslations(locale);
+// Cloudflare връща този файл за всеки несъществуващ адрес (not_found_handling = "404-page"),
+// затова е на български; линковете в хедъра водят към двата езика.
 ---
 
-<Base title={`${t('notfound.title')} - ${company.brand}`} locale={locale} noindex ogImage="/og/index.png">
-  <div class="wrap outer">
-    <div class="page tile tile-surface">
-      <p class="mono code">404</p>
-      <h1>{t('notfound.title')}</h1>
-      <p class="lead">
-        <a class="arrow-link" href={localeUrl(locale, '/projects')}>{t('notfound.projects')}</a>
-        {' '}{t('notfound.or')}{' '}
-        <a class="arrow-link" href={localeUrl(locale, '/contact')}>{t('notfound.write')}</a>.
-      </p>
-    </div>
-  </div>
+<Base key="home" locale="bg" title={NOT_FOUND.title.bg} description={NOT_FOUND.description.bg} noindex indexable={false} css={pageCss('404')}>
+  <Fragment set:html={pageHtml('404', 'bg')} />
 </Base>
-
-<style>
-  .outer {
-    padding-block: var(--spacing-12) var(--spacing-24);
-  }
-
-  .page {
-    max-width: calc(var(--measure) + 2 * var(--spacing-12));
-  }
-
-  .code {
-    margin: 0 0 var(--spacing-4);
-    color: var(--color-muted);
-  }
-
-  /* xl на мобилно: „съществува.“ не се побира на 294 px при 2xl. */
-  h1 {
-    font-size: var(--text-xl);
-    line-height: 1.1;
-    letter-spacing: -0.01em;
-    margin: 0 0 var(--spacing-6);
-  }
-
-  .lead {
-    font-size: var(--text-base);
-    line-height: 1.6;
-    margin: 0;
-  }
-</style>

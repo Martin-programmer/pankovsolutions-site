@@ -2,95 +2,41 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Resvg } from '@resvg/resvg-js';
 import satori from 'satori';
-import { company } from '../data/company';
 
-// OG изображение 1200×630: paper фон, заглавие в Source Serif 700, mono ред с домейна —
-// DESIGN.md §Изображения. Цветовете се четат от tokens.css, за да няма hex тук.
-// Шрифтовете са TTF с „изпечени“ български форми (scripts/og-fonts.py).
-const root = process.cwd();
-const tokens = readFileSync(join(root, 'src/styles/tokens.css'), 'utf-8');
-const color = (name: string) => tokens.match(new RegExp(`--color-${name}:\\s*(#[0-9A-Fa-f]{6})`))?.[1] ?? '';
+// OG изображение 1200×630 в стила на сайта: navy фон, бяло лого, заглавие в Onest 600,
+// lime блок с асиметричен ъгъл. Шрифтовете са статични WOFF (satori не чете WOFF2).
+const dir = join(process.cwd(), 'src/assets/og');
+const font = (f: string) => readFileSync(join(dir, f));
+const fonts = [
+  { name: 'Onest', data: font('onest-latin-600-normal.woff'), weight: 600 as const, style: 'normal' as const },
+  { name: 'Onest', data: font('onest-cyrillic-600-normal.woff'), weight: 600 as const, style: 'normal' as const },
+  { name: 'Manrope', data: font('manrope-latin-600-normal.woff'), weight: 600 as const, style: 'normal' as const },
+  { name: 'Manrope', data: font('manrope-cyrillic-600-normal.woff'), weight: 600 as const, style: 'normal' as const },
+];
+const logo = `data:image/svg+xml;base64,${readFileSync(join(dir, 'logo-white.svg'), 'base64')}`;
 
-const serif = readFileSync(join(root, 'src/assets/og-fonts/SourceSerif4-Bold.ttf'));
-const mono = readFileSync(join(root, 'src/assets/og-fonts/JetBrainsMono-Regular.ttf'));
-// Знакът от логото (256 px PNG) — data URI, защото satori не чете от диска.
-const mark = `data:image/png;base64,${readFileSync(join(root, 'src/assets/og-logo-mark.png'), { encoding: 'base64' })}`;
+const h = (type: string, style: Record<string, unknown>, children?: unknown) => ({ type, props: { style, children } });
 
-const WIDTH = 1200;
-const HEIGHT = 630;
-
-export async function renderOg(title: string): Promise<ArrayBuffer> {
-  const size = title.length > 60 ? 56 : title.length > 40 ? 64 : 72;
+export async function renderOg(title: string, kicker: string): Promise<Uint8Array> {
+  const size = title.length > 70 ? 54 : title.length > 45 ? 62 : 72;
   const svg = await satori(
-    {
-      type: 'div',
-      props: {
-        style: {
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          padding: '72px 80px',
-          background: color('paper'),
-          color: color('ink'),
-        },
-        children: [
-          {
-            type: 'div',
-            props: {
-              style: { fontFamily: 'JetBrains Mono', fontSize: 28, color: color('muted') },
-              children: company.email.replace(/^.*@/, ''),
-            },
-          },
-          {
-            type: 'div',
-            props: {
-              style: {
-                fontFamily: 'Source Serif 4',
-                fontWeight: 700,
-                fontSize: size,
-                lineHeight: 1.1,
-                letterSpacing: '-0.01em',
-                maxWidth: '1000px',
-              },
-              children: title,
-            },
-          },
-          {
-            type: 'div',
-            props: {
-              style: {
-                display: 'flex',
-                alignItems: 'center',
-                gap: 24,
-                fontFamily: 'JetBrains Mono',
-                fontSize: 24,
-                color: color('primary'),
-                borderTop: `2px solid ${color('line')}`,
-                paddingTop: 28,
-              },
-              children: [
-                { type: 'img', props: { src: mark, width: 44, height: 44 } },
-                { type: 'div', props: { children: company.brand } },
-                { type: 'div', props: { style: { color: color('muted') }, children: '·' } },
-                { type: 'div', props: { style: { color: color('muted') }, children: `${company.city}` } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-    {
-      width: WIDTH,
-      height: HEIGHT,
-      fonts: [
-        { name: 'Source Serif 4', data: serif, weight: 700, style: 'normal' },
-        { name: 'JetBrains Mono', data: mono, weight: 400, style: 'normal' },
+    h(
+      'div',
+      { width: '100%', height: '100%', display: 'flex', background: '#0A2A66', color: '#FFFFFF', position: 'relative', fontFamily: 'Manrope' },
+      [
+        h('div', { position: 'absolute', right: 0, bottom: 0, width: 300, height: 210, background: '#C6F24E', borderTopLeftRadius: 120 }),
+        h('div', { position: 'absolute', right: 300, bottom: 0, width: 150, height: 110, background: '#2563EB', borderTopLeftRadius: 24, borderTopRightRadius: 24 }),
+        h('div', { display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '64px 72px', width: '100%' }, [
+          { type: 'img', props: { src: logo, width: 230, height: 88, style: { width: 230, height: 88 } } },
+          h('div', { display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 900 }, [
+            h('div', { fontSize: 26, color: '#C6F24E', fontWeight: 600 }, kicker),
+            h('div', { fontFamily: 'Onest', fontWeight: 600, fontSize: size, lineHeight: 1.08, letterSpacing: '-0.02em' }, title),
+          ]),
+          h('div', { fontSize: 24, color: '#C9D4EA' }, 'pankovsolutions.com'),
+        ]),
       ],
-    },
+    ) as never,
+    { width: 1200, height: 630, fonts },
   );
-  const png = new Resvg(svg, { fitTo: { mode: 'width', value: WIDTH } }).render().asPng();
-  // Копие като чист ArrayBuffer — това е типът, който Response приема.
-  return png.buffer.slice(png.byteOffset, png.byteOffset + png.byteLength) as ArrayBuffer;
+  return new Resvg(svg, { fitTo: { mode: 'width', value: 1200 } }).render().asPng();
 }

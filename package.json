@@ -16,7 +16,6 @@
     "overflow": "node scripts/overflow.mjs",
     "crop": "node scripts/crop.mjs",
     "test:form": "node scripts/formtest.mjs",
-    "test:survey": "node scripts/surveytest.mjs",
     "serve:dist": "serve dist -l 4177 --no-clipboard",
     "audit:lh": "lhci autorun",
     "audit:a11y": "pa11y-ci",
@@ -24,14 +23,10 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/markdown-remark": "^6.3.11",
     "@astrojs/sitemap": "^3.7.4",
     "@resvg/resvg-js": "^2.6.2",
-    "@tailwindcss/vite": "^4.3.3",
     "astro": "^5.18.2",
     "satori": "^0.33.4",
-    "tailwindcss": "^4.3.3",
-    "yaml": "^2.9.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {

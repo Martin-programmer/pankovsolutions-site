@@ -10,8 +10,11 @@ module.exports = {
       url: [
         `${base}/`,
         `${base}/projects`,
-        `${base}/projects/domoupravitel-bulgaria`,
+        `${base}/projects/domoupravitel`,
         `${base}/services`,
+        `${base}/services/erp`,
+        `${base}/eu-funding`,
+        `${base}/en`,
         `${base}/about`,
         `${base}/contact`,
       ],

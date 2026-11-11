@@ -1,34 +1,51 @@
 # pankovsolutions.com
 
-Портфолио сайт на Pankov Solutions. Astro 5 (static) + Tailwind v4, хостинг Cloudflare Pages.
-Правилата за работа са в `CLAUDE.md`, дизайнът в `DESIGN.md`, текстът в `COPY.md`, прегледът
-в `CHECKLIST.md`. Съдържанието е в `content/bg/` (източник на истината) и `content/en/`.
+Сайтът на Pankov Solutions. Astro 5 (static), хостинг Cloudflare Worker със статични файлове.
+Правилата за работа са в `CLAUDE.md`. Българският е основен (без префикс), английският е под `/en`.
 
 ```
-npm run dev            # Astro dev сървър (без формата — тя е в Worker-а)
+npm run dev            # Astro dev сървър (без формите — те са в Worker-а)
 npm run build          # production build в dist/
-npm run preview        # сервира dist/
-npm run dev:functions  # wrangler dev: dist/ + worker/ (формата) на http://localhost:8788
+npm run dev:functions  # wrangler dev: dist/ + worker/ (формите) на http://localhost:8788
 npm run check          # astro check
-npm run shot -- <url> <папка>   # скрийншоти 1440/390 (Playwright през Edge)
-npm run crop -- <url> "<селектор>" <файл>
+npm run test:form      # формите (запитване + проверка за ЕС финансиране) срещу dev:functions
+npm run shot -- <url> <папка>   # скрийншоти 1440/390
 npm run overflow -- <url> [ширина]
-npm run test:form -- http://127.0.0.1:8788 .shots   # формата: грешки по поле, успех (срещу dev:functions)
-npm run serve:dist                                   # dist/ с компресия на 127.0.0.1:4177 — за одитите по-долу
-npm run audit:lh                                     # Lighthouse CI, mobile, 6 URL, праг 95 (lighthouserc.cjs)
-npm run audit:a11y                                   # pa11y-ci, axe + htmlcs, WCAG 2.2 AA (.pa11yci.json)
-npm run audit:js                                     # JS на страница, бюджет 60 KB gzip
+npm run serve:dist     # dist/ на 127.0.0.1:4177 — за одитите
+npm run audit:lh       # Lighthouse CI, mobile, праг 95 (lighthouserc.cjs)
+npm run audit:a11y     # pa11y-ci, WCAG 2.2 AA
+npm run audit:js       # JS на страница, бюджет 60 KB gzip
 ```
 
-Одитите са на порт 4177 и през `127.0.0.1` нарочно: забравен `astro dev` слуша на `[::1]:4321`
-и `localhost:4321` отива при него — тогава Lighthouse мери dev toolbar-а (perf ~56).
-В `.pa11yci.json` `hideElements: "svg.diagram"` — axe не чете `fill`/фон на SVG текст и
-докладва фалшив контраст за етикетите на схемата (реално 5,9-14:1); схемата е `role="img"`
-с `<title>`.
+## Как е устроен сайтът
+
+- `src/design/bg/*.html`, `src/design/en/*.html` — HTML-ът на всяка страница, пренесен от
+  дизайна (Claude Design). Името на файла е ключът на страницата с `/` → `__`
+  (`services__erp.html` = `/services/erp`). `_header.html` и `_footer.html` са общи.
+- `src/design/css/*.css` — стиловете на отделните страници; `src/design/index.json` казва коя
+  страница кой файл ползва. Общите стилове са в `src/styles/design.css` + `site.css`.
+- `src/data/pages.ts` — регистърът: заглавие, описание (SEO) и име на всяка страница на двата
+  езика. Нова страница = ред тук + HTML файл за bg и en.
+- `src/pages/[...path].astro` генерира всички адреси; `src/lib/render.ts` подменя маркерите
+  (активно меню, бутон в хедъра, превключвател на езика, Turnstile) и строи JSON-LD
+  (Organization, WebSite, BreadcrumbList, Service, Article, FAQPage — въпросите се вадят от
+  `<details>` на страницата).
+- `src/scripts/site.ts` — целият JS: спиране на логата, формата за запитване (грешки по поле,
+  `?service=<slug>` избира услугата), 5-стъпковата проверка за ЕС финансиране.
+- `public/consent.js` — банерът за бисквитки (GDPR, Google Consent Mode v2, Meta). Показва се
+  само ако при build има поне едно от `GA4_ID`, `GOOGLE_ADS_ID`, `META_PIXEL_ID`.
+- OG картинките се генерират при build (`src/pages/og/[...slug].png.ts`, `src/lib/og.ts`).
+- `public/_redirects` — 301 от адресите на стария сайт.
+
+## Имейли
+
+Брандирани HTML имейли (с текстова версия) са в `functions/email.ts`: известие за запитване,
+автоотговор, известие и потвърждение за листа с чакащи (ЕС). Текстовете за грешки са в
+`functions/messages.ts`.
 
 ## Форма - настройка
 
-Формата за запитване (`src/components/InquiryForm.astro`) праща POST към `/api/inquiry` —
+Формата за запитване (начална страница и `/contact`) праща POST към `/api/inquiry` —
 обработва се в `functions/api/inquiry.ts`, извикван от Worker-а `worker/index.ts` (сайтът е
 Cloudflare Worker със статични файлове от `dist/`; `wrangler.toml`). Ред на обработка: honeypot → timing
 (под 3 s) → rate limit (KV, 5 на час на IP) → Turnstile → Zod → Resend (известие до
@@ -73,8 +90,8 @@ npm run dev:functions                 # wrangler dev → http://localhost:8788/c
 
 ```
 curl -s -X POST http://localhost:8788/api/inquiry -H "accept: application/json" ^
-  -d "name=Тест Тестов" -d "email=test@example.com" -d "type=eu" ^
-  -d "message=Пробно запитване от curl, десет знака." -d "consent=on"
+  -d "name=Тест Тестов" -d "email=test@example.com" -d "phone=0888123456" -d "service=erp" ^
+  -d "message=Пробно запитване от curl, десет знака."
 ```
 
 ### 2. Cloudflare Turnstile
@@ -107,7 +124,7 @@ curl -s -X POST http://localhost:8788/api/inquiry -H "accept: application/json" 
 5. Тест на репутацията: прати през формата до адрес от mail-tester.com - цел над 9/10.
 
 Известията идват от `Pankov Solutions <hello@pankovsolutions.com>` с `reply-to` подателя;
-автоотговорът е с текста от `src/i18n/ui.ts` (`mail.autoreply.*`).
+автоотговорът е HTML шаблон от `functions/email.ts`.
 
 ### 4. Telegram бот
 
@@ -133,7 +150,7 @@ Telegram получава цялото запитване (решение на �
 
 1. Или **Umami Cloud** (cloud.umami.is, безплатен план) - или self-hosted (docker на Hetzner;
    при self-hosted в ЕС политиката за поверителност не се променя, при Cloud - добави Umami
-   Software, Inc. като обработващ в `content/bg/privacy.md`).
+   Software, Inc. като обработващ в политиката за поверителност).
 2. **Add website** → `pankovsolutions.com` → копирай **Website ID** и адреса на скрипта
    (Cloud: `https://cloud.umami.is`; self-hosted: твоят домейн).
 3. Worker → Settings → **Build** → Variables (четат се при build): `UMAMI_URL` = адресът без
@@ -153,3 +170,16 @@ Telegram получава цялото запитване (решение на �
 | `INQUIRY_RL` | `wrangler.toml` → kv_namespaces (id от Dashboard → KV) | rate limit |
 | `INQUIRY_MOCK` | само `.dev.vars` | `1` = не праща, логва |
 | `UMAMI_URL`, `UMAMI_WEBSITE_ID` | Worker → Build → Variables / `.env` | аналитика; без тях няма скрипт |
+| `GA4_ID`, `GOOGLE_ADS_ID`, `META_PIXEL_ID` | Worker → Build → Variables / `.env` | Google Analytics 4 (`G-…`), Google Ads (`AW-…`), Meta Pixel; зареждат се само след съгласие |
+| `CONSENT_LOG` | `wrangler.toml` → kv_namespaces (по избор) | записи за дадено съгласие за бисквитки (доказателство по чл. 7 GDPR); без него записите са само в лога |
+
+### 8. Реклами и проследяване (Google, Meta)
+
+1. GA4: Admin → Data streams → Web → **Measurement ID** (`G-…`) → `GA4_ID`. В Admin → Data
+   retention сложи **14 months** (така е в политиката за поверителност).
+2. Google Ads: Tools → Conversions → Google tag → ID (`AW-…`) → `GOOGLE_ADS_ID`.
+3. Meta: Events Manager → Data sources → Pixel ID → `META_PIXEL_ID`.
+4. И трите са Build Variables (влизат в HTML-а при build). Скриптовете на Google и Meta се
+   зареждат от `public/consent.js` чак след съгласие; CSP-то в `public/_headers` ги допуска.
+5. Доказателство за съгласието: Dashboard → KV → Create namespace `consent-log`, ID-то в
+   `wrangler.toml` като `[[kv_namespaces]] binding = "CONSENT_LOG"`. Записите се пазят 3 години.
