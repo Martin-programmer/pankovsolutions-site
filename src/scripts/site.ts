@@ -20,6 +20,8 @@ const L = {
     phone: 'Въведете валиден телефон.',
     message: 'Напишете поне няколко думи.',
     turnstile: 'Потвърдете, че не сте робот.',
+    choose: 'Изберете отговор.',
+    chooseSome: 'Изберете поне едно.',
   },
   en: {
     sending: 'Sending…',
@@ -30,6 +32,8 @@ const L = {
     phone: 'Please enter a valid phone number.',
     message: 'Please write at least a few words.',
     turnstile: 'Please confirm you are not a robot.',
+    choose: 'Please choose an option.',
+    chooseSome: 'Please choose at least one.',
   },
 }[lang];
 
@@ -217,36 +221,98 @@ if (eu) {
     if (num) num.textContent = String(s);
     if (bar) bar.style.width = `${s * 20}%`;
     err.hidden = true;
+    clearErrors(form);
   };
 
-  const check = (s: number): { text: string; field?: string } | null => {
-    if (s === 1 && !val('registered')) return { text: msg('1'), field: 'registered' };
-    if (s === 2 && (!val('staff') || !val('revenue'))) return { text: msg('2'), field: !val('staff') ? 'staff' : 'revenue' };
+  type Err = { text: string; field?: string };
+  // Всички грешки на стъпката, всяка до своето поле (както във формата за запитване).
+  const check = (s: number): Err[] => {
+    const out: Err[] = [];
+    const need = (f: string, text: string) => !val(f) && out.push({ field: f, text });
+    if (s === 1) need('registered', msg('1'));
+    if (s === 2) {
+      need('staff', L.choose);
+      need('revenue', L.choose);
+    }
     if (s === 3) {
-      for (const f of ['company', 'eik', 'city', 'activity']) {
-        if (f === 'eik' && val('registered') === 'no') continue;
-        if (!val(f)) return { text: msg('3'), field: f };
+      need('company', L.required);
+      if (val('registered') !== 'no') {
+        if (!val('eik')) out.push({ field: 'eik', text: L.required });
+        else if (!/^(\d{9}|\d{13})$/.test(val('eik').replace(/\s/g, ''))) out.push({ field: 'eik', text: msg('eik') });
       }
-      if (val('registered') !== 'no' && !/^(\d{9}|\d{13})$/.test(val('eik').replace(/\s/g, ''))) return { text: msg('eik'), field: 'eik' };
+      need('city', L.required);
+      need('activity', L.required);
     }
     if (s === 4) {
-      for (const f of ['wants', 'description', 'budget', 'cofin', 'debts']) if (!val(f)) return { text: msg('4'), field: f };
+      need('wants', L.chooseSome);
+      need('description', L.required);
+      need('budget', L.choose);
+      need('cofin', L.choose);
+      need('debts', L.choose);
     }
     if (s === 5) {
-      if (val('name').length < 2) return { text: msg('name'), field: 'name' };
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email'))) return { text: msg('email'), field: 'email' };
-      if (val('phone').replace(/[^\d]/g, '').length < 9) return { text: msg('phone'), field: 'phone' };
-      if (!val('consentPartner') || !val('consentPrivacy')) return { text: msg('consent'), field: !val('consentPartner') ? 'consentPartner' : 'consentPrivacy' };
+      if (val('name').length < 2) out.push({ field: 'name', text: msg('name') });
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email'))) out.push({ field: 'email', text: msg('email') });
+      if (val('phone').replace(/[^\d]/g, '').length < 9) out.push({ field: 'phone', text: msg('phone') });
+      need('consentPartner', msg('consent'));
+      need('consentPrivacy', msg('consent'));
     }
-    return null;
+    return out;
   };
 
-  const fail = (e: { text: string; field?: string }) => {
-    err.textContent = e.text;
-    err.hidden = false;
-    const el = e.field ? form.querySelector<HTMLElement>(`[name="${e.field}"]`) : null;
-    (el ?? err).focus();
+  // Групите с избор (радио/отметки) получават грешката в края на своя fieldset.
+  const markField = (name: string, text: string) => {
+    const first = form.querySelector<HTMLInputElement>(`[name="${name}"]`);
+    if (!first) return null;
+    const group = (first.type === 'radio' || (first.type === 'checkbox' && form.querySelectorAll(`[name="${name}"]`).length > 1)) ? first.closest('fieldset') : null;
+    if (!group) {
+      fieldError(form, name, text);
+      return first;
+    }
+    group.setAttribute('aria-invalid', 'true');
+    const p = document.createElement('span');
+    p.className = 'ps-field-err';
+    p.dataset.for = name;
+    p.id = `err-eu-${name}`;
+    p.textContent = text;
+    group.appendChild(p);
+    group.setAttribute('aria-describedby', p.id);
+    return first;
   };
+
+  const fail = (list: Err[]) => {
+    clearErrors(form);
+    for (const g of form.querySelectorAll('fieldset[aria-describedby^="err-eu-"]')) g.removeAttribute('aria-describedby');
+    let firstEl: HTMLElement | null = null;
+    const loose: string[] = [];
+    for (const e of list) {
+      const el = e.field ? markField(e.field, e.text) : null;
+      if (el) firstEl ??= el;
+      else loose.push(e.text);
+    }
+    err.textContent = loose.join(' ');
+    err.hidden = loose.length === 0;
+    const target = firstEl ?? err;
+    target.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    target.focus({ preventScroll: true });
+  };
+  // Грешката на текстово поле изчезва, щом човек започне да пише (не при blur: виж по-горе).
+  form.addEventListener('input', (e) => {
+    const t = e.target as HTMLInputElement;
+    if (t.type === 'radio' || t.type === 'checkbox' || t.tagName === 'SELECT') return;
+    if (t.getAttribute('aria-invalid') === 'true') {
+      t.removeAttribute('aria-invalid');
+      form.querySelector(`.ps-field-err[data-for="${t.name}"]`)?.remove();
+    }
+  });
+  form.addEventListener('change', (e) => {
+    const t = e.target as HTMLInputElement;
+    if (t.type !== 'radio' && t.type !== 'checkbox' && t.tagName !== 'SELECT') return;
+    const holder = t.closest('fieldset[aria-invalid="true"]') ?? (t.getAttribute('aria-invalid') === 'true' ? t : null);
+    if (!holder) return;
+    holder.removeAttribute('aria-invalid');
+    form.querySelector(`.ps-field-err[data-for="${t.name}"]`)?.remove();
+  });
 
   // Частично известие след всяка стъпка (без лични данни), за да се вижда къде спират хората.
   const ping = (s: number) => {
@@ -267,7 +333,7 @@ if (eu) {
 
   next.addEventListener('click', () => {
     const e = check(step);
-    if (e) return fail(e);
+    if (e.length) return fail(e);
     ping(step);
     show(step + 1);
     steps[step - 1]?.querySelector<HTMLElement>('input, select, textarea')?.focus();
@@ -278,7 +344,7 @@ if (eu) {
     event.preventDefault();
     for (let s = 1; s <= 5; s++) {
       const e = check(s);
-      if (e) {
+      if (e.length) {
         show(s);
         return fail(e);
       }
@@ -297,8 +363,8 @@ if (eu) {
     submit.disabled = false;
     submit.textContent = label;
     if (!reply.ok) {
-      const firstField = Object.keys(reply.errors ?? {})[0];
-      fail({ text: Object.values(reply.errors ?? {})[0] ?? reply.message ?? msg('network'), field: firstField });
+      const errs = Object.entries(reply.errors ?? {}).map(([field, text]) => ({ field, text }));
+      fail(errs.length ? errs : [{ text: reply.message ?? msg('network') }]);
       window.turnstile?.reset();
       return;
     }
@@ -324,6 +390,38 @@ if (eu) {
 
   syncOptions();
   show(1);
+}
+
+// Мобилно меню: на цял екран; затваря се с Escape, с линк или с бутона, а страницата отзад не се превърта.
+const menu = document.querySelector<HTMLDetailsElement>('details.ps-menu');
+if (menu) {
+  const sync = () => document.documentElement.classList.toggle('ps-menu-open', menu.open);
+  menu.addEventListener('toggle', sync);
+  menu.querySelectorAll('.ps-mnav a').forEach((a) => a.addEventListener('click', () => (menu.open = false)));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary')?.focus();
+    }
+  });
+  document.addEventListener('click', (e) => {
+    if (menu.open && !menu.contains(e.target as Node)) menu.open = false;
+  });
+  matchMedia('(min-width: 1081px)').addEventListener('change', (e) => e.matches && (menu.open = false));
+}
+
+// Технологиите на телефон: първо две групи и бутон „Покажи всички“ (списъкът е дълъг ~2 екрана).
+const techMore = document.querySelector<HTMLButtonElement>('[data-tech-more]');
+const techList = document.querySelector<HTMLElement>('.ps-tech-list');
+if (techMore && techList) {
+  techList.classList.add('ps-tech-collapsed');
+  techMore.hidden = false;
+  techMore.addEventListener('click', () => {
+    techList.classList.remove('ps-tech-collapsed');
+    techMore.remove();
+    techList.querySelectorAll<HTMLElement>(':scope > div')[2]?.querySelector<HTMLElement>('h3')?.setAttribute('tabindex', '-1');
+    techList.querySelectorAll<HTMLElement>(':scope > div')[2]?.querySelector<HTMLElement>('h3')?.focus();
+  });
 }
 
 export {};

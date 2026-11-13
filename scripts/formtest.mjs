@@ -24,7 +24,7 @@ await p.goto(`${base}${lang}/eu-funding`);
 const visible = async () => p.$$eval('[data-step]', a => a.filter(x => !x.hidden).map(x => x.dataset.step));
 console.log('visible steps', await visible());
 await p.click('[data-next]');
-console.log('err1', await p.$eval('[data-err]', e => e.hidden ? '' : e.textContent));
+console.log('err1', await p.$$eval('.pe-form .ps-field-err', a => a.map(e => e.dataset.for + ':' + e.textContent)));
 await p.check('input[name=registered][value="lt1"]');
 console.log('note lt1 shown', await p.$eval('[data-show-if="registered=lt1"]', e => !e.hidden));
 await p.click('[data-next]');
@@ -32,7 +32,7 @@ await p.selectOption('select[name=staff]', 'lt10'); await p.selectOption('select
 await p.click('[data-next]');
 await p.fill('input[name=company]', 'Пример ЕООД'); await p.fill('input[name=eik]', '123'); await p.fill('input[name=city]', 'Варна'); await p.fill('input[name=activity]', 'мебели');
 await p.click('[data-next]');
-console.log('eik err', await p.$eval('[data-err]', e => e.textContent));
+console.log('eik err', await p.$$eval('.pe-form .ps-field-err', a => a.map(e => e.dataset.for + ':' + e.textContent)));
 await p.fill('input[name=eik]', '123456789'); await p.click('[data-next]'); 
 await p.check('input[name=wants][value=soft]'); await p.check('input[name=wants][value=green]');
 await p.fill('textarea[name=description]', 'Искаме една система за всичко.');

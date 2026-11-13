@@ -1,0 +1,133 @@
+/* Мобилна версия. Дизайнът е правен за компютър; тук са поправките за телефон и таблет
+   (виж мобилния одит от ноември 2026). Inline стиловете в src/design се надписват с !important. */
+
+/* ---- Хедър и мобилно меню ---------------------------------------------------------------- */
+:root{--ps-hh:88px}
+.ps-ico-close{display:none}
+.ps-menu[open] .ps-ico-open{display:none}
+.ps-menu[open] .ps-ico-close{display:block}
+.ps-mnav{position:fixed;left:0;right:0;top:var(--ps-hh);bottom:0;z-index:40;display:flex;flex-direction:column;gap:2px;padding:12px 20px 0;background:#FFFFFF;border-top:1px solid #DDE3EC;overflow-y:auto;overscroll-behavior:contain}
+.ps-mnav>a,.ps-mnav>details>summary{font-size:18px !important;padding:14px 4px !important;border-bottom:1px solid #EEF2F8}
+.ps-mnav>details>a{font-size:16px !important;padding:11px 4px 11px 18px !important}
+.ps-mnav>details[open]{padding-bottom:8px;border-bottom:1px solid #EEF2F8}
+.ps-mnav>details[open]>summary{border-bottom:0}
+.ps-mnav-foot{position:sticky;bottom:0;margin-top:auto;display:flex;flex-direction:column;gap:10px;padding:16px 0 calc(16px + env(safe-area-inset-bottom));background:#FFFFFF}
+.ps-mnav-cta,.ps-mnav-tel{display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:12px;font-weight:700;font-size:16px;text-decoration:none}
+.ps-mnav-cta{background:#0A2A66;color:#FFFFFF !important}
+.ps-mnav-tel{border:2px solid #0A2A66;color:#0A2A66 !important}
+.ps-mnav .ps-mnav-foot a:hover{border-radius:12px}
+html.ps-menu-open{overflow:hidden}
+@media (max-width:760px){
+  :root{--ps-hh:64px}
+  html{scroll-padding-top:80px}
+  .ps-header{padding:0 16px !important}
+  .ps-header__in{height:64px !important;gap:12px !important}
+  .ps-logo{height:36px !important}
+  .ps-lang--head{display:none !important}
+  .ps-call,.ps-menu summary{width:44px !important;height:44px !important}
+}
+
+/* ---- Общи: етикети, заглавия, падащи менюта ---------------------------------------------- */
+.ps-tags li{border:0 !important;background:#EEF2F8 !important}
+h1,h2,h3{text-wrap:balance}
+p,li,dd{text-wrap:pretty}
+form select{-webkit-appearance:none;appearance:none;background:#FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%230B1B3A' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center !important;padding-right:40px !important;color:#0B1B3A;font-family:Manrope,system-ui,sans-serif !important;font-size:16px !important}
+.ps-tech-more{display:none}
+fieldset[aria-invalid="true"] .pe-opt{border-color:#B91C1C}
+fieldset>.ps-field-err{display:block;margin-top:4px}
+
+/* ---- Таблет и телефон ------------------------------------------------------------------- */
+@media (max-width:1080px){
+  [style*="position: sticky; top: 88px"]{top:var(--ps-hh) !important}
+}
+
+/* ---- Телефон ---------------------------------------------------------------------------- */
+@media (max-width:760px){
+  .ps-hide-m{display:none !important}
+
+  /* Отстъпи: 16px от ръба навсякъде, за да има място за текста и формите. */
+  main section,footer{padding-left:16px !important;padding-right:16px !important}
+
+  /* Текст: основният поне 16px, помощният поне 14px. */
+  [style*="font-size: 15px"]{font-size:16px !important}
+  [style*="font-size: 13px"],[style*="font-size: 12px"]{font-size:14px !important}
+  [style*="line-height: 22px"][style*="font-size: 15px"]{line-height:24px !important}
+
+  /* Заглавия: една скала. */
+  h1{font-size:34px !important;line-height:1.15 !important}
+  h2[style*="clamp"]{font-size:26px !important;line-height:1.25 !important}
+  h3[style*="font-size: 30px"],h3[style*="font-size: 26px"],h3[style*="font-size: 22px"]{font-size:22px !important;line-height:1.3 !important}
+
+  /* Хиро: бутоните един под друг, на цяла ширина. */
+  .ps-cta-row{flex-direction:column}
+  .ps-cta-row>a,main>section:first-of-type a.ps-btn-primary,main>section:first-of-type a.ps-btn-secondary{width:100%;justify-content:center;box-sizing:border-box;padding:0 16px !important;text-align:center}
+  #top h1 .ps-mark,#top h1 mark{padding:0 6px}
+
+  /* Лентата с лога: по-ниска, без огромни карти, а бутонът за пауза не крещи. */
+  .ps-logos li{width:132px !important;height:64px !important;padding:10px 16px !important;border-radius:10px !important}
+  .ps-marquee-btn{align-self:flex-end !important;height:44px !important;border:0 !important;padding:0 4px !important;font-size:14px !important;color:#4A5872 !important;text-decoration:underline;text-underline-offset:3px}
+
+  /* „Готова основа“: блоковете един под друг, резултатът (лайм) най-отдолу. */
+  .ps-mosaic{grid-template-columns:minmax(0,1fr) !important}
+  .ps-mosaic>div{grid-column:auto !important;grid-row:auto !important;padding:18px 20px !important}
+  .ps-mosaic>div:nth-child(2){order:4;border-radius:16px 16px 48px 16px !important}
+  .ps-mosaic p[style*="font-size: 20px"]{font-size:18px !important}
+
+  /* Технологии: първо две групи, после бутон. */
+  .ps-tech-list.ps-tech-collapsed>div:nth-child(n+3){display:none !important}
+  #uslugi .ps-list{gap:6px}
+  #uslugi .st:has(>.ps-list){gap:6px !important}
+  #kak ol{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+  #kak ol li{padding:18px 16px !important}
+  #kak ol li:last-child{border-radius:16px 48px 16px 16px !important}
+  .ps-tech-more{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;margin-top:8px;border:1px solid #7C8AA3;border-radius:10px;background:#FFFFFF;color:#0B1B3A;font:600 16px Manrope,sans-serif;cursor:pointer}
+  .ps-tech-more[hidden]{display:none}
+
+  /* Портретът: на цяла ширина, без декоративните блокове. */
+  .ps-portrait{display:block !important;min-height:0 !important}
+  .ps-portrait>div{display:none}
+  .ps-portrait img{aspect-ratio:4/5;height:auto !important;max-height:440px;border-radius:16px 16px 72px 16px !important}
+
+  /* Проектите: мобилен кадър от конфигуратора вместо смаления десктоп. */
+  .ps-case-hero,.ps-featured-media{aspect-ratio:964/620 !important;min-height:0 !important;border-radius:16px 72px 16px 16px !important}
+  .ps-case-hero img,.ps-featured-media img{object-position:left top !important}
+
+  /* Карти и форми: по-малък вътрешен отстъп, за да са полетата широки. */
+  form.ps-inquiry,.pe-card{padding:24px 18px !important;border-radius:16px 72px 16px 16px !important}
+  form.ps-inquiry button[type="submit"],.pe-form [data-submit],.pe-form [data-next]{width:100%;justify-content:center}
+  details[style*="padding: 22px 28px"]{padding:18px 18px !important}
+  li[style*="padding: 28px"],div[style*="padding: 36px"],div[style*="padding: 32px"],div[style*="padding: 30px"],div[style*="padding: 28px"]{padding:22px 20px !important}
+
+  /* Резултатите на проектите: по-ниски плочки с число и текст на един ред. */
+  section[aria-label="Резултати"] .st>div,section[aria-label="Results"] .st>div{display:flex;align-items:center;gap:16px;padding:18px 20px !important}
+  section[aria-label="Резултати"] .st>div>p:first-child,section[aria-label="Results"] .st>div>p:first-child{flex:none;min-width:84px;font-size:34px !important}
+  section[aria-label="Резултати"] .st>div>p+p,section[aria-label="Results"] .st>div>p+p{margin:0 !important}
+
+  /* Хоризонтални филтри: избледняване към ръба, за да личи, че има още. */
+  .ps-filter{margin:0 -16px !important;padding:4px 16px !important}
+  .ps-filter,.ps-subnav-in{-webkit-mask-image:linear-gradient(90deg,#000 82%,transparent);mask-image:linear-gradient(90deg,#000 82%,transparent)}
+
+  /* Футър: имейлът, телефонът и линковете с удобна зона за докосване. */
+  footer a.ps-flink,footer ul a{display:inline-block;padding:10px 0 !important;line-height:24px !important}
+  footer ul{gap:0 !important}
+
+  /* Витрината: кадърът е цял, стъпките са ленти със зона 44px, паузата е бутон. */
+  .ps-show__view{aspect-ratio:1415/674}
+  .ps-show__hs{display:block}
+  .ps-show__tracks{box-sizing:border-box}
+  .ps-show__steps li{min-height:44px}
+  .ps-show__steps button{height:44px !important;background:transparent !important}
+  .ps-show__steps button::before{content:"";position:absolute;left:0;right:0;top:19px;height:6px;border-radius:3px;background:#DCE4F0}
+  .ps-show__steps .p{top:19px !important;height:6px !important;border-radius:3px}
+  .ps-show__pause{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px !important;border:1px solid #DCE4F0;border-radius:10px;background:#FFFFFF;font-size:14px !important;box-sizing:border-box}
+  .ps-show__cap{font-size:14px !important;line-height:22px !important}
+}
+@media (max-width:360px){
+  h1{font-size:30px !important}
+  .ps-show__tracks button{padding:8px 10px}
+  .ps-show__tracks button b{font-size:13px}
+  a[href^="mailto"][style*="font-size: 17px"]{font-size:15px !important}
+}
+.ps-btn-lime:hover{background:#B5E33A !important}
+.ps-mid-cta{width:100%;box-sizing:border-box;grid-column:1/-1}
+@media (max-width:760px){.ps-mid-cta{padding:20px 18px !important}.ps-mid-cta .ps-btn-lime{width:100%}}

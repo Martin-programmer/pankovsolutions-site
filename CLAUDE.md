@@ -36,6 +36,8 @@ secret-bar,domoupravitel}` · `/about` · `/contact` · `/eu-funding` · `/priva
 - Текстът и разметката са в `src/design/<locale>/<ключ>.html` (ключ с `/` → `__`). Промяна в
   българския текст изисква същата промяна в `src/design/en/`.
 - Заглавие и meta description: `src/data/pages.ts`.
+- Мобилната версия: `src/styles/mobile.css` (надписва inline стиловете с !important). Класове за телефон:
+  `ps-hide-m` (скрива на ≤760px), `ps-cta-row`, `ps-mosaic`, `ps-portrait`, `ps-tech-list`, `ps-mid-cta`.
 - Хедър и футър: `src/design/<locale>/_header.html`, `_footer.html`. Маркерите `__CTA__`,
   `__ALT_URL__`, `__ALT_LANG__`, `__ALT_SHORT__`, `__ALT_NAME__`, `__LOCALE__`
   и `<!--TURNSTILE-->` се подменят в `src/lib/render.ts` — не ги трий.

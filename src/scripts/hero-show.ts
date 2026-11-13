@@ -83,7 +83,8 @@ export function initHeroShow(root: HTMLElement) {
     url.innerHTML = '';
     const em = document.createElement('em');
     em.textContent = b.dataset.host ?? '';
-    url.append(em, b.dataset.path ?? '');
+    url.appendChild(em);
+    url.appendChild(document.createTextNode(b.dataset.path ?? ''));
     const kind = b.querySelector('.k')?.textContent ?? '';
     const text = b.querySelector('.c')?.textContent ?? '';
     set('[data-chip-k]', kind);
@@ -97,19 +98,20 @@ export function initHeroShow(root: HTMLElement) {
     const [x1, y1, x2, y2] = area(b);
     const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
     const small = mobile.matches;
-    const z = reduce ? 1 : Number(b.dataset.z ?? 1) + (small ? 0.35 : 0);
+    // На телефон кадърът се показва цял (без увеличение), само с рамка около важното.
+    const z = reduce || small ? 1 : Number(b.dataset.z ?? 1);
     const im = imgs[b.dataset.img!];
     load(b.dataset.img);
     load(next(tr, s).dataset.img);
-    im.style.objectPosition = small ? `${cx}% ${cy}%` : '';
     im.style.transformOrigin = `${cx}% ${cy}%`;
     im.style.transform = 'scale(1)';
     void im.offsetWidth;
     im.classList.add('on');
     requestAnimationFrame(() => (im.style.transform = `scale(${z})`));
-    if (!small) {
-      const w = (x2 - x1) * z, h = (y2 - y1) * z, pad = 0.8;
-      Object.assign(hs.style, { left: `${cx - w / 2 - pad}%`, top: `${cy - h / 2 - pad * 2.1}%`, width: `${w + pad * 2}%`, height: `${h + pad * 4.2}%` });
+    const w = (x2 - x1) * z, h = (y2 - y1) * z, pad = 0.8;
+    Object.assign(hs.style, { left: `${cx - w / 2 - pad}%`, top: `${cy - h / 2 - pad * 2.1}%`, width: `${w + pad * 2}%`, height: `${h + pad * 4.2}%` });
+    if (small) timers.push(window.setTimeout(() => hs.classList.add('on'), 400));
+    else {
       cur.style.left = `${cx}%`;
       cur.style.top = `${cy}%`;
       timers.push(window.setTimeout(() => {

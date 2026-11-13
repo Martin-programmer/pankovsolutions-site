@@ -41,7 +41,7 @@
     d: 'Strictly necessary cookies keep the website working. With your consent we will also use Google and Meta cookies to measure visits and our ads, and to show you our ads on other websites (data may be transferred to the USA). You can change your choice at any time via “Cookie settings” at the bottom of the page.',
     policy: 'Cookie policy', list: 'Full list of cookies',
     reject: 'Reject all', settings: 'Settings', accept: 'Accept all', save: 'Save my choice',
-    sh: 'Cookie settings', sd: 'Choose which cookies to allow. Without your consent only strictly necessary cookies are used.',
+    sh: 'Cookie settings', close: 'Close', sd: 'Choose which cookies to allow. Without your consent only strictly necessary cookies are used.',
     nec: 'Strictly necessary', always: 'Always active',
     necD: 'They remember your cookie choice and protect the forms from spam (Cloudflare Turnstile). The website cannot work properly without them.',
     an: 'Analytics', anD: 'Google Analytics: how many people visit the website, which pages they view and where they come from. Provider: Google Ireland Limited, with possible transfer to the USA.',
@@ -51,7 +51,7 @@
     d: 'Строго необходимите бисквитки осигуряват работата на сайта. С Ваше съгласие ще използваме и бисквитки на Google и Meta, за да измерваме посещаемостта и рекламите си и да Ви показваме наши реклами в други сайтове (възможен е трансфер на данни към САЩ). Можете да промените избора си по всяко време от „Настройки на бисквитките“ в долната част на страницата.',
     policy: 'Политика за бисквитки', list: 'Пълен списък на бисквитките',
     reject: 'Отказвам всички', settings: 'Настройки', accept: 'Приемам всички', save: 'Запазвам избора',
-    sh: 'Настройки на бисквитките', sd: 'Изберете кои бисквитки да разрешите. Без Ваше съгласие се използват само строго необходимите.',
+    sh: 'Настройки на бисквитките', close: 'Затвори', sd: 'Изберете кои бисквитки да разрешите. Без Ваше съгласие се използват само строго необходимите.',
     nec: 'Строго необходими', always: 'Винаги активни',
     necD: 'Запомнят избора Ви за бисквитките и защитават формите от спам (Cloudflare Turnstile). Без тях сайтът не може да работи правилно.',
     an: 'Аналитични', anD: 'Google Analytics: колко хора посещават сайта, кои страници разглеждат и откъде идват. Доставчик: Google Ireland Limited, с възможен трансфер към САЩ.',
@@ -171,7 +171,14 @@
   '.pc-sw[aria-checked="true"]{background:#2563EB}.pc-sw[aria-checked="true"]::after{left:23px}' +
   '.pc-sw:disabled{background:#0A2A66;opacity:.55;cursor:not-allowed}' +
   '.pc-always{font-size:13px;color:#4A5872;font-weight:600}' +
-  '@media(max-width:620px){.pc-wrap{left:8px;right:8px;bottom:8px}.pc-box{padding:18px;border-radius:16px}.pc-p{font-size:14px;line-height:22px}.pc-btn{flex-basis:100%;height:44px}.pc-row{gap:8px;margin-top:14px}}';
+  '.pc-wrap.pc-modal{inset:0;left:0;right:0;bottom:0;align-items:center;padding:16px;background:rgba(7,22,52,.45)}' +
+  '.pc-modal .pc-box{display:flex;flex-direction:column;max-width:640px;max-height:calc(100dvh - 32px);overflow:hidden;padding:0;position:relative}' +
+  '.pc-body{overflow-y:auto;padding:24px 28px 8px;overscroll-behavior:contain}' +
+  '.pc-modal .pc-row{margin:0;padding:14px 28px calc(18px + env(safe-area-inset-bottom));border-top:1px solid #DCE4F0;background:#fff}' +
+  '.pc-x{position:absolute;top:10px;right:10px;width:44px;height:44px;border:0;border-radius:10px;background:transparent;color:#0B1B3A;font-size:26px;line-height:1;cursor:pointer}.pc-x:hover{background:#E3ECFE}' +
+  '.pc-modal .pc-h{padding-right:44px}' +
+  '@media(max-width:620px){.pc-wrap.pc-modal{padding:0;align-items:flex-end;left:0;right:0;bottom:0}.pc-modal .pc-box{border-radius:16px 16px 0 0;max-height:92dvh}.pc-body{padding:20px 18px 8px}.pc-modal .pc-row{padding:12px 18px calc(14px + env(safe-area-inset-bottom))}' +
+  '.pc-wrap{left:8px;right:8px;bottom:8px}.pc-box{padding:18px;border-radius:16px}.pc-p{font-size:14px;line-height:22px}.pc-btn{flex-basis:100%;height:44px}.pc-row{gap:8px;margin-top:14px}}';
 
   var root, lastFocus;
   function el(html) { var d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; }
@@ -207,14 +214,15 @@
 
   function sw(id, on) { return '<button type="button" class="pc-sw" role="switch" id="' + id + '" aria-checked="' + (on ? 'true' : 'false') + '" aria-labelledby="' + id + '-l"></button>'; }
   function showSettings() {
-    if (root) root.remove();
+    if (root) root.remove(); else lastFocus = document.activeElement;
     var c = readConsent() || { analytics: false, marketing: false };
-    root = el('<div class="pc-wrap"><div class="pc-box" role="dialog" aria-modal="true" aria-labelledby="pc-sh">' +
+    root = el('<div class="pc-wrap pc-modal"><div class="pc-box" role="dialog" aria-modal="true" aria-labelledby="pc-sh">' +
+      '<button type="button" class="pc-x" data-a="x" aria-label="' + T.close + '">×</button><div class="pc-body">' +
       '<p class="pc-h" id="pc-sh">' + T.sh + '</p>' +
       '<p class="pc-p">' + T.sd + ' <a href="' + CONFIG.policyUrl + '">' + T.list + '</a></p>' +
       '<div class="pc-cat"><div class="pc-cat-h"><span id="pc-n-l">' + T.nec + '</span><span class="pc-always">' + T.always + '</span></div><p>' + T.necD + '</p></div>' +
       '<div class="pc-cat"><div class="pc-cat-h"><span id="pc-an-l">' + T.an + '</span>' + sw('pc-an', c.analytics) + '</div><p>' + T.anD + '</p></div>' +
-      '<div class="pc-cat"><div class="pc-cat-h"><span id="pc-mk-l">' + T.mk + '</span>' + sw('pc-mk', c.marketing) + '</div><p>' + T.mkD + '</p></div>' +
+      '<div class="pc-cat"><div class="pc-cat-h"><span id="pc-mk-l">' + T.mk + '</span>' + sw('pc-mk', c.marketing) + '</div><p>' + T.mkD + '</p></div></div>' +
       '<div class="pc-row"><button type="button" class="pc-btn" data-a="reject">' + T.reject + '</button>' +
       '<button type="button" class="pc-btn pc-btn2" data-a="save">' + T.save + '</button>' +
       '<button type="button" class="pc-btn" data-a="accept">' + T.accept + '</button></div></div></div>');
@@ -224,6 +232,8 @@
       var a = e.target.getAttribute('data-a');
       if (a === 'reject') finish({ analytics: false, marketing: false }, 'reject_all');
       if (a === 'accept') finish({ analytics: true, marketing: true }, 'accept_all');
+      // Затваряне без избор: ако още няма съгласие, връщаме банера (затварянето не е съгласие).
+      if (a === 'x' || e.target === root) { if (readConsent()) close(); else if (TRACKING) showBanner(); else close(); return; }
       if (a === 'save') finish({ analytics: root.querySelector('#pc-an').getAttribute('aria-checked') === 'true',
                                  marketing: root.querySelector('#pc-mk').getAttribute('aria-checked') === 'true' }, 'custom');
     });
