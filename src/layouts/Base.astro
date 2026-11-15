@@ -35,7 +35,12 @@ const ogImage = `${site}/og/${locale === 'en' ? 'en/' : ''}${ogKey}.png`;
 // Build → Variables. Без нито едно ID банерът за бисквитки не се показва, защото тогава
 // сайтът ползва само строго необходими бисквитки.
 const env = (name: string) => ((process.env[name] ?? import.meta.env[name] ?? '') as string).trim();
-const tracking = { ga4: env('GA4_ID'), ads: env('GOOGLE_ADS_ID'), meta: env('META_PIXEL_ID') };
+const tracking = {
+  ga4: env('GA4_ID'),
+  ads: env('GOOGLE_ADS_ID'),
+  adsLead: env('GOOGLE_ADS_LEAD_LABEL'),
+  meta: env('META_PIXEL_ID'),
+};
 const umamiUrl = env('UMAMI_URL').replace(/\/+$/, '');
 const umamiId = env('UMAMI_WEBSITE_ID');
 const skip = locale === 'bg' ? 'Към съдържанието' : 'Skip to content';
@@ -91,6 +96,7 @@ const skip = locale === 'bg' ? 'Към съдържанието' : 'Skip to cont
       data-policy={pathFor('cookies', locale)}
       data-ga4={tracking.ga4}
       data-ads={tracking.ads}
+      data-ads-lead={tracking.adsLead}
       data-meta={tracking.meta}></script>
     {umamiUrl && umamiId && <script is:inline defer src={`${umamiUrl}/script.js`} data-website-id={umamiId} />}
     {turnstile && hasTurnstile() && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />}

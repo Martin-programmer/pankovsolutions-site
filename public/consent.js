@@ -33,6 +33,7 @@
     policyUrl: ds.policy || '/cookies',
     ga4Id: ds.ga4 || '',                   // Google Analytics 4 (G-…)
     adsId: ds.ads || '',                   // Google Ads (AW-…)
+    adsLead: ds.adsLead || '',             // етикет на конверсията „Запитване“ в Google Ads (AW-…/<етикет>)
     metaPixelId: ds.meta || ''             // Meta Pixel
   };
   var EN = (ds.lang || document.documentElement.lang) === 'en';
@@ -258,7 +259,37 @@
     });
     var c = readConsent();
     if (c) applyConsent(c); else if (TRACKING) showBanner();
+
+    // Обаждане или имейл от сайта: само събитие, без лични данни.
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a[href^="tel:"],a[href^="mailto:"]');
+      if (a) track(a.getAttribute('href').indexOf('tel:') === 0 ? 'phone' : 'email');
+    });
+    // Запитването: формата слага знак преди пренасочването, тук го отчитаме веднъж.
+    try {
+      if (sessionStorage.getItem('ps_lead')) { sessionStorage.removeItem('ps_lead'); track('lead'); }
+    } catch (err) { /* без sessionStorage няма отчитане */ }
+    window.addEventListener('ps:conversion', function (e) { track(e.detail && e.detail.type); });
+  }
+
+  // ---- Конверсии ----------------------------------------------------------
+  // Изпращат се само ако съответният таг е зареден, т.е. само при съгласие.
+  function track(type) {
+    var c = readConsent() || {};
+    var ga = c.analytics && CONFIG.ga4Id, ads = c.marketing && CONFIG.adsId;
+    var meta = c.marketing && CONFIG.metaPixelId && window.fbq;
+    if (type === 'lead') {
+      if (ga) gtag('event', 'generate_lead', { form: 'inquiry' });
+      if (ads && CONFIG.adsLead) gtag('event', 'conversion', { send_to: CONFIG.adsId + '/' + CONFIG.adsLead });
+      if (meta) fbq('track', 'Lead');
+    } else if (type === 'eu_waitlist') {
+      if (ga) gtag('event', 'eu_waitlist_signup');
+      if (meta) fbq('trackCustom', 'EUWaitlist');
+    } else if (type === 'phone' || type === 'email') {
+      if (ga) gtag('event', type === 'phone' ? 'phone_click' : 'email_click');
+      if (meta) fbq('track', 'Contact');
+    }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-  window.PankovConsent = { open: showSettings, get: readConsent };
+  window.PankovConsent = { open: showSettings, get: readConsent, track: track };
 })();

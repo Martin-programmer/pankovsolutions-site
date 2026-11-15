@@ -154,6 +154,11 @@ for (const form of document.querySelectorAll<HTMLFormElement>('form.ps-inquiry')
       button.textContent = label;
     }
     if (reply.ok) {
+      try {
+        sessionStorage.setItem('ps_lead', '1');
+      } catch {
+        /* без sessionStorage конверсията не се отчита */
+      }
       location.href = lang === 'en' ? '/en/contact/sent' : '/contact/sent';
       return;
     }
@@ -368,6 +373,7 @@ if (eu) {
       window.turnstile?.reset();
       return;
     }
+    window.dispatchEvent(new CustomEvent('ps:conversion', { detail: { type: 'eu_waitlist' } }));
     if (done) {
       const labelOf = (n: string) =>
         [...form.querySelectorAll<HTMLInputElement>(`[name="${n}"]:checked`)]
