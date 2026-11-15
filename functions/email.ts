@@ -138,7 +138,7 @@ export function inquiryAutoreply(d: { name: string; message: string; service?: s
       ],
       rows: d.service ? [{ label: 'Interested in', value: d.service }] : [],
       note: d.message,
-      after: ['What happens next: we read your description, check how we can help and get in touch to arrange a free consultation.'],
+      after: ['What happens next: we read your description, check how we can help and get in touch for a short call. Within 3 business days after it you receive a written plan with an estimated price.'],
       cta: { href: `${company.site}/en/projects`, label: 'See our projects' },
     });
   }
@@ -153,7 +153,7 @@ export function inquiryAutoreply(d: { name: string; message: string; service?: s
     ],
     rows: d.service ? [{ label: 'Интересувате се от', value: d.service }] : [],
     note: d.message,
-    after: ['Какво следва: запознаваме се с описанието, проверяваме как можем да помогнем и се свързваме с Вас, за да уговорим безплатна консултация.'],
+    after: ['Какво следва: запознаваме се с описанието, проверяваме как можем да помогнем и се свързваме с Вас за кратък разговор. До 3 работни дни след него получавате писмен план с ориентировъчна цена.'],
     cta: { href: `${company.site}/projects`, label: 'Вижте нашите проекти' },
   });
 }

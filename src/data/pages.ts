@@ -52,8 +52,8 @@ export const PAGES: PageMeta[] = [
       en: 'Pankov Solutions – business systems, online stores and custom software',
     },
     description: {
-      bg: 'ERP и CRM системи на Odoo, онлайн магазини, уеб приложения и IT инфраструктура за малки и средни фирми. Безплатна първа консултация.',
-      en: 'Odoo ERP and CRM systems, online stores, web applications and IT infrastructure for small and medium-sized businesses. Free first consultation.',
+      bg: 'ERP и CRM системи на Odoo, онлайн магазини, уеб приложения и IT инфраструктура за малки и средни фирми. Безплатен план с ориентировъчна цена до 3 работни дни.',
+      en: 'Odoo ERP and CRM systems, online stores, web applications and IT infrastructure for small and medium-sized businesses. Free plan with an estimated price within 3 business days.',
     },
   },
   {
@@ -188,8 +188,8 @@ export const PAGES: PageMeta[] = [
     name: { bg: 'Контакти', en: 'Contact' },
     title: { bg: 'Контакти' + B, en: 'Contact' + B },
     description: {
-      bg: 'Обадете се на 0877 944 224, пишете ни или попълнете формата. Отговаряме до 1 работен ден, а първата консултация е безплатна.',
-      en: 'Call +359 877 944 224, email us or fill in the form. We reply within one business day and the first consultation is free.',
+      bg: 'Обадете се на 0877 944 224, пишете ни или попълнете формата. Отговаряме до 1 работен ден, а планът с ориентировъчна цена е безплатен.',
+      en: 'Call +359 877 944 224, email us or fill in the form. We reply within one business day, and the plan with an estimated price is free.',
     },
   },
   {
