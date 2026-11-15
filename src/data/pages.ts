@@ -173,6 +173,19 @@ export const PAGES: PageMeta[] = [
     'A CRM tailored to building management and an online academy where new staff learn the job and the law at their own pace.',
   ]),
   {
+    key: 'industries/manufacturing',
+    kind: 'page',
+    name: { bg: 'Производствени фирми', en: 'Manufacturing companies' },
+    title: {
+      bg: 'Система за производствени фирми: запитвания, оферти и поръчки' + B,
+      en: 'Systems for manufacturing companies: enquiries, quotes and orders' + B,
+    },
+    description: {
+      bg: 'Запитванията, чертежите, офертите и поръчките на едно място в Odoo. Внедряваме на етапи, без да спирате цеха, и обучаваме екипа. Пример: Равера, металообработка.',
+      en: 'Enquiries, drawings, quotes and orders in one Odoo system. We roll out in stages without stopping production and train your team. Example: Ravera, metalworking.',
+    },
+  },
+  {
     key: 'about',
     kind: 'page',
     name: { bg: 'За нас', en: 'About us' },

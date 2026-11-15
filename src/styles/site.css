@@ -17,6 +17,7 @@ button[disabled]{opacity:.7;cursor:progress}
 .ps-check{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
 .ps-check li{display:flex;gap:12px;align-items:flex-start;font-size:16px;line-height:24px}
 .ps-check li::before{content:"";flex:none;width:22px;height:22px;border-radius:6px;background:#2563EB url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4 8-9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat;margin-top:1px}
+.ps-check.ps-x li::before{background:#DCE4F0 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 7l10 10M17 7L7 17' fill='none' stroke='%234A5872' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center/14px no-repeat}
 /* Българските форми на кирилицата (locl) са изключени навсякъде, както в дизайна. Inline
    `font:` в бутоните иначе ги връща. */
 *,*::before,*::after,::placeholder{font-feature-settings:"locl" 0 !important}

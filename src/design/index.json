@@ -17,6 +17,7 @@
   "services/business-intelligence": "ca71b1bc",
   "services/backups": "ca71b1bc",
   "services/crm": "ca71b1bc",
+    "industries/manufacturing": "ca71b1bc",
   "services/document-cloud": "ca71b1bc",
   "services/desktop-and-mobile-apps": "ca71b1bc",
   "services/erp": "1198d633",
