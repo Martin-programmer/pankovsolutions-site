@@ -17,6 +17,11 @@ export interface Env {
   // Доказателства за съгласие за бисквитки (KV namespace „consent-log“). По избор.
   CONSENT_LOG?: KVNamespace;
   INQUIRY_MOCK?: string;
+  // Odoo CRM (support.pankovsolutions.com): всяко запитване става възможност в CRM-а. По избор.
+  ODOO_URL?: string;
+  ODOO_DB?: string;
+  ODOO_UID?: string;
+  ODOO_API_KEY?: string;
 }
 
 // JSON за fetch (accept: application/json), иначе 303 към страница - формите работят и без JS.
@@ -100,4 +105,65 @@ export async function rateCount(env: Env, key: string, windowSeconds: number): P
   if (!env.INQUIRY_RL) return;
   const count = Number((await env.INQUIRY_RL.get(key)) ?? '0');
   await env.INQUIRY_RL.put(key, String(count + 1), { expirationTtl: windowSeconds });
+}
+
+// ---- Odoo CRM ------------------------------------------------------------------------------
+// Външното JSON-RPC на Odoo (/jsonrpc → object.execute_kw) с API ключ на отделен потребител,
+// който има права само за CRM. Ако нещо липсва или Odoo не отговори, запитването пак е в пощата.
+async function odoo(env: Env, model: string, method: string, args: unknown[], kwargs: Record<string, unknown> = {}) {
+  const res = await fetch(`${env.ODOO_URL!.replace(/\/$/, '')}/jsonrpc`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      method: 'call',
+      params: { service: 'object', method: 'execute_kw', args: [env.ODOO_DB, Number(env.ODOO_UID), env.ODOO_API_KEY, model, method, args, kwargs] },
+    }),
+  });
+  const body = (await res.json()) as { result?: unknown; error?: { data?: { message?: string } } };
+  if (!res.ok || body.error) throw new Error(`Odoo ${model}.${method}: ${body.error?.data?.message ?? res.status}`);
+  return body.result;
+}
+
+export const odooEnabled = (env: Env) => Boolean(env.ODOO_URL && env.ODOO_DB && env.ODOO_UID && env.ODOO_API_KEY);
+
+const SOURCE_NAMES: Record<string, string> = {
+  'google-ads': 'Google Ads',
+  meta: 'Meta',
+  organic: 'Сайт (органично)',
+};
+
+export async function createOdooLead(
+  env: Env,
+  d: { name: string; company: string; email: string; phone: string; message: string; serviceTag?: string; serviceName?: string; locale: string; src: string; campaign: string; landing: string; page: string },
+) {
+  const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const src = SOURCE_NAMES[d.src] ?? '';
+  const ids = async (model: string, name: string) => (name ? ((await odoo(env, model, 'search', [[['name', '=', name]]], { limit: 1 })) as number[]) : []);
+  const [tag] = d.serviceTag ? await ids('crm.tag', d.serviceTag) : [];
+  const [source] = await ids('utm.source', src);
+  const info = [
+    ['Услуга', d.serviceName ?? '—'],
+    ['Източник', src || d.src || '—'],
+    ['Кампания', d.campaign || '—'],
+    ['Първа страница', d.landing || '—'],
+    ['Изпратено от', d.page || '—'],
+    ['Език', d.locale],
+  ];
+  const description =
+    `<p>${esc(d.message).replace(/\n/g, '<br>')}</p><hr><p>` + info.map(([k, v]) => `<b>${k}:</b> ${esc(v)}`).join('<br>') + '</p>';
+  const title = [d.serviceName, d.company || d.name].filter(Boolean).join(' – ');
+  return odoo(env, 'crm.lead', 'create', [
+    {
+      type: 'opportunity',
+      name: title || 'Запитване от сайта',
+      contact_name: d.name,
+      partner_name: d.company || false,
+      email_from: d.email,
+      phone: d.phone,
+      description,
+      tag_ids: tag ? [[6, 0, [tag]]] : false,
+      source_id: source ?? false,
+    },
+  ]);
 }

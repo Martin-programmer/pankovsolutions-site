@@ -96,6 +96,49 @@ async function post(form: HTMLFormElement, data: FormData): Promise<Reply> {
   }
 }
 
+// ---- Откъде идва посетителят ---------------------------------------------------------------
+// За да знаем в CRM-а коя реклама или страница е довела запитването. Изпраща се само с формата.
+// Между страниците се помни в sessionStorage само при съгласие за аналитични бисквитки;
+// без съгласие се взима от страницата, от която се праща формата.
+type Source = { src: string; campaign: string; landing: string };
+const detectSource = (): Source => {
+  const q = new URLSearchParams(location.search);
+  let ref = '';
+  try {
+    ref = document.referrer && !document.referrer.startsWith(location.origin) ? new URL(document.referrer).hostname : '';
+  } catch {
+    /* невалиден referrer */
+  }
+  let src = 'direct';
+  if (q.has('gclid') || q.has('gbraid') || q.has('wbraid')) src = 'google-ads';
+  else if (q.has('fbclid') || /facebook|instagram|meta/i.test(q.get('utm_source') ?? '')) src = 'meta';
+  else if (q.get('utm_source')) src = q.get('utm_source') ?? 'direct';
+  else if (/google\.|bing\.|duckduckgo|yahoo/.test(ref)) src = 'organic';
+  else if (ref) src = 'ref:' + ref;
+  return { src, campaign: q.get('utm_campaign') ?? '', landing: location.pathname };
+};
+const storedSource = (): Source | null => {
+  try {
+    return JSON.parse(sessionStorage.getItem('ps_src') ?? 'null') as Source | null;
+  } catch {
+    return null;
+  }
+};
+const rememberSource = () => {
+  const consent = (window as unknown as { PankovConsent?: { get: () => { analytics?: boolean } | null } }).PankovConsent?.get();
+  if (!consent?.analytics) return;
+  try {
+    if (!sessionStorage.getItem('ps_src')) sessionStorage.setItem('ps_src', JSON.stringify(detectSource()));
+  } catch {
+    /* без sessionStorage */
+  }
+};
+rememberSource();
+window.addEventListener('load', rememberSource);
+document.addEventListener('click', (e) => {
+  if ((e.target as Element | null)?.closest?.('[data-a="accept"],[data-a="save"]')) setTimeout(rememberSource, 0);
+});
+
 // ---- Форма за запитване ---------------------------------------------------------------
 let formCount = 0;
 for (const form of document.querySelectorAll<HTMLFormElement>('form.ps-inquiry')) {
@@ -145,7 +188,13 @@ for (const form of document.querySelectorAll<HTMLFormElement>('form.ps-inquiry')
     }
     let reply: Reply;
     try {
-      reply = await post(form, new FormData(form));
+      const data = new FormData(form);
+      const a = storedSource() ?? detectSource();
+      data.set('src', a.src);
+      data.set('campaign', a.campaign);
+      data.set('landing', a.landing);
+      data.set('page', location.pathname);
+      reply = await post(form, data);
     } catch {
       reply = { ok: false, message: L.network };
     }

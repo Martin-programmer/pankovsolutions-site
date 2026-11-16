@@ -3,13 +3,38 @@ import { z } from 'zod';
 import { company } from '../../src/data/company';
 import { inquiryAutoreply, inquiryNotification } from '../email';
 import { fieldMsg, isLocale, msg, SERVICES, type Locale } from '../messages';
-import { type Env, oneLine, respond, safeError, sameOrigin, sendResend, sendTelegram, verifyTurnstile } from '../lib';
+import { createOdooLead, type Env, odooEnabled, oneLine, respond, safeError, sameOrigin, sendResend, sendTelegram, verifyTurnstile } from '../lib';
 
 // POST /api/inquiry - формата за запитване (начална страница и /contact).
 // Ред: произход → размер → timing (< 3 s) → honeypot → rate limit (KV, 5/час/IP) →
-// Turnstile → Zod → Resend (известие до нас + автоотговор, HTML) → Telegram → отговор.
+// Turnstile → Zod → Resend (известие до нас + автоотговор, HTML) → Odoo CRM → Telegram → отговор.
 // С INQUIRY_MOCK=1 нищо не се изпраща - съдържанието се логва.
 // Без JS: обикновен POST → 303 към /contact/sent или /contact/error.
+
+// Етикетът в CRM-а за всяка услуга от падащото меню.
+const SERVICE_TAGS: Record<string, string> = {
+  erp: 'ERP',
+  crm: 'CRM',
+  'warehouse-management': 'Склад',
+  'business-intelligence': 'Бизнес анализи',
+  'learning-platform': 'Софтуер по поръчка',
+  'document-cloud': 'Инфраструктура',
+  'online-stores': 'Онлайн магазин',
+  'corporate-websites': 'Сайт',
+  'web-applications': 'Софтуер по поръчка',
+  'desktop-and-mobile-apps': 'Софтуер по поръчка',
+  'legacy-modernization': 'Софтуер по поръчка',
+  integrations: 'Интеграции',
+  'process-automation': 'Автоматизация',
+  'business-analysis': 'Софтуер по поръчка',
+  'ux-ui-design': 'Сайт',
+  'audit-and-testing': 'Софтуер по поръчка',
+  'servers-and-hosting': 'Инфраструктура',
+  'network-security': 'Инфраструктура',
+  backups: 'Инфраструктура',
+  'support-and-monitoring': 'Инфраструктура',
+  'eu-funding': 'ЕС финансиране',
+};
 
 const RATE_LIMIT = 5;
 const RATE_WINDOW = 60 * 60;
@@ -138,6 +163,27 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   } catch (err) {
     console.error('[inquiry] resend notify failed:', safeError(err));
     return fail(502, msg(locale, 'error.generic'));
+  }
+  // Възможност в Odoo CRM. Ако падне, запитването вече е в пощата ни.
+  if (odooEnabled(env)) {
+    try {
+      await createOdooLead(env, {
+        name: oneLine(d.name),
+        company: d.company ? oneLine(d.company) : '',
+        email: d.email,
+        phone: d.phone,
+        message: d.message,
+        serviceTag: d.service ? SERVICE_TAGS[d.service] : undefined,
+        serviceName: service?.bg,
+        locale,
+        src: oneLine(field('src')).slice(0, 80),
+        campaign: oneLine(field('campaign')).slice(0, 120),
+        landing: oneLine(field('landing')).slice(0, 200),
+        page: oneLine(field('page')).slice(0, 200),
+      });
+    } catch (err) {
+      console.error('[inquiry] odoo lead failed:', safeError(err));
+    }
   }
   // Автоотговорът и Telegram са известия: ако паднат, запитването вече е в пощата ни.
   try {
