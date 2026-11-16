@@ -23,5 +23,13 @@ id = "bc9f984e5d2f47498ca3dbaf57ce2c30"
 [[kv_namespaces]]
 binding = "CONSENT_LOG"
 
+# Odoo CRM (support.pankovsolutions.com): всяко запитване става възможност в CRM-а.
+# ODOO_API_KEY е Secret в Dashboard (ключ на потребителя „Запитвания от сайта“), не тук.
+# Тези трите са тук, защото wrangler deploy трие текстовите променливи, зададени само в Dashboard.
+[vars]
+ODOO_URL = "https://support.pankovsolutions.com"
+ODOO_DB = "support"
+ODOO_UID = "10"
+
 [observability]
 enabled = true

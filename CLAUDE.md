@@ -26,6 +26,8 @@
   Analytics, Google Ads и Meta Pixel се зареждат само след съгласие. ID-тата са Build Variables.
 - Umami (без бисквитки) остава по избор.
 - Секрети само в Cloudflare env и `.dev.vars`. Никога в repo-то.
+- Odoo CRM: `ODOO_URL`, `ODOO_DB`, `ODOO_UID` в `wrangler.toml` [vars], `ODOO_API_KEY` като Secret. Всяко запитване
+  става възможност в CRM-а на support.pankovsolutions.com (етикет за услугата + източник: Google Ads / Meta / органично).
 
 ## Структура на страниците
 `/` · `/services` · `/services/<slug>` (20 услуги) · `/projects` · `/projects/{dushcabini,ravera,
