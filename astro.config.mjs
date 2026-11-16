@@ -17,7 +17,7 @@ export default defineConfig({
     sitemap({
       i18n: { defaultLocale: 'bg', locales: { bg: 'bg', en: 'en' } },
       // Вътрешните/noindex страници не влизат в sitemap-а.
-      filter: (page) => !/\/(contact\/sent|contact\/error|404)(\/|$)/.test(page) && !page.includes('/og/'),
+      filter: (page) => !/\/(contact\/sent|contact\/error|404)(\/|$)/.test(page) && !page.includes('/og/') && !page.includes('/studio'),
     }),
   ],
   // Целият CSS inline в HTML-а: една заявка по-малко преди първия рендер на бавна мрежа

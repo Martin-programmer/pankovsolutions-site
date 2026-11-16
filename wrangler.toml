@@ -26,6 +26,11 @@ binding = "CONSENT_LOG"
 # Odoo CRM (support.pankovsolutions.com): всяко запитване става възможност в CRM-а.
 # ODOO_API_KEY е Secret в Dashboard (ключ на потребителя „Запитвания от сайта“), не тук.
 # Тези трите са тук, защото wrangler deploy трие текстовите променливи, зададени само в Dashboard.
+# Студиото (/studio): история на генериранията. Без id - wrangler deploy го създава сам.
+# Секретите KIE_API_KEY и STUDIO_PASSWORD са в Dashboard.
+[[kv_namespaces]]
+binding = "STUDIO_KV"
+
 [vars]
 ODOO_URL = "https://support.pankovsolutions.com"
 ODOO_DB = "support"

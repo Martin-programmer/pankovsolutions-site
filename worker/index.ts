@@ -2,6 +2,7 @@
 import { onRequest as inquiryGet, onRequestPost as inquiryPost } from '../functions/api/inquiry';
 import { onRequest as surveyGet, onRequestPost as surveyPost } from '../functions/api/survey';
 import { onRequest as consentGet, onRequestPost as consentPost } from '../functions/api/consent';
+import { onStudio, type StudioEnv } from '../functions/api/studio';
 
 // Worker със статични файлове (Cloudflare Workers Builds; Pages вече не се предлага за нови
 // акаунти). Всичко, което не е API, идва от dist/ през ASSETS binding-а - заедно с _headers и
@@ -24,6 +25,8 @@ const ROUTES: Record<string, { post: Handler; other: Handler }> = {
 export default {
   async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
+    // Студиото за реклами (/studio): закрито с парола, вика Kie.ai.
+    if (url.pathname.startsWith('/api/studio/')) return onStudio({ request, env: env as unknown as StudioEnv });
     const route = ROUTES[url.pathname];
     if (route) {
       const context = {

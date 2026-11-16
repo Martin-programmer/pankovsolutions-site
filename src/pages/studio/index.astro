@@ -1,0 +1,173 @@
+---
+// Студио за реклами и постове. Закрито с парола (/api/studio/login), не се индексира и не е в
+// sitemap-а. Логиката е в src/scripts/studio.ts, сървърната част в functions/api/studio.ts.
+---
+<!doctype html>
+<html lang="bg">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Студио · Pankov Solutions</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style is:global>
+      @font-face { font-family: Onest; src: url(/fonts/onest-cyrillic-wght-normal.woff2) format('woff2'); font-weight: 100 900; unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+      @font-face { font-family: Onest; src: url(/fonts/onest-latin-wght-normal.woff2) format('woff2'); font-weight: 100 900; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+      @font-face { font-family: Manrope; src: url(/fonts/manrope-cyrillic-wght-normal.woff2) format('woff2'); font-weight: 200 800; unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+      @font-face { font-family: Manrope; src: url(/fonts/manrope-latin-wght-normal.woff2) format('woff2'); font-weight: 200 800; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+      :root { --navy: #0A2A66; --blue: #2563EB; --lime: #C6F24E; --text: #0B1B3A; --muted: #4A5872; --bg: #F6F8FB; --line: #DCE4F0; }
+      * { box-sizing: border-box; font-feature-settings: 'locl' 0; }
+      body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 Manrope, system-ui, sans-serif; }
+      h1, h2, h3 { font-family: Onest, sans-serif; font-weight: 600; margin: 0; }
+      button, input, select, textarea { font: inherit; color: inherit; }
+      button { cursor: pointer; }
+      :focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+      .top { display: flex; align-items: center; gap: 16px; padding: 12px 20px; background: var(--navy); color: #fff; position: sticky; top: 0; z-index: 5; }
+      .top img { height: 30px; }
+      .top h1 { font-size: 18px; }
+      .top .sp { flex: 1; }
+      .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.12); font-size: 13px; }
+      .btn { height: 40px; padding: 0 16px; border-radius: 10px; border: 0; background: var(--navy); color: #fff; font-weight: 600; }
+      .btn.lime { background: var(--lime); color: var(--navy); }
+      .btn.ghost { background: transparent; border: 1px solid var(--line); color: var(--text); }
+      .top .btn.ghost { color: #fff; border-color: rgba(255,255,255,.3); }
+      .btn:disabled { opacity: .5; cursor: wait; }
+      .login { max-width: 360px; margin: 12vh auto; background: #fff; border-radius: 16px 16px 72px 16px; padding: 32px; display: grid; gap: 14px; }
+      .app { display: grid; grid-template-columns: 360px minmax(0, 1fr) 420px; gap: 16px; padding: 16px; align-items: start; }
+      @media (max-width: 1300px) { .app { grid-template-columns: 340px minmax(0, 1fr); } .col.ed { grid-column: 1 / -1; } }
+      @media (max-width: 860px) { .app { grid-template-columns: 1fr; } }
+      .col { background: #fff; border-radius: 16px; padding: 18px; display: grid; gap: 14px; }
+      .col h2 { font-size: 17px; }
+      label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; }
+      input[type=text], input[type=password], select, textarea { border: 1px solid #7C8AA3; border-radius: 10px; padding: 9px 11px; background: #fff; font-weight: 400; font-size: 14px; }
+      textarea { resize: vertical; min-height: 70px; }
+      .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; }
+      .row > * { flex: 1; min-width: 0; }
+      .hint { font-size: 12px; color: var(--muted); font-weight: 400; }
+      .topics { max-height: 230px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; padding: 8px; display: grid; gap: 2px; font-weight: 400; }
+      .topics b { font-size: 12px; color: var(--muted); margin-top: 6px; }
+      .topics label { display: flex; gap: 8px; align-items: center; font-weight: 400; font-size: 13px; }
+      .concepts { display: grid; gap: 10px; }
+      .card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 6px; font-size: 13px; }
+      .card h3 { font-size: 15px; }
+      .card .angle { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--blue); font-weight: 700; }
+      .card p { margin: 0; white-space: pre-wrap; }
+      .card .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+      .card .actions .btn { height: 32px; font-size: 13px; padding: 0 10px; }
+      .refs { display: flex; gap: 8px; flex-wrap: wrap; }
+      .ref { position: relative; width: 84px; height: 60px; border-radius: 8px; overflow: hidden; border: 2px solid var(--line); background: #eef2f8; padding: 0; }
+      .ref img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .ref.on { border-color: var(--blue); }
+      .ref .x { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border-radius: 50%; border: 0; background: rgba(11,27,58,.8); color: #fff; font-size: 12px; line-height: 20px; padding: 0; }
+      .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+      .shot { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; display: grid; }
+      .shot .img { aspect-ratio: 1; background: #eef2f8 center/cover no-repeat; display: grid; place-items: center; color: var(--muted); font-size: 12px; text-align: center; padding: 8px; border: 0; width: 100%; }
+      .shot .meta { padding: 8px; font-size: 11px; color: var(--muted); display: grid; gap: 4px; }
+      .shot .meta .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+      .shot .meta button { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 3px 8px; font-size: 12px; }
+      .spin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--navy); animation: s 1s linear infinite; }
+      @keyframes s { to { transform: rotate(360deg); } }
+      canvas { width: 100%; height: auto; border-radius: 12px; background: #eef2f8; display: block; }
+      .msg { font-size: 13px; padding: 8px 10px; border-radius: 8px; background: #FEF3C7; }
+      .msg:empty { display: none; }
+      .msg.err { background: #FEE2E2; color: #991B1B; }
+      .copy { background: #F6F8FB; border-radius: 10px; padding: 10px; font-size: 13px; white-space: pre-wrap; }
+      dialog { border: 0; border-radius: 16px; padding: 18px; max-width: 900px; width: 92vw; }
+      dialog::backdrop { background: rgba(11,27,58,.5); }
+      [hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <header class="top">
+      <img src="/img/logo-white.svg" alt="Pankov Solutions" />
+      <h1>Студио</h1>
+      <span class="sp"></span>
+      <span class="pill" id="credit" hidden></span>
+      <button class="btn ghost" id="logout" hidden>Изход</button>
+    </header>
+
+    <main>
+      <form class="login" id="login" hidden>
+        <h2>Вход в студиото</h2>
+        <label>Парола <input type="password" name="password" autocomplete="current-password" required /></label>
+        <button class="btn" type="submit">Вход</button>
+        <p class="msg err" id="login-msg" role="alert"></p>
+      </form>
+
+      <div class="app" id="app" hidden>
+        <section class="col" aria-labelledby="h-brief">
+          <h2 id="h-brief">1. Бриф и текстове</h2>
+          <div>
+            <span style="font-size:13px;font-weight:600">Тема от сайта</span>
+            <div class="topics" id="topics" role="group" aria-label="Теми от сайта"></div>
+          </div>
+          <div class="row">
+            <label>Вид <select id="kind"><option value="ad">Реклама (Meta)</option><option value="post">Пост</option></select></label>
+            <label>Брой <select id="count"><option>3</option><option>2</option><option>4</option><option>6</option><option>8</option></select></label>
+          </div>
+          <label>Насока <span class="hint">по избор: идея, ъгъл, сезон, аудитория</span><textarea id="angle" rows="2" placeholder="Например: фирми, които още водят склада в Excel"></textarea></label>
+          <label>Модел за текстове <select id="wmodel"><option value="gemini-3.1-pro">Gemini 3.1 Pro (по-добър)</option><option value="gemini-3-flash">Gemini 3 Flash (по-бърз)</option></select></label>
+          <button class="btn" id="write">Напиши концепции</button>
+          <p class="msg" id="write-msg" role="status"></p>
+          <div class="concepts" id="concepts"></div>
+        </section>
+
+        <section class="col" aria-labelledby="h-gen">
+          <h2 id="h-gen">2. Визия</h2>
+          <label>Промпт за картинката <span class="hint">на английски дава най-добър резултат; без текст в картинката — текста го слагаме в стъпка 3</span>
+            <textarea id="prompt" rows="4"></textarea></label>
+          <div class="row">
+            <label>Модел <select id="model">
+              <option value="nano-banana-pro">Nano Banana Pro — сцени + истински екран</option>
+              <option value="gpt-image-2">GPT Image 2 — следва указания, текст</option>
+              <option value="seedream-5">Seedream 5 Lite — серия в един стил</option>
+              <option value="nano-banana-2">Nano Banana 2 — бързо и евтино</option>
+            </select></label>
+            <label>Формат <select id="aspect"><option value="4:5">4:5 лента</option><option value="1:1">1:1 квадрат</option><option value="9:16">9:16 сторита</option><option value="16:9">16:9</option></select></label>
+            <label>Качество <select id="res"><option>2K</option><option>1K</option><option>4K</option></select></label>
+            <label>Брой <select id="n"><option>1</option><option>2</option><option>4</option></select></label>
+          </div>
+          <div>
+            <span style="font-size:13px;font-weight:600">Референтни снимки</span> <span class="hint">истинските екрани от сайта се слагат в сцената</span>
+            <div class="refs" id="refs" style="margin-top:6px"></div>
+            <div class="row" style="margin-top:8px">
+              <button class="btn ghost" id="pick" type="button">+ От сайта</button>
+              <label class="btn ghost" style="display:inline-flex;align-items:center;justify-content:center;font-size:15px">+ Качи файл<input type="file" id="file" accept="image/png,image/jpeg,image/webp" hidden /></label>
+            </div>
+          </div>
+          <button class="btn lime" id="generate">Генерирай</button>
+          <p class="msg" id="gen-msg" role="status"></p>
+          <div class="row" style="align-items:center"><h2 style="flex:1">Резултати</h2><button class="btn ghost" id="reload" type="button" style="flex:none;height:32px">Обнови</button></div>
+          <div class="gallery" id="gallery"></div>
+        </section>
+
+        <section class="col ed" aria-labelledby="h-ed">
+          <h2 id="h-ed">3. Текст върху визията</h2>
+          <canvas id="cv" width="1080" height="1350" aria-label="Преглед на визията"></canvas>
+          <div class="row">
+            <label>Размер <select id="size"><option value="1080x1350">1080×1350 (4:5)</option><option value="1080x1080">1080×1080 (1:1)</option><option value="1080x1920">1080×1920 (9:16)</option><option value="1200x628">1200×628 (линк)</option></select></label>
+            <label>Оформление <select id="layout"><option value="band">Лента отдолу</option><option value="card">Карта отгоре</option><option value="clean">Само лого</option><option value="none">Без нищо</option></select></label>
+          </div>
+          <label>Заглавие <input type="text" id="t-head" /></label>
+          <label>Дума за открояване <span class="hint">лайм подчертаване на една дума или израз от заглавието</span><input type="text" id="t-mark" /></label>
+          <label>Подзаглавие <input type="text" id="t-sub" /></label>
+          <div class="row">
+            <label>Бутон <input type="text" id="t-cta" /></label>
+            <label>Значка <input type="text" id="t-badge" placeholder="напр. от 900 €" /></label>
+          </div>
+          <label>Позиция на картинката <input type="range" id="pos" min="0" max="100" value="50" /></label>
+          <button class="btn lime" id="download">Изтегли PNG</button>
+          <label>Основен текст на рекламата/поста <textarea id="primary" rows="6"></textarea></label>
+          <button class="btn ghost" id="copy" type="button">Копирай текста</button>
+        </section>
+      </div>
+    </main>
+
+    <dialog id="picker" aria-labelledby="picker-h">
+      <div class="row" style="align-items:center;margin-bottom:12px"><h2 id="picker-h" style="flex:1">Истински снимки от сайта</h2><button class="btn ghost" id="picker-close" style="flex:none">Затвори</button></div>
+      <div class="gallery" id="picker-list"></div>
+    </dialog>
+
+    <script src="../../scripts/studio.ts"></script>
+  </body>
+</html>
