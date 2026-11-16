@@ -74,6 +74,13 @@ const MODELS: Record<string, (r: GenReq) => { model: string; input: Record<strin
     model: 'nano-banana-2',
     input: { prompt: r.prompt, aspect_ratio: r.aspect, resolution: r.resolution ?? '2K', output_format: 'png', ...(r.refs?.length ? { image_input: r.refs.slice(0, 8) } : {}) },
   }),
+  // GPT Image 2.6 Flare (ноември 2026): най-добре следва указания и изписва текст; поддържа 4:5.
+  'gpt-image-2-6': (r) => {
+    const input = { prompt: r.prompt, aspect_ratio: r.aspect, resolution: r.resolution ?? '2K', quality: 'high', output_format: 'png' };
+    return r.refs?.length
+      ? { model: 'gpt-image-2-6/flare-image-to-image', input: { ...input, input_urls: r.refs.slice(0, 16) } }
+      : { model: 'gpt-image-2-6/flare-text-to-image', input };
+  },
   'gpt-image-2': (r) => {
     // GPT Image 2 няма 4:5 и 2:3; най-близкото е 3:4.
     const aspect = ['1:1', '9:16', '16:9', '4:3', '3:4'].includes(r.aspect) ? r.aspect : '3:4';
@@ -82,11 +89,21 @@ const MODELS: Record<string, (r: GenReq) => { model: string; input: Record<strin
       ? { model: 'gpt-image-2-image-to-image', input: { prompt: r.prompt, input_urls: r.refs.slice(0, 16), aspect_ratio: aspect, resolution } }
       : { model: 'gpt-image-2-text-to-image', input: { prompt: r.prompt, aspect_ratio: aspect, resolution } };
   },
-  'seedream-5': (r) => {
+  // Seedream 5.5 (9.11.2026): най-последователен стил в серия, добра светлина и материи.
+  'seedream-5-5': (r) => {
     const aspect = ['1:1', '4:3', '3:4', '16:9', '9:16', '2:3', '3:2', '21:9'].includes(r.aspect) ? r.aspect : '3:4';
+    const size = r.resolution === '1K' ? '1K' : '2K';
     return r.refs?.length
-      ? { model: 'seedream/5-lite-image-to-image', input: { prompt: r.prompt, image_urls: r.refs.slice(0, 14), aspect_ratio: aspect, quality: 'basic' } }
-      : { model: 'seedream/5-lite-text-to-image', input: { prompt: r.prompt, aspect_ratio: aspect, quality: 'basic' } };
+      ? { model: 'seedream/5-5-image-to-image', input: { prompt: r.prompt, image_urls: r.refs.slice(0, 10), aspect_ratio: aspect, size, output_format: 'png' } }
+      : { model: 'seedream/5-5-text-to-image', input: { prompt: r.prompt, aspect_ratio: aspect, size, output_format: 'png' } };
+  },
+  // Flux 3 Klein: най-евтиният (~0,01 $), добър текст; за бързи чернови.
+  'flux-3-klein': (r) => {
+    const aspect = ['1:1', '4:3', '3:4', '3:2', '2:3', '16:9', '9:16', '21:9', '9:21'].includes(r.aspect) ? r.aspect : '3:4';
+    const input = { prompt: r.prompt, aspect_ratio: aspect, resolution: r.resolution ?? '2K', output_format: 'png', enhance_prompt: false };
+    return r.refs?.length
+      ? { model: 'flux-3/klein-edit-image', input: { ...input, image_urls: r.refs.slice(0, 10) } }
+      : { model: 'flux-3/klein-text-to-image', input };
   },
 };
 
@@ -133,20 +150,30 @@ ${body.angle ? 'Насока от Марти: ' + body.angle : ''}
 
 ЗНАНИЕ:
 ${JSON.stringify(knowledge)}`;
-  const model = ['gemini-3.1-pro', 'gemini-3-flash'].includes(body.model ?? '') ? body.model! : 'gemini-3.1-pro';
-  const res = await kie(env, `/api/v1/${model}/v1/chat/completions`, {
-    method: 'POST',
-    body: JSON.stringify({
-      stream: false,
-      reasoning_effort: 'low',
-      include_thoughts: false,
-      messages: [
-        { role: 'system', content: [{ type: 'text', text: WRITER_RULES }] },
-        { role: 'user', content: [{ type: 'text', text: ask }] },
-      ],
-    }),
-  });
-  const content = String((res as { choices?: { message?: { content?: unknown } }[] }).choices?.[0]?.message?.content ?? '');
+  const model = ['claude-opus-5-5', 'claude-sonnet-5-5', 'gemini-3.1-pro', 'gemini-3-flash'].includes(body.model ?? '') ? body.model! : 'claude-opus-5-5';
+  let content = '';
+  if (model.startsWith('claude')) {
+    // Claude през Kie (Anthropic Messages формат). Правилата са в началото на съобщението.
+    const res = (await kie(env, '/claude/v1/messages', {
+      method: 'POST',
+      body: JSON.stringify({ model, max_tokens: 8000, stream: false, messages: [{ role: 'user', content: WRITER_RULES + '\n\n---\n\n' + ask }] }),
+    })) as { content?: { type?: string; text?: string }[] };
+    content = (res.content ?? []).filter((b) => b.type === 'text').map((b) => b.text ?? '').join('');
+  } else {
+    const res = await kie(env, `/api/v1/${model}/v1/chat/completions`, {
+      method: 'POST',
+      body: JSON.stringify({
+        stream: false,
+        reasoning_effort: 'low',
+        include_thoughts: false,
+        messages: [
+          { role: 'system', content: [{ type: 'text', text: WRITER_RULES }] },
+          { role: 'user', content: [{ type: 'text', text: ask }] },
+        ],
+      }),
+    });
+    content = String((res as { choices?: { message?: { content?: unknown } }[] }).choices?.[0]?.message?.content ?? '');
+  }
   const m = content.match(/\{[\s\S]*\}/);
   if (!m) throw new Error('Моделът не върна JSON');
   return JSON.parse(m[0]) as { concepts: unknown[] };

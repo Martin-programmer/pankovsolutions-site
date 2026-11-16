@@ -106,7 +106,7 @@
             <label>Брой <select id="count"><option>3</option><option>2</option><option>4</option><option>6</option><option>8</option></select></label>
           </div>
           <label>Насока <span class="hint">по избор: идея, ъгъл, сезон, аудитория</span><textarea id="angle" rows="2" placeholder="Например: фирми, които още водят склада в Excel"></textarea></label>
-          <label>Модел за текстове <select id="wmodel"><option value="gemini-3.1-pro">Gemini 3.1 Pro (по-добър)</option><option value="gemini-3-flash">Gemini 3 Flash (по-бърз)</option></select></label>
+          <label>Модел за текстове <select id="wmodel"><option value="claude-opus-5-5">Claude Opus 5.5 (най-добър на български)</option><option value="claude-sonnet-5-5">Claude Sonnet 5.5 (по-бърз)</option><option value="gemini-3.1-pro">Gemini 3.1 Pro</option></select></label>
           <button class="btn" id="write">Напиши концепции</button>
           <p class="msg" id="write-msg" role="status"></p>
           <div class="concepts" id="concepts"></div>
@@ -118,10 +118,12 @@
             <textarea id="prompt" rows="4"></textarea></label>
           <div class="row">
             <label>Модел <select id="model">
-              <option value="nano-banana-pro">Nano Banana Pro — сцени + истински екран</option>
-              <option value="gpt-image-2">GPT Image 2 — следва указания, текст</option>
-              <option value="seedream-5">Seedream 5 Lite — серия в един стил</option>
-              <option value="nano-banana-2">Nano Banana 2 — бързо и евтино</option>
+              <option value="nano-banana-pro">Nano Banana Pro — сцена + истински екран</option>
+              <option value="gpt-image-2-6">GPT Image 2.6 — най-нов, следва указания</option>
+              <option value="seedream-5-5">Seedream 5.5 — серия в един стил</option>
+              <option value="gpt-image-2">GPT Image 2 — №1 в класацията</option>
+              <option value="nano-banana-2">Nano Banana 2 — бърз</option>
+              <option value="flux-3-klein">Flux 3 Klein — най-евтин, чернови</option>
             </select></label>
             <label>Формат <select id="aspect"><option value="4:5">4:5 лента</option><option value="1:1">1:1 квадрат</option><option value="9:16">9:16 сторита</option><option value="16:9">16:9</option></select></label>
             <label>Качество <select id="res"><option>2K</option><option>1K</option><option>4K</option></select></label>
