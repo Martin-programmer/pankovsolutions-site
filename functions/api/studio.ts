@@ -3,7 +3,8 @@
 // текстове) със ключа на Марти, който стои само като Secret KIE_API_KEY в Cloudflare.
 // Маршрути под /api/studio/*:
 //   POST login · POST logout · GET me · GET credit · POST write · POST generate · GET task
-//   POST upload · GET img (прокси за картинките, за да може canvas да ги изнесе) · GET/POST history
+//   POST upload · GET img (прокси за файловете, само за влезли) · GET/POST history
+//   POST raw (всеки модел от Kie Market) · POST music + GET music-task (Suno) · POST callback
 import { safeError } from '../lib';
 
 export interface StudioEnv {
@@ -197,7 +198,6 @@ async function upsert(env: StudioEnv, item: Partial<Item> & { id: string }) {
 }
 
 // Картинките на Kie идват от техните CDN-и; само тях проксираме.
-const IMG_HOSTS = /(^|\.)(kie\.ai|redpandaai\.co|aiquickdraw\.com|tempfile\.aiquickdraw\.com|kieai\.erweima\.ai|storage\.googleapis\.com|cloudfront\.net)$/;
 
 export async function onStudio(context: { request: Request; env: StudioEnv }): Promise<Response> {
   const { request, env } = context;
@@ -224,6 +224,8 @@ export async function onStudio(context: { request: Request; env: StudioEnv }): P
     }
     if (route === 'logout' && post) return json({ ok: true }, 200, { 'set-cookie': `${COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0` });
 
+    // Kie (Suno) изисква callBackUrl; резултатът го взимаме с проверка, затова тук само потвърждаваме.
+    if (route === 'callback') return json({ ok: true });
     if (!(await authed(request, env))) return json({ error: 'auth' }, 401);
     if (route === 'me') return json({ ok: true, kie: Boolean(env.KIE_API_KEY), kv: Boolean(env.STUDIO_KV) });
     if (!env.KIE_API_KEY && route !== 'history') return json({ error: 'Липсва KIE_API_KEY в Cloudflare.' }, 503);
@@ -249,6 +251,47 @@ export async function onStudio(context: { request: Request; env: StudioEnv }): P
       return json({ id });
     }
 
+    // Всеки модел от Kie Market (глас, видео и т.н.) с готов input: {model, input, note}.
+    if (route === 'raw' && post) {
+      const r = (await request.json()) as { model?: string; input?: Record<string, unknown>; note?: string };
+      if (!r.model || !/^[\w./-]{3,80}$/.test(r.model) || !r.input) return json({ error: 'model/input' }, 400);
+      const res = (await kie(env, '/api/v1/jobs/createTask', { method: 'POST', body: JSON.stringify({ model: r.model, input: r.input }) })) as { msg?: string; data?: { taskId?: string } };
+      const id = res.data?.taskId;
+      if (!id) return json({ error: `Kie не прие задачата: ${res.msg ?? ''}` }, 502);
+      await upsert(env, { id, model: r.model, prompt: JSON.stringify(r.input).slice(0, 500), aspect: '-', state: 'waiting', created: Date.now(), note: r.note?.slice(0, 300) });
+      return json({ id });
+    }
+    // Музика (Suno): {prompt, style?, title?, instrumental?, model?}
+    if (route === 'music' && post) {
+      const r = (await request.json()) as { prompt?: string; style?: string; title?: string; instrumental?: boolean; model?: string };
+      const custom = Boolean(r.style);
+      const body = {
+        prompt: r.prompt ?? '',
+        customMode: custom,
+        instrumental: r.instrumental ?? true,
+        model: r.model ?? 'V5',
+        callBackUrl: `${url.origin}/api/studio/callback`,
+        ...(custom ? { style: r.style, title: r.title ?? 'Pankov' } : {}),
+      };
+      const res = (await kie(env, '/api/v1/generate', { method: 'POST', body: JSON.stringify(body) })) as { msg?: string; data?: { taskId?: string } };
+      const id = res.data?.taskId;
+      if (!id) return json({ error: `Kie не прие задачата: ${res.msg ?? ''}` }, 502);
+      await upsert(env, { id, model: 'suno-' + body.model, prompt: (r.style ?? r.prompt ?? '').slice(0, 500), aspect: '-', state: 'waiting', created: Date.now() });
+      return json({ id });
+    }
+    if (route === 'music-task') {
+      const id = url.searchParams.get('id') ?? '';
+      if (!/^[\w-]{6,80}$/.test(id)) return json({ error: 'id' }, 400);
+      const res = (await kie(env, `/api/v1/generate/record-info?taskId=${encodeURIComponent(id)}`)) as {
+        data?: { status?: string; errorMessage?: string; response?: { sunoData?: { audioUrl?: string; streamAudioUrl?: string; duration?: number; title?: string }[] } };
+      };
+      const d = res.data ?? {};
+      const tracks = d.response?.sunoData ?? [];
+      const urls = tracks.map((t) => t.audioUrl || t.streamAudioUrl || '').filter(Boolean);
+      const done = d.status === 'SUCCESS' || (urls.length > 0 && tracks.every((t) => t.audioUrl));
+      if (done) await upsert(env, { id, state: 'success', urls });
+      return json({ state: done ? 'success' : (d.status ?? 'unknown'), urls, tracks, error: d.errorMessage ?? '' });
+    }
     if (route === 'task') {
       const id = url.searchParams.get('id') ?? '';
       if (!/^[\w-]{6,80}$/.test(id)) return json({ error: 'id' }, 400);
@@ -280,7 +323,7 @@ export async function onStudio(context: { request: Request; env: StudioEnv }): P
 
     if (route === 'img') {
       const u = new URL(url.searchParams.get('u') ?? '');
-      if (u.protocol !== 'https:' || !IMG_HOSTS.test(u.hostname)) return json({ error: 'host' }, 400);
+      if (u.protocol !== 'https:') return json({ error: 'host' }, 400);
       const r = await fetch(u.toString());
       if (!r.ok) return json({ error: `img ${r.status}` }, 502);
       return new Response(r.body, { headers: { 'content-type': r.headers.get('content-type') ?? 'image/png', 'cache-control': 'private, max-age=86400' } });
